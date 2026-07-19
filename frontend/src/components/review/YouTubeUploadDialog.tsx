@@ -43,6 +43,12 @@ interface YouTubeUploadDialogProps {
   onUploadStarted: () => void
 }
 
+const PRIVACY_OPTIONS = [
+  { value: "unlisted", label: "Unlisted" },
+  { value: "public", label: "Public" },
+  { value: "private", label: "Private" },
+]
+
 export function YouTubeUploadDialog({
   open,
   onOpenChange,
@@ -261,13 +267,19 @@ export function YouTubeUploadDialog({
                   Privacy
                 </Label>
                 <Select value={privacyStatus} onValueChange={setPrivacyStatus}>
-                  <SelectTrigger id="yt-privacy">
-                    <SelectValue />
+                  <SelectTrigger id="yt-privacy" className="w-full">
+                    <SelectValue>
+                      {(value: string | null) =>
+                        PRIVACY_OPTIONS.find((o) => o.value === value)?.label ?? value
+                      }
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="unlisted">Unlisted</SelectItem>
-                    <SelectItem value="public">Public</SelectItem>
-                    <SelectItem value="private">Private</SelectItem>
+                    {PRIVACY_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
