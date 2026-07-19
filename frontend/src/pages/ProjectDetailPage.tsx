@@ -781,7 +781,8 @@ export function ProjectDetailPage() {
                     </EmptyMedia>
                     <EmptyTitle>No files found</EmptyTitle>
                     <EmptyDescription>
-                      Nothing matches “{search}” in {currentFolder ? "this folder" : "this project"}.
+                      Nothing matches “{search}” in{" "}
+                      {currentFolder ? "this folder or its subfolders" : "this project"}.
                     </EmptyDescription>
                   </EmptyHeader>
                   <Button variant="outline" size="sm" onClick={() => handleSearchChange("")}>

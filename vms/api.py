@@ -685,6 +685,28 @@ def _escape_like(term):
 	return term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
+def _folder_subtree(folder):
+	"""A folder plus every live folder nested under it, for subtree-scoped queries.
+
+	Trashed descendants are left out: they're unreachable in the UI, so surfacing
+	their assets in a search would show files the user can't navigate to.
+	"""
+	subtree = [folder]
+	frontier = [folder]
+	# depth cap mirrors the controller's — corrupt parent data can't spin here
+	for _ in range(50):
+		if not frontier:
+			break
+		frontier = frappe.get_all(
+			"VMS Folder",
+			filters={"parent_folder": ["in", frontier], "deleted_at": ["is", "not set"]},
+			pluck="name",
+		)
+		subtree.extend(frontier)
+
+	return subtree
+
+
 def _asset_order_by(sort_by=None, sort_order=None):
 	"""Build a safe `order_by` clause from user input, defaulting to newest first."""
 	field = sort_by if sort_by in SORTABLE_ASSET_FIELDS else "creation"
@@ -709,11 +731,12 @@ def get_project_assets(
 	Parameters:
 		project: VMS Project ID (required)
 		folder: VMS Folder ID. None = root-level assets only. Ignored when category is set.
+			With `tag` or `search` it scopes to the folder's whole subtree instead of
+			just its direct contents.
 		category: "For Review" or "Deliverable". Returns matching assets across ALL folders.
-		tag: Filter to assets tagged with this tag. Crosses folder/category boundaries
-			like category does (returns matching assets across ALL folders).
-		search: Substring match on file_name. Searching from the project root spans every
-			folder; inside a folder it stays scoped to that folder.
+		tag: Filter to assets tagged with this tag. Scoped to the current subtree — the
+			whole project from the root, folder + descendants inside a folder.
+		search: Substring match on file_name. Same subtree scoping as `tag`.
 		page: Page number (1-indexed, default 1)
 		page_size: Items per page (default 20, max 500)
 		sort_by: "creation", "file_size" or "file_name" (default "creation")
@@ -733,14 +756,15 @@ def get_project_assets(
 
 	if category:
 		filters["category"] = category
-	elif tag:
-		# tag filter spans folders so the user sees every match in the project
-		pass
+	elif tag or search:
+		# A tag filter or a search is scoped to the current subtree: from the project
+		# root that's every folder, inside a folder it's that folder plus everything
+		# nested under it. Matching only the exact folder would hide results the user
+		# can see by clicking down one more level.
+		if folder:
+			filters["folder"] = ["in", _folder_subtree(folder)]
 	elif folder:
 		filters["folder"] = folder
-	elif search:
-		# searching from the project root spans every folder, like the tag filter
-		pass
 	else:
 		filters["folder"] = ["is", "not set"]
 
