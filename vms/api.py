@@ -707,6 +707,19 @@ def _folder_subtree(folder):
 	return subtree
 
 
+def _trashed_folders(project):
+	"""Every trashed folder in a project.
+
+	Soft delete cascades to descendants, so this set is already closed downwards —
+	a live folder can't sit under a trashed one.
+	"""
+	return frappe.get_all(
+		"VMS Folder",
+		filters={"project": project, "deleted_at": ["is", "set"]},
+		pluck="name",
+	)
+
+
 def _asset_order_by(sort_by=None, sort_order=None):
 	"""Build a safe `order_by` clause from user input, defaulting to newest first."""
 	field = sort_by if sort_by in SORTABLE_ASSET_FIELDS else "creation"
@@ -735,7 +748,8 @@ def get_project_assets(
 			just its direct contents.
 		category: "For Review" or "Deliverable". Returns matching assets across ALL folders.
 		tag: Filter to assets tagged with this tag. Scoped to the current subtree — the
-			whole project from the root, folder + descendants inside a folder.
+			whole project from the root, folder + descendants inside a folder. Assets
+			in trashed folders are excluded either way, since they're unreachable.
 		search: Substring match on file_name. Same subtree scoping as `tag`.
 		page: Page number (1-indexed, default 1)
 		page_size: Items per page (default 20, max 500)
@@ -763,6 +777,13 @@ def get_project_assets(
 		# can see by clicking down one more level.
 		if folder:
 			filters["folder"] = ["in", _folder_subtree(folder)]
+		else:
+			# From the root the subtree is the whole project, but trashed folders are
+			# still unreachable in the UI, so their assets stay out of the results —
+			# same rule `_folder_subtree` applies one level down.
+			trashed = _trashed_folders(project)
+			if trashed:
+				filters["folder"] = ["not in", trashed]
 	elif folder:
 		filters["folder"] = folder
 	else:
@@ -787,7 +808,10 @@ def get_project_assets(
 			}
 		filters["name"] = ["in", tagged_names]
 
-	total = frappe.db.count("VMS Asset", filters=filters)
+	# Counted through get_all, not frappe.db.count: only get_all applies Frappe's
+	# ifnull() compatibility wrapping, so a `not in` filter counts the NULL-folder
+	# rows that the listing below returns. db.count would drop them.
+	total = frappe.get_all("VMS Asset", filters=filters, fields=[{"COUNT": "*"}])[0].get("COUNT(*)")
 
 	assets = frappe.get_all(
 		"VMS Asset",
