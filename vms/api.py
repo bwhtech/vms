@@ -638,9 +638,21 @@ def move_assets_to_folder(asset_names: str | list, folder: str | None = None):
 	return {"status": "ok", "count": len(asset_names)}
 
 
+SORTABLE_ASSET_FIELDS = ("creation", "file_size", "file_name")
+
+
+def _asset_order_by(sort_by=None, sort_order=None):
+	"""Build a safe `order_by` clause from user input, defaulting to newest first."""
+	field = sort_by if sort_by in SORTABLE_ASSET_FIELDS else "creation"
+	direction = "asc" if str(sort_order).lower() == "asc" else "desc"
+	return f"{field} {direction}"
+
+
 @frappe.whitelist(methods=["GET"])
-def get_project_assets(project, folder=None, category=None, tag=None, page=1, page_size=20):
-	"""Get project assets with server-side folder/category/tag filtering and pagination.
+def get_project_assets(
+	project, folder=None, category=None, tag=None, page=1, page_size=20, sort_by=None, sort_order=None
+):
+	"""Get project assets with server-side folder/category/tag filtering, sorting and pagination.
 
 	Parameters:
 		project: VMS Project ID (required)
@@ -650,6 +662,8 @@ def get_project_assets(project, folder=None, category=None, tag=None, page=1, pa
 			like category does (returns matching assets across ALL folders).
 		page: Page number (1-indexed, default 1)
 		page_size: Items per page (default 20, max 500)
+		sort_by: "creation", "file_size" or "file_name" (default "creation")
+		sort_order: "asc" or "desc" (default "desc")
 	"""
 	if not frappe.db.exists("VMS Project", project):
 		frappe.throw(_("Project {0} does not exist").format(project))
@@ -710,7 +724,7 @@ def get_project_assets(project, folder=None, category=None, tag=None, page=1, pa
 			"_user_tags",
 			"card_color",
 		],
-		order_by="creation desc",
+		order_by=_asset_order_by(sort_by, sort_order),
 		start=start,
 		page_length=page_size,
 	)

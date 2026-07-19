@@ -64,6 +64,8 @@ import { DropZoneOverlay } from "@/components/DropZoneOverlay"
 import { CategoryBadge } from "@/components/CategoryBadge"
 import { AssetTags } from "@/components/AssetTags"
 import { AssetTagFilter } from "@/components/AssetTagFilter"
+import { AssetSortMenu, DEFAULT_ASSET_SORT } from "@/components/AssetSortMenu"
+import type { AssetSort } from "@/components/AssetSortMenu"
 import { AssetCardColor, CARD_COLOR_BORDER_CLASS } from "@/components/AssetCardColor"
 import { useDownload } from "@/hooks/useDownload"
 import { UserAvatar } from "@/components/UserAvatar"
@@ -111,6 +113,7 @@ export function ProjectDetailPage() {
   // assets stay on screen. Reset to PAGE_SIZE whenever the underlying list changes.
   const [limit, setLimit] = useState(PAGE_SIZE)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
+  const [sort, setSort] = useState<AssetSort>(DEFAULT_ASSET_SORT)
   const { downloadOne, downloadMany, isDownloading } = useDownload()
 
   const { call: callTogglePublicReview } = useFrappePostCall("vms.review_api.toggle_public_review")
@@ -127,8 +130,8 @@ export function ProjectDetailPage() {
 
   const { data: folderAssetsData, mutate: mutateFolderAssets, isLoading: isLoadingFolder } = useFrappeGetCall<{ message: PaginatedAssets }>(
     "vms.api.get_project_assets",
-    { project: projectId!, folder: currentFolder ?? undefined, tag: tagFilter ?? undefined, page: 1, page_size: activeTab === "all" ? limit : PAGE_SIZE },
-    `project-assets-folder-${projectId}-${currentFolder ?? "root"}-t${tagFilter ?? ""}-l${activeTab === "all" ? limit : PAGE_SIZE}`,
+    { project: projectId!, folder: currentFolder ?? undefined, tag: tagFilter ?? undefined, page: 1, page_size: activeTab === "all" ? limit : PAGE_SIZE, sort_by: sort.field, sort_order: sort.order },
+    `project-assets-folder-${projectId}-${currentFolder ?? "root"}-t${tagFilter ?? ""}-l${activeTab === "all" ? limit : PAGE_SIZE}-s${sort.field}-${sort.order}`,
     // growing the limit changes the SWR key; keep the loaded cards on screen while the
     // bigger page fetches instead of flashing back to skeletons
     { keepPreviousData: true },
@@ -136,15 +139,15 @@ export function ProjectDetailPage() {
 
   const { data: forReviewData, mutate: mutateForReview, isLoading: isLoadingForReview } = useFrappeGetCall<{ message: PaginatedAssets }>(
     "vms.api.get_project_assets",
-    { project: projectId!, category: "For Review", tag: tagFilter ?? undefined, page: 1, page_size: activeTab === "for-review" ? limit : PAGE_SIZE },
-    `project-assets-review-${projectId}-t${tagFilter ?? ""}-l${activeTab === "for-review" ? limit : PAGE_SIZE}`,
+    { project: projectId!, category: "For Review", tag: tagFilter ?? undefined, page: 1, page_size: activeTab === "for-review" ? limit : PAGE_SIZE, sort_by: sort.field, sort_order: sort.order },
+    `project-assets-review-${projectId}-t${tagFilter ?? ""}-l${activeTab === "for-review" ? limit : PAGE_SIZE}-s${sort.field}-${sort.order}`,
     { keepPreviousData: true },
   )
 
   const { data: deliverablesData, mutate: mutateDeliverables, isLoading: isLoadingDeliverables } = useFrappeGetCall<{ message: PaginatedAssets }>(
     "vms.api.get_project_assets",
-    { project: projectId!, category: "Deliverable", tag: tagFilter ?? undefined, page: 1, page_size: activeTab === "deliverables" ? limit : PAGE_SIZE },
-    `project-assets-deliverables-${projectId}-t${tagFilter ?? ""}-l${activeTab === "deliverables" ? limit : PAGE_SIZE}`,
+    { project: projectId!, category: "Deliverable", tag: tagFilter ?? undefined, page: 1, page_size: activeTab === "deliverables" ? limit : PAGE_SIZE, sort_by: sort.field, sort_order: sort.order },
+    `project-assets-deliverables-${projectId}-t${tagFilter ?? ""}-l${activeTab === "deliverables" ? limit : PAGE_SIZE}-s${sort.field}-${sort.order}`,
     { keepPreviousData: true },
   )
 
@@ -584,6 +587,10 @@ export function ProjectDetailPage() {
               project={projectId!}
               value={tagFilter}
               onChange={(t) => { setTagFilter(t); setLimit(PAGE_SIZE); clearSelection() }}
+            />
+            <AssetSortMenu
+              value={sort}
+              onChange={(s) => { setSort(s); setLimit(PAGE_SIZE); clearSelection() }}
             />
             <ToggleGroup
               className="hidden sm:flex"
