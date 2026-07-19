@@ -54,8 +54,9 @@ export function YouTubeSection() {
   const [clientId, setClientId] = useState("")
   const [clientSecret, setClientSecret] = useState("")
   const [isFinalizing, setIsFinalizing] = useState(false)
-  // Either a single channel to remove, or "all" for a full disconnect
-  const [pendingRemoval, setPendingRemoval] = useState<YouTubeChannel | "all" | null>(null)
+  // Either the name of a single channel to remove, or "all" for a full disconnect.
+  // Held by name rather than by object so the dialog reads the latest counts.
+  const [pendingRemoval, setPendingRemoval] = useState<string | "all" | null>(null)
   const [removing, setRemoving] = useState(false)
 
   const {
@@ -87,7 +88,17 @@ export function YouTubeSection() {
   const status = statusData?.message
   const channels = status?.channels ?? []
   const totalAssetCount = channels.reduce((sum, channel) => sum + (channel.asset_count ?? 0), 0)
+  const pendingChannel =
+    pendingRemoval && pendingRemoval !== "all"
+      ? channels.find((channel) => channel.name === pendingRemoval)
+      : undefined
   const redirectUri = redirectData?.message?.redirect_uri || ""
+
+  // Counts come from page load, so refresh them before the dialog quotes one
+  const openRemoval = (target: string | "all") => {
+    setPendingRemoval(target)
+    mutate()
+  }
 
   // Handle OAuth redirect callback
   useEffect(() => {
@@ -144,8 +155,8 @@ export function YouTubeSection() {
         setClientSecret("")
         toast.success("YouTube disconnected")
       } else {
-        await callDisconnectChannel({ channel: pendingRemoval.name })
-        toast.success(`Disconnected ${pendingRemoval.channel_name}`)
+        await callDisconnectChannel({ channel: pendingRemoval })
+        toast.success(`Disconnected ${pendingChannel?.channel_name ?? "channel"}`)
       }
       setPendingRemoval(null)
       mutate()
@@ -223,7 +234,7 @@ export function YouTubeSection() {
                       variant="ghost"
                       size="sm"
                       className="shrink-0 text-destructive hover:text-destructive"
-                      onClick={() => setPendingRemoval(channel)}
+                      onClick={() => openRemoval(channel.name)}
                     >
                       Remove
                     </Button>
@@ -311,7 +322,7 @@ export function YouTubeSection() {
         {status?.connected ? (
           <Button
             variant="destructive"
-            onClick={() => setPendingRemoval("all")}
+            onClick={() => openRemoval("all")}
             disabled={disconnecting}
           >
             {disconnecting
@@ -328,7 +339,7 @@ export function YouTubeSection() {
       </div>
 
       <AlertDialog
-        open={pendingRemoval !== null}
+        open={pendingRemoval === "all" || pendingChannel !== undefined}
         onOpenChange={(open) => {
           if (!open) setPendingRemoval(null)
         }}
@@ -353,10 +364,10 @@ export function YouTubeSection() {
               ) : (
                 <>
                   <strong className="text-foreground">
-                    {pendingRemoval ? pendingRemoval.channel_name : ""}
+                    {pendingChannel?.channel_name ?? ""}
                   </strong>{" "}
                   will be disconnected.{" "}
-                  {unlinkWarning(pendingRemoval ? pendingRemoval.asset_count : 0, "it")} Videos
+                  {unlinkWarning(pendingChannel?.asset_count ?? 0, "it")} Videos
                   already on YouTube are unaffected.
                 </>
               )}
