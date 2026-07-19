@@ -541,30 +541,66 @@ def rename_folder(folder_name_id: str, new_name: str):
 
 
 @frappe.whitelist()
-def move_folder(folder_name_id: str, parent_folder: str | None = None):
+def move_folder(
+	folder_name_id: str, parent_folder: str | None = None, target_project: str | None = None
+):
 	"""Reparent a folder. `parent_folder` empty means move it to the project root.
+
+	`target_project` moves the folder to a different project. The whole subtree goes
+	with it, assets included — a folder is a container, so its contents follow it.
+	That's the opposite of `move_asset`, which clears the folder of an asset moved on
+	its own, because there the folder is being left behind rather than carried along.
 
 	Cycle and same-project checks live in the VMS Folder controller, so they also
 	cover desk edits; this only adds the sibling-name collision check.
 	"""
 	folder = frappe.get_doc("VMS Folder", folder_name_id)
 
+	target_project = target_project or folder.project
+	if target_project != folder.project and not frappe.db.exists("VMS Project", target_project):
+		frappe.throw(_("Target project {0} does not exist").format(target_project))
+
 	parent_folder = parent_folder or None
 	if parent_folder:
-		if not frappe.db.exists("VMS Folder", parent_folder):
+		parent = frappe.db.get_value(
+			"VMS Folder", parent_folder, ["project", "deleted_at"], as_dict=True
+		)
+		if not parent:
 			frappe.throw(_("Destination folder {0} does not exist").format(parent_folder))
-		if frappe.db.get_value("VMS Folder", parent_folder, "deleted_at"):
+		if parent.deleted_at:
 			frappe.throw(_("Cannot move a folder into the trash"))
+		if parent.project != target_project:
+			frappe.throw(_("Destination folder does not belong to the target project"))
 
-	if (folder.parent_folder or None) == parent_folder:
-		return {"name": folder.name, "parent_folder": folder.parent_folder}
+	if target_project == folder.project and (folder.parent_folder or None) == parent_folder:
+		return {"name": folder.name, "parent_folder": folder.parent_folder, "project": folder.project}
 
-	_check_duplicate_folder_name(folder.folder_name, folder.project, parent_folder, exclude=folder.name)
+	_check_duplicate_folder_name(folder.folder_name, target_project, parent_folder, exclude=folder.name)
 
+	folder.project = target_project
 	folder.parent_folder = parent_folder
 	folder.save(ignore_permissions=True)
 
-	return {"name": folder.name, "parent_folder": folder.parent_folder}
+	_reproject_subtree(folder.name, target_project)
+
+	return {"name": folder.name, "parent_folder": folder.parent_folder, "project": folder.project}
+
+
+def _reproject_subtree(folder_name: str, project: str):
+	"""Point every folder under `folder_name`, and every asset in them, at `project`.
+
+	Trashed descendants are included: they were trashed with an ancestor and come
+	back with it, so leaving them behind would strand them in the old project.
+	The tree shape doesn't change here, so this writes directly rather than saving
+	each document.
+	"""
+	subtree = _folder_subtree(folder_name, include_trashed=True)
+
+	descendants = [f for f in subtree if f != folder_name]
+	if descendants:
+		frappe.db.set_value("VMS Folder", {"name": ["in", descendants]}, "project", project)
+
+	frappe.db.set_value("VMS Asset", {"folder": ["in", subtree]}, "project", project)
 
 
 @frappe.whitelist()
@@ -685,23 +721,24 @@ def _escape_like(term):
 	return term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
-def _folder_subtree(folder):
-	"""A folder plus every live folder nested under it, for subtree-scoped queries.
+def _folder_subtree(folder, include_trashed=False):
+	"""A folder plus every folder nested under it, for subtree-scoped queries.
 
-	Trashed descendants are left out: they're unreachable in the UI, so surfacing
-	their assets in a search would show files the user can't navigate to.
+	Trashed descendants are left out by default: they're unreachable in the UI, so
+	surfacing their assets in a search would show files the user can't navigate to.
+	A move is the exception — the whole subtree travels, trash and all.
 	"""
 	subtree = [folder]
 	frontier = [folder]
+	filters = {"parent_folder": ["in", frontier]}
+	if not include_trashed:
+		filters["deleted_at"] = ["is", "not set"]
 	# depth cap mirrors the controller's — corrupt parent data can't spin here
 	for _ in range(50):
 		if not frontier:
 			break
-		frontier = frappe.get_all(
-			"VMS Folder",
-			filters={"parent_folder": ["in", frontier], "deleted_at": ["is", "not set"]},
-			pluck="name",
-		)
+		filters["parent_folder"] = ["in", frontier]
+		frontier = frappe.get_all("VMS Folder", filters=filters, pluck="name")
 		subtree.extend(frontier)
 
 	return subtree
