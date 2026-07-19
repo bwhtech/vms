@@ -106,7 +106,9 @@ export function ProjectDetailPage() {
   const [view, setView] = useState<"list" | "grid">("grid")
   const { selected, toggleSelect, toggleSelectAll, clearSelection } = useSelection()
   const [activeTab, setActiveTab] = useState("all")
-  const [page, setPage] = useState(1)
+  // "Load more" grows the requested page size instead of paging, so already-loaded
+  // assets stay on screen. Reset to PAGE_SIZE whenever the underlying list changes.
+  const [limit, setLimit] = useState(PAGE_SIZE)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const { downloadOne, downloadMany, isDownloading } = useDownload()
 
@@ -124,31 +126,35 @@ export function ProjectDetailPage() {
 
   const { data: folderAssetsData, mutate: mutateFolderAssets, isLoading: isLoadingFolder } = useFrappeGetCall<{ message: PaginatedAssets }>(
     "vms.api.get_project_assets",
-    { project: projectId!, folder: currentFolder ?? undefined, tag: tagFilter ?? undefined, page: activeTab === "all" ? page : 1, page_size: PAGE_SIZE },
-    `project-assets-folder-${projectId}-${currentFolder ?? "root"}-t${tagFilter ?? ""}-p${activeTab === "all" ? page : 1}`,
+    { project: projectId!, folder: currentFolder ?? undefined, tag: tagFilter ?? undefined, page: 1, page_size: activeTab === "all" ? limit : PAGE_SIZE },
+    `project-assets-folder-${projectId}-${currentFolder ?? "root"}-t${tagFilter ?? ""}-l${activeTab === "all" ? limit : PAGE_SIZE}`,
+    // growing the limit changes the SWR key; keep the loaded cards on screen while the
+    // bigger page fetches instead of flashing back to skeletons
+    { keepPreviousData: true },
   )
 
   const { data: forReviewData, mutate: mutateForReview, isLoading: isLoadingForReview } = useFrappeGetCall<{ message: PaginatedAssets }>(
     "vms.api.get_project_assets",
-    { project: projectId!, category: "For Review", tag: tagFilter ?? undefined, page: activeTab === "for-review" ? page : 1, page_size: PAGE_SIZE },
-    `project-assets-review-${projectId}-t${tagFilter ?? ""}-p${activeTab === "for-review" ? page : 1}`,
+    { project: projectId!, category: "For Review", tag: tagFilter ?? undefined, page: 1, page_size: activeTab === "for-review" ? limit : PAGE_SIZE },
+    `project-assets-review-${projectId}-t${tagFilter ?? ""}-l${activeTab === "for-review" ? limit : PAGE_SIZE}`,
+    { keepPreviousData: true },
   )
 
   const { data: deliverablesData, mutate: mutateDeliverables, isLoading: isLoadingDeliverables } = useFrappeGetCall<{ message: PaginatedAssets }>(
     "vms.api.get_project_assets",
-    { project: projectId!, category: "Deliverable", tag: tagFilter ?? undefined, page: activeTab === "deliverables" ? page : 1, page_size: PAGE_SIZE },
-    `project-assets-deliverables-${projectId}-t${tagFilter ?? ""}-p${activeTab === "deliverables" ? page : 1}`,
+    { project: projectId!, category: "Deliverable", tag: tagFilter ?? undefined, page: 1, page_size: activeTab === "deliverables" ? limit : PAGE_SIZE },
+    `project-assets-deliverables-${projectId}-t${tagFilter ?? ""}-l${activeTab === "deliverables" ? limit : PAGE_SIZE}`,
+    { keepPreviousData: true },
   )
 
   const folderAssets = folderAssetsData?.message?.assets ?? []
   const folderTotal = folderAssetsData?.message?.total ?? 0
-  const folderTotalPages = folderAssetsData?.message?.total_pages ?? 1
   const forReviewItems = forReviewData?.message?.assets ?? []
   const forReviewTotal = forReviewData?.message?.total ?? 0
-  const forReviewTotalPages = forReviewData?.message?.total_pages ?? 1
   const deliverableItems = deliverablesData?.message?.assets ?? []
   const deliverableTotal = deliverablesData?.message?.total ?? 0
-  const deliverableTotalPages = deliverablesData?.message?.total_pages ?? 1
+
+  const loadMore = useCallback(() => setLimit((l) => l + PAGE_SIZE), [])
 
   const mutateAssets = useCallback(() => {
     mutateFolderAssets()
@@ -253,13 +259,13 @@ export function ProjectDetailPage() {
 
   const handleFolderClick = (folderName: string) => {
     navigate(`/projects/${projectId}/folder/${folderName}`)
-    setPage(1)
+    setLimit(PAGE_SIZE)
     clearSelection()
   }
 
   const handleNavigateToRoot = () => {
     navigate(`/projects/${projectId}`)
-    setPage(1)
+    setLimit(PAGE_SIZE)
     clearSelection()
   }
 
@@ -510,7 +516,7 @@ export function ProjectDetailPage() {
         </div>
       )}
 
-      {!folderNotFound && <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setPage(1); clearSelection() }}>
+      {!folderNotFound && <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setLimit(PAGE_SIZE); clearSelection() }}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <TabsList>
             <TabsTrigger value="all">
@@ -576,7 +582,7 @@ export function ProjectDetailPage() {
             <AssetTagFilter
               project={projectId!}
               value={tagFilter}
-              onChange={(t) => { setTagFilter(t); setPage(1); clearSelection() }}
+              onChange={(t) => { setTagFilter(t); setLimit(PAGE_SIZE); clearSelection() }}
             />
             <ToggleGroup
               className="hidden sm:flex"
@@ -690,7 +696,7 @@ export function ProjectDetailPage() {
               )
             }
           />
-          <PaginationControls page={page} totalPages={folderTotalPages} onPageChange={setPage} />
+          <LoadMoreControls loaded={folderAssets.length} total={folderTotal} isLoading={isLoadingFolder} onLoadMore={loadMore} />
         </TabsContent>
 
         <TabsContent value="for-review">
@@ -724,7 +730,7 @@ export function ProjectDetailPage() {
               </Empty>
             }
           />
-          <PaginationControls page={page} totalPages={forReviewTotalPages} onPageChange={setPage} />
+          <LoadMoreControls loaded={forReviewItems.length} total={forReviewTotal} isLoading={isLoadingForReview} onLoadMore={loadMore} />
         </TabsContent>
 
         <TabsContent value="deliverables">
@@ -758,7 +764,7 @@ export function ProjectDetailPage() {
               </Empty>
             }
           />
-          <PaginationControls page={page} totalPages={deliverableTotalPages} onPageChange={setPage} />
+          <LoadMoreControls loaded={deliverableItems.length} total={deliverableTotal} isLoading={isLoadingDeliverables} onLoadMore={loadMore} />
         </TabsContent>
       </Tabs>}
 
@@ -1152,38 +1158,31 @@ function BreadcrumbNav({
   )
 }
 
-function PaginationControls({
-  page,
-  totalPages,
-  onPageChange,
+function LoadMoreControls({
+  loaded,
+  total,
+  isLoading,
+  onLoadMore,
 }: {
-  page: number
-  totalPages: number
-  onPageChange: (page: number) => void
+  loaded: number
+  total: number
+  isLoading: boolean
+  onLoadMore: () => void
 }) {
-  if (totalPages <= 1) return null
+  if (total <= PAGE_SIZE) return null
+
+  const remaining = total - loaded
 
   return (
-    <div className="flex items-center justify-end gap-2 pt-4">
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={page <= 1}
-        onClick={() => onPageChange(page - 1)}
-      >
-        Previous
-      </Button>
+    <div className="flex flex-col items-center gap-2 pt-6">
       <span className="text-sm text-muted-foreground">
-        Page {page} of {totalPages}
+        Showing {loaded} of {total}
       </span>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={page >= totalPages}
-        onClick={() => onPageChange(page + 1)}
-      >
-        Next
-      </Button>
+      {remaining > 0 && (
+        <Button variant="outline" size="sm" disabled={isLoading} onClick={onLoadMore}>
+          {isLoading ? "Loading..." : `Load more (${remaining} left)`}
+        </Button>
+      )}
     </div>
   )
 }

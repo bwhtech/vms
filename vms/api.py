@@ -649,13 +649,14 @@ def get_project_assets(project, folder=None, category=None, tag=None, page=1, pa
 		tag: Filter to assets tagged with this tag. Crosses folder/category boundaries
 			like category does (returns matching assets across ALL folders).
 		page: Page number (1-indexed, default 1)
-		page_size: Items per page (default 20, max 100)
+		page_size: Items per page (default 20, max 500)
 	"""
 	if not frappe.db.exists("VMS Project", project):
 		frappe.throw(_("Project {0} does not exist").format(project))
 
 	page = max(1, int(page))
-	page_size = min(100, max(1, int(page_size)))
+	# cap is high because the UI loads more by growing page_size, not by paging
+	page_size = min(500, max(1, int(page_size)))
 	start = (page - 1) * page_size
 
 	filters = {"project": project, "status": ["!=", "Uploading"], "deleted_at": ["is", "not set"]}
