@@ -38,6 +38,8 @@ interface YouTubeUploadDialogProps {
   uploadPercent: number
   uploadError: string
   uploadVideoUrl: string
+  /** Channel the asset was actually uploaded to; "" before any upload. */
+  uploadChannelName: string
   onUploadStarted: () => void
 }
 
@@ -51,6 +53,7 @@ export function YouTubeUploadDialog({
   uploadPercent,
   uploadError,
   uploadVideoUrl,
+  uploadChannelName,
   onUploadStarted,
 }: YouTubeUploadDialogProps) {
   const [title, setTitle] = useState(fileName.replace(/\.[^/.]+$/, ""))
@@ -72,13 +75,17 @@ export function YouTubeUploadDialog({
   const channels = statusData?.message?.channels ?? []
   // Channels come back default-first, so the head is the pre-selected one
   const channel = selectedChannel || channels[0]?.name || ""
-  const channelName =
-    channels.find((c) => c.name === channel)?.channel_name ||
-    statusData?.message?.channel_name ||
-    "YouTube"
   const isInProgress = uploadStatus === "Queued" || uploadStatus === "Uploading"
   const isComplete = uploadStatus === "Complete"
   const isError = uploadStatus === "Error"
+  // Once an upload exists, the channel it went to is the one to report — the
+  // picker's selection resets on reload and would fall back to the default.
+  const hasUpload = isInProgress || isComplete || isError
+  const channelName =
+    (hasUpload ? uploadChannelName : "") ||
+    channels.find((c) => c.name === channel)?.channel_name ||
+    statusData?.message?.channel_name ||
+    "YouTube"
 
   const handleUpload = async () => {
     if (!title.trim()) {
@@ -115,7 +122,11 @@ export function YouTubeUploadDialog({
         <DialogHeader>
           <DialogTitle>Upload to YouTube</DialogTitle>
           <DialogDescription>
-            {isConnected ? `Uploading to ${channelName}` : "YouTube is not connected"}
+            {!isConnected
+              ? "YouTube is not connected"
+              : isComplete
+                ? `Uploaded to ${channelName}`
+                : `Uploading to ${channelName}`}
           </DialogDescription>
         </DialogHeader>
 

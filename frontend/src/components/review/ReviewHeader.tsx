@@ -64,6 +64,8 @@ interface ReviewHeaderProps {
   isGeneratingProxy?: boolean
   youtubeUploadStatus?: string
   youtubeVideoUrl?: string
+  /** Channel the asset was uploaded to; "" before any upload. */
+  youtubeChannelName?: string
   onOpenYouTubeUpload?: () => void
   onResetYouTubeUpload?: () => void
   version?: number
@@ -94,6 +96,7 @@ export function ReviewHeader({
   isGeneratingProxy,
   youtubeUploadStatus,
   youtubeVideoUrl,
+  youtubeChannelName,
   onOpenYouTubeUpload,
   onResetYouTubeUpload,
   version,
@@ -342,7 +345,14 @@ export function ReviewHeader({
                   <>
                     <DropdownMenuItem onClick={() => window.open(youtubeVideoUrl, "_blank")}>
                       <HugeiconsIcon icon={YoutubeIcon} strokeWidth={2} size={16} />
-                      View on YouTube
+                      <span className="flex flex-col items-start">
+                        View on YouTube
+                        {youtubeChannelName && (
+                          <span className="text-xs text-muted-foreground">
+                            {youtubeChannelName}
+                          </span>
+                        )}
+                      </span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={onResetYouTubeUpload}>
                       <HugeiconsIcon icon={YoutubeIcon} strokeWidth={2} size={16} />

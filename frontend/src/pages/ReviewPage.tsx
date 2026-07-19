@@ -35,6 +35,7 @@ interface ReviewData {
   youtube_upload_status?: string
   youtube_video_id?: string
   youtube_video_url?: string
+  youtube_channel_name?: string
   version?: number
 }
 
@@ -213,7 +214,12 @@ function ReviewPageInner({
 
   // Fallback polling in case realtime events don't arrive
   const { data: youtubeStatusPoll } = useFrappeGetCall<{
-    message: { youtube_upload_status: string; youtube_video_id: string; youtube_video_url: string }
+    message: {
+      youtube_upload_status: string
+      youtube_video_id: string
+      youtube_video_url: string
+      youtube_channel_name: string
+    }
   }>(
     "vms.youtube.get_youtube_upload_status",
     isYouTubeActive ? { asset_name: asset.name } : undefined,
@@ -239,6 +245,10 @@ function ReviewPageInner({
 
   const youtubeUploadStatus = youtubeProgress.status
   const youtubeVideoUrl = youtubeProgress.videoUrl
+  // The channel the upload actually went to, which is not necessarily the
+  // default one the dialog would otherwise fall back to showing.
+  const youtubeChannelName =
+    youtubeStatusPoll?.message?.youtube_channel_name || asset.youtube_channel_name || ""
 
   // Stop proxy polling when done
   useEffect(() => {
@@ -362,6 +372,7 @@ function ReviewPageInner({
         isGeneratingProxy={generatingProxy}
         youtubeUploadStatus={youtubeUploadStatus}
         youtubeVideoUrl={youtubeVideoUrl}
+        youtubeChannelName={youtubeChannelName}
         onOpenYouTubeUpload={() => setYoutubeDialogOpen(true)}
         onResetYouTubeUpload={handleResetYouTubeUpload}
         version={asset.version}
@@ -428,6 +439,7 @@ function ReviewPageInner({
           uploadPercent={youtubeProgress.percent}
           uploadError={youtubeProgress.error}
           uploadVideoUrl={youtubeVideoUrl}
+          uploadChannelName={youtubeChannelName}
           onUploadStarted={() => {
             setYoutubeProgress({ status: "Queued", videoUrl: "", percent: 0, stage: "queued", error: "" })
             mutateReviewData()

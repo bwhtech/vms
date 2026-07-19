@@ -278,6 +278,14 @@ def get_youtube_status():
 	}
 
 
+def channel_display_name(channel: str | None):
+	"""Name of a connected channel, or "" if it is unset or since removed."""
+	if not channel:
+		return ""
+
+	return frappe.db.get_value("VMS YouTube Channel", channel, "channel_name") or ""
+
+
 def _resolve_channel(channel: str | None):
 	"""Return the channel to publish to, falling back to the default one."""
 	if channel:
@@ -350,7 +358,7 @@ def get_youtube_upload_status(asset_name: str):
 	data = frappe.db.get_value(
 		"VMS Asset",
 		asset_name,
-		["youtube_upload_status", "youtube_video_id", "youtube_video_url"],
+		["youtube_upload_status", "youtube_video_id", "youtube_video_url", "youtube_channel"],
 		as_dict=True,
 	)
 
@@ -358,6 +366,7 @@ def get_youtube_upload_status(asset_name: str):
 		"youtube_upload_status": data.youtube_upload_status or "",
 		"youtube_video_id": data.youtube_video_id or "",
 		"youtube_video_url": data.youtube_video_url or "",
+		"youtube_channel_name": channel_display_name(data.youtube_channel),
 	}
 
 
