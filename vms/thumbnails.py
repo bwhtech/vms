@@ -66,10 +66,39 @@ def _generate_video_thumbnail(video_path, thumb_path, asset_name):
 	return True
 
 
+def _probe_duration(video_path, asset_name):
+	"""Return the video's duration in seconds via ffprobe, or None if it fails."""
+	result = subprocess.run(
+		[
+			"ffprobe",
+			"-v",
+			"error",
+			"-show_entries",
+			"format=duration",
+			"-of",
+			"csv=p=0",
+			video_path,
+		],
+		capture_output=True,
+		text=True,
+		timeout=60,
+	)
+
+	if result.returncode != 0:
+		frappe.logger("vms").error(f"ffprobe failed for {asset_name}: {result.stderr}")
+		return None
+
+	try:
+		return float(result.stdout.strip())
+	except ValueError:
+		return None
+
+
 def generate_thumbnail(asset_name):
 	"""Generate a WebP thumbnail from an asset (runs as background job).
 
-	For videos: extracts a single frame at 1s using FFmpeg.
+	For videos: extracts a single frame at 1s using FFmpeg, and probes the
+	duration with ffprobe.
 	For images: resizes to max 640px wide.
 	Saves as a public Frappe File and sets thumbnail_url.
 	"""
@@ -79,7 +108,11 @@ def generate_thumbnail(asset_name):
 		if not asset.r2_key:
 			return
 
-		if asset.thumbnail_url:
+		is_video = not _is_image(asset.file_type)
+		needs_duration = is_video and not asset.duration_seconds
+
+		# nothing left to compute, don't pay for the download
+		if asset.thumbnail_url and not needs_duration:
 			return
 
 		presigned_url = generate_presigned_view_url(asset.r2_key)
@@ -88,6 +121,15 @@ def generate_thumbnail(asset_name):
 		thumb_path = os.path.join(tmp_dir, "thumb.webp")
 
 		_download_file(presigned_url, src_path)
+
+		if needs_duration:
+			duration = _probe_duration(src_path, asset_name)
+			if duration:
+				frappe.db.set_value("VMS Asset", asset_name, "duration_seconds", duration)
+				frappe.db.commit()
+
+		if asset.thumbnail_url:
+			return
 
 		if _is_image(asset.file_type):
 			_generate_image_thumbnail(src_path, thumb_path)
