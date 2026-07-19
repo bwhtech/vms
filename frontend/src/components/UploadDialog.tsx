@@ -295,7 +295,12 @@ export function UploadDialog() {
             ) : (
               <div className="space-y-2">
                 <Label>Category</Label>
-                <Select value={category} onValueChange={setCategory} disabled={isUploading}>
+                {files.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Applies to files you add next — already queued files keep theirs.
+                  </p>
+                )}
+                <Select value={category} onValueChange={setCategory}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -410,7 +415,7 @@ export function UploadDialog() {
               onClick={() => fileInputRef.current?.click()}
               className={cn(
                 "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-8 text-center transition-colors",
-                isUploading || duplicates.length > 0 || (isVersionMode && files.length > 0)
+                duplicates.length > 0 || (isVersionMode && files.length > 0)
                   ? "pointer-events-none border-muted opacity-50"
                   : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30",
               )}
