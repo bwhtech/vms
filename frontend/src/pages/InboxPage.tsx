@@ -7,7 +7,7 @@ import { AssetCardColor, CARD_COLOR_BORDER_CLASS } from "@/components/AssetCardC
 import { useNavigate } from "react-router"
 import { useFrappeGetCall } from "frappe-react-sdk"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { CloudUploadIcon, Delete02Icon, Download04Icon, Film01Icon, GridViewIcon, Album01Icon, ListViewIcon, Move01Icon, PencilEdit01Icon } from "@hugeicons/core-free-icons"
+import { CloudUploadIcon, Delete02Icon, Download04Icon, GridViewIcon, Album01Icon, ListViewIcon, Move01Icon, PencilEdit01Icon } from "@hugeicons/core-free-icons"
 import { Badge } from "@/components/ui/badge"
 import { cn, formatBytes, formatDuration } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -32,7 +32,7 @@ import { useUploadContext } from "@/contexts/UploadContext"
 import { MoveAssetDialog } from "@/components/MoveAssetDialog"
 import { DeleteAssetDialog } from "@/components/DeleteAssetDialog"
 import { LoadMoreControls } from "@/components/LoadMoreControls"
-import { AssetCardPreview } from "@/components/AssetCardPreview"
+import { AssetCardPreview, AssetRowPreview } from "@/components/AssetCardPreview"
 import { RenameAssetDialog } from "@/components/RenameAssetDialog"
 import { MediaPlayerDialog } from "@/components/MediaPlayerDialog"
 import { useDownload } from "@/hooks/useDownload"
@@ -321,15 +321,7 @@ export function UncategorisedPage() {
                             onCheckedChange={() => toggleSelect(asset.name)}
                           />
                         </div>
-                        <div className="h-10 w-16 shrink-0 overflow-hidden rounded bg-muted">
-                          {asset.thumbnail_url ? (
-                            <img src={asset.thumbnail_url} alt="" className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-muted-foreground/40">
-                              <HugeiconsIcon icon={Film01Icon} size={18} strokeWidth={1.5} />
-                            </div>
-                          )}
-                        </div>
+                        <AssetRowPreview asset={asset} />
                         <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
                           <CardTitle className="truncate text-sm">
                             {asset.file_name}

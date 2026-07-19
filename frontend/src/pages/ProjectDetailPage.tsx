@@ -8,7 +8,6 @@ import {
   CloudUploadIcon,
   Delete02Icon,
   Download04Icon,
-  Film01Icon,
   Folder02Icon,
   FolderAddIcon,
   FolderTransferIcon,
@@ -69,7 +68,7 @@ import { AssetSearchInput } from "@/components/AssetSearchInput"
 import { AssetSortMenu, DEFAULT_ASSET_SORT } from "@/components/AssetSortMenu"
 import type { AssetSort } from "@/components/AssetSortMenu"
 import { AssetCardColor, CARD_COLOR_BORDER_CLASS } from "@/components/AssetCardColor"
-import { AssetCardPreview } from "@/components/AssetCardPreview"
+import { AssetCardPreview, AssetRowPreview } from "@/components/AssetCardPreview"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useDownload } from "@/hooks/useDownload"
 import { UserAvatar } from "@/components/UserAvatar"
@@ -1411,15 +1410,7 @@ function AssetList({
                         onCheckedChange={() => toggleSelect(asset.name)}
                       />
                     </div>
-                    <div className="h-10 w-16 shrink-0 overflow-hidden rounded bg-muted">
-                      {asset.thumbnail_url ? (
-                        <img src={asset.thumbnail_url} alt="" draggable={false} className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-muted-foreground/40">
-                          <HugeiconsIcon icon={Film01Icon} size={18} strokeWidth={1.5} />
-                        </div>
-                      )}
-                    </div>
+                    <AssetRowPreview asset={asset} />
                     <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
                       <CardTitle className="truncate text-sm">
                         {asset.file_name}
