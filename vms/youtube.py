@@ -226,8 +226,11 @@ def set_default_youtube_channel(channel: str):
 	if not frappe.db.exists("VMS YouTube Channel", channel):
 		frappe.throw(_("Channel {0} does not exist").format(channel))
 
-	for name in frappe.get_all("VMS YouTube Channel", pluck="name"):
-		frappe.db.set_value("VMS YouTube Channel", name, "is_default", 1 if name == channel else 0)
+	# Saving with the flag set is enough — the controller's on_update demotes the
+	# others, so the "exactly one default" rule lives in one place.
+	doc = frappe.get_doc("VMS YouTube Channel", channel)
+	doc.is_default = 1
+	doc.save(ignore_permissions=True)
 
 	_sync_settings_summary()
 
