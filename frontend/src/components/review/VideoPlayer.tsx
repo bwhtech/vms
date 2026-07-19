@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from "react"
 import { useFrappePostCall } from "frappe-react-sdk"
 import { useVideoPlayer } from "@/hooks/useVideoPlayer"
+import { useFullscreen } from "@/hooks/useFullscreen"
 import { useReviewContext } from "@/hooks/useReviewContext"
 import { Spinner } from "@/components/ui/spinner"
 import { VideoControls } from "./VideoControls"
@@ -27,11 +28,11 @@ export function VideoPlayer({ assetName }: VideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const videoWrapperRef = useRef<HTMLDivElement>(null)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
-  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const { call: getViewUrl } = useFrappePostCall("vms.review_api.get_review_view_url")
 
   const player = useVideoPlayer(videoRef)
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(containerRef, videoRef)
 
   // Fetch video URL
   useEffect(() => {
@@ -62,23 +63,6 @@ export function VideoPlayer({ assetName }: VideoPlayerProps) {
       videoRef.current?.pause()
     }
   }, [annotationMode, replayAnnotation])
-
-  // Fullscreen
-  const toggleFullscreen = useCallback(() => {
-    const el = containerRef.current
-    if (!el) return
-    if (document.fullscreenElement) {
-      document.exitFullscreen()
-    } else {
-      el.requestFullscreen()
-    }
-  }, [])
-
-  useEffect(() => {
-    const onChange = () => setIsFullscreen(!!document.fullscreenElement)
-    document.addEventListener("fullscreenchange", onChange)
-    return () => document.removeEventListener("fullscreenchange", onChange)
-  }, [])
 
   const SKIP_SECONDS = 10
   const FPS = 30

@@ -1,6 +1,7 @@
-import { useRef, useEffect, useState, useCallback } from "react"
+import { useRef, useEffect, useState } from "react"
 import { useFrappePostCall } from "frappe-react-sdk"
 import { useReviewContext } from "@/hooks/useReviewContext"
+import { useFullscreen } from "@/hooks/useFullscreen"
 import { AnnotationCanvas } from "./AnnotationCanvas"
 
 interface ImageViewerProps {
@@ -13,9 +14,9 @@ export function ImageViewer({ assetName }: ImageViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const imageWrapperRef = useRef<HTMLDivElement>(null)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const { call: getViewUrl } = useFrappePostCall("vms.review_api.get_review_view_url")
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(containerRef)
 
   useEffect(() => {
     if (!assetName) return
@@ -25,22 +26,6 @@ export function ImageViewer({ assetName }: ImageViewerProps) {
       setImageUrl(res.message.url)
     })
   }, [assetName, token, getViewUrl])
-
-  const toggleFullscreen = useCallback(() => {
-    const el = containerRef.current
-    if (!el) return
-    if (document.fullscreenElement) {
-      document.exitFullscreen()
-    } else {
-      el.requestFullscreen()
-    }
-  }, [])
-
-  useEffect(() => {
-    const onChange = () => setIsFullscreen(!!document.fullscreenElement)
-    document.addEventListener("fullscreenchange", onChange)
-    return () => document.removeEventListener("fullscreenchange", onChange)
-  }, [])
 
   const isCanvasActive = annotationMode || !!replayAnnotation
 
