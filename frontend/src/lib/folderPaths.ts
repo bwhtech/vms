@@ -12,6 +12,31 @@ export interface FolderOption {
   path: string
 }
 
+/** Where each folder sits, written relative to `from` (null = the project root).
+ *
+ * A search or tag filter spans the whole subtree, so a result can live several
+ * levels below what the user is looking at. The path is relative rather than
+ * absolute so it reads as "down there from here" — the folder being viewed maps
+ * to an empty string, since "here" needs no label.
+ */
+export function buildFolderPathMap(
+  folders: VMSFolder[],
+  from: string | null = null,
+): Map<string, string> {
+  const byName = new Map(folders.map((f) => [f.name, f]))
+  const paths = new Map<string, string>()
+  for (const folder of folders) {
+    const parts: string[] = []
+    let node: VMSFolder | undefined = folder
+    while (node && node.name !== from && parts.length < MAX_FOLDER_DEPTH) {
+      parts.unshift(node.folder_name)
+      node = node.parent_folder ? byName.get(node.parent_folder) : undefined
+    }
+    paths.set(folder.name, parts.join(" / "))
+  }
+  return paths
+}
+
 /** Folders can share a name in different branches, so options are labelled by path. */
 export function buildFolderOptions(folders: VMSFolder[]): FolderOption[] {
   const byName = new Map(folders.map((f) => [f.name, f]))

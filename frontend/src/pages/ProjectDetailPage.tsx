@@ -83,6 +83,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { Files01Icon, FilmRoll01Icon, DeliveryBox01Icon, FolderOpenIcon } from "@hugeicons/core-free-icons"
+import { buildFolderPathMap } from "@/lib/folderPaths"
 import type { VMSProject, VMSAsset, VMSFolder } from "@/types"
 
 const PAGE_SIZE = 20
@@ -294,6 +295,14 @@ export function ProjectDetailPage() {
   // Folder cards only make sense with an unfiltered list — a tag filter or a search
   // spans folders, so the results are files, not a directory listing.
   const hideFolders = !!tagFilter || !!search
+
+  // ...and because the results span folders, each one needs to say where it lives.
+  // Only while filtering: browsing shows a folder's direct contents, so every row
+  // is already where the breadcrumb says it is.
+  const folderPaths = useMemo(
+    () => (hideFolders ? buildFolderPathMap(allFolders ?? [], currentFolder) : undefined),
+    [hideFolders, allFolders, currentFolder],
+  )
 
   const handleSearchChange = useCallback((q: string) => {
     setSearchInput(q)
@@ -764,6 +773,7 @@ export function ProjectDetailPage() {
             onCopyShareLink={handleMenuCopyShareLink}
             onToggleSharing={handleMenuToggleSharing}
             folders={hideFolders ? undefined : folders ?? undefined}
+            folderPaths={folderPaths}
             onFolderClick={handleFolderClick}
             onFolderRename={hideFolders ? undefined : handleCardFolderRename}
             onFolderMove={hideFolders ? undefined : handleCardFolderMove}
@@ -1408,6 +1418,24 @@ function isConvertibleToMp4(asset: VMSAsset): boolean {
   return ext ? VIDEO_EXTENSIONS.has(ext) : false
 }
 
+/** Where a filtered-in result actually lives, since it may be several levels down. */
+function AssetFolderPath({ path, onClick }: { path: string; onClick?: () => void }) {
+  return (
+    <button
+      type="button"
+      title={path}
+      className="flex min-w-0 max-w-full items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+      onClick={(e) => {
+        e.stopPropagation()
+        onClick?.()
+      }}
+    >
+      <HugeiconsIcon icon={Folder02Icon} strokeWidth={1.5} className="size-3.5 shrink-0" />
+      <span className="truncate">{path}</span>
+    </button>
+  )
+}
+
 function AssetList({
   items,
   allItems,
@@ -1427,6 +1455,7 @@ function AssetList({
   onToggleSharing,
   emptyMessage,
   folders,
+  folderPaths,
   onFolderClick,
   onFolderRename,
   onFolderMove,
@@ -1454,6 +1483,8 @@ function AssetList({
   onToggleSharing?: (asset: VMSAsset) => void
   emptyMessage: React.ReactNode
   folders?: VMSFolder[]
+  /** Folder name -> path relative to the current view. Set only while filtering. */
+  folderPaths?: Map<string, string>
   onFolderClick?: (folderName: string) => void
   onFolderRename?: (folder: VMSFolder) => void
   onFolderMove?: (folder: VMSFolder) => void
@@ -1645,6 +1676,12 @@ function AssetList({
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2 pl-10">
+                  {asset.folder && folderPaths?.get(asset.folder) && (
+                    <AssetFolderPath
+                      path={folderPaths.get(asset.folder)!}
+                      onClick={() => onFolderClick?.(asset.folder!)}
+                    />
+                  )}
                   <AssetTags
                     assetName={asset.name}
                     tags={asset.tags ?? []}
@@ -1735,6 +1772,12 @@ function AssetList({
                   </div>
                 </CardHeader>
                 <CardContent className="mt-auto space-y-2">
+                  {asset.folder && folderPaths?.get(asset.folder) && (
+                    <AssetFolderPath
+                      path={folderPaths.get(asset.folder)!}
+                      onClick={() => onFolderClick?.(asset.folder!)}
+                    />
+                  )}
                   <div className="flex flex-wrap gap-1.5">
                     <CategoryBadge
                       assetName={asset.name}
