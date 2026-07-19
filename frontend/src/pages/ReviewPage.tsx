@@ -25,6 +25,7 @@ interface ReviewData {
   uploaded_by: string
   uploaded_at?: string
   project?: { name: string; project_name: string } | null
+  folder?: { name: string; folder_name: string } | null
   is_public_review?: 0 | 1
   review_token?: string | null
   transcription_status?: string
@@ -343,6 +344,7 @@ function ReviewPageInner({
         fileType={asset.file_type}
         category={asset.category}
         project={asset.project}
+        folder={asset.folder}
         isPublicReview={asset.is_public_review === 1}
         reviewToken={asset.review_token}
         onTogglePublicReview={handleTogglePublicReview}

@@ -46,6 +46,7 @@ interface ReviewHeaderProps {
   fileType?: string
   category?: string
   project?: { name: string; project_name: string } | null
+  folder?: { name: string; folder_name: string } | null
   isPublicReview?: boolean
   reviewToken?: string | null
   onTogglePublicReview?: (enable: boolean) => Promise<void>
@@ -75,6 +76,7 @@ export function ReviewHeader({
   fileType,
   category,
   project,
+  folder,
   isPublicReview = false,
   reviewToken,
   onTogglePublicReview,
@@ -104,12 +106,13 @@ export function ReviewHeader({
   const [publicLinkOpen, setPublicLinkOpen] = useState(false)
   const isVideo = !fileType || fileType.startsWith("video/") || fileType.startsWith("audio/")
 
+  // Return to the folder the asset lives in, not just the project root,
+  // so the breadcrumb stays where the user left off.
+  const projectUrl = project ? `/projects/${project.name}` : null
+  const folderUrl = projectUrl && folder ? `${projectUrl}/folder/${folder.name}` : null
+
   const handleBack = () => {
-    if (project) {
-      navigate(`/projects/${project.name}`)
-    } else {
-      navigate("/uncategorised")
-    }
+    navigate(folderUrl || projectUrl || "/uncategorised")
   }
 
   const shareUrl = reviewToken
@@ -149,11 +152,22 @@ export function ReviewHeader({
             <>
               <span
                 className="hidden cursor-pointer text-xs text-muted-foreground hover:text-foreground truncate md:inline"
-                onClick={() => navigate(`/projects/${project.name}`)}
+                onClick={() => navigate(projectUrl!)}
               >
                 {project.project_name}
               </span>
               <span className="hidden text-xs text-muted-foreground md:inline">/</span>
+              {folder && (
+                <>
+                  <span
+                    className="hidden cursor-pointer text-xs text-muted-foreground hover:text-foreground truncate md:inline"
+                    onClick={() => navigate(folderUrl!)}
+                  >
+                    {folder.folder_name}
+                  </span>
+                  <span className="hidden text-xs text-muted-foreground md:inline">/</span>
+                </>
+              )}
             </>
           )}
           <span className="text-xs font-medium truncate md:text-sm">{fileName}</span>

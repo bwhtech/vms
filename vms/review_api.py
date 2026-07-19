@@ -93,6 +93,14 @@ def get_review_data(asset_name: str, token: str | None = None):
 	else:
 		data["project"] = None
 
+	if asset.folder and frappe.db.exists("VMS Folder", asset.folder):
+		data["folder"] = {
+			"name": asset.folder,
+			"folder_name": frappe.db.get_value("VMS Folder", asset.folder, "folder_name"),
+		}
+	else:
+		data["folder"] = None
+
 	return data
 
 
