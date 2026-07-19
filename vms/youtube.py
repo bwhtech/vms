@@ -185,8 +185,7 @@ def finalize_youtube_connection():
 	doc.channel_name = channel["name"]
 	doc.refresh_token = token["refresh_token"]
 	doc.connected_by = frappe.session.user
-	if not existing and not frappe.db.count("VMS YouTube Channel"):
-		doc.is_default = 1
+	# The controller marks the first channel default; a later one stays non-default.
 	doc.save(ignore_permissions=True)
 
 	# Free the cache so the next connect starts a clean authorization

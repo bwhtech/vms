@@ -8,6 +8,27 @@ from frappe.model.document import Document
 class VMSYouTubeChannel(Document):
 	_DOCTYPE_NAME = "VMS YouTube Channel"
 
+	def validate(self):
+		# A channel saved while no other one is marked default takes the flag, so
+		# the site is never left with zero defaults and the upload picker falling
+		# back to creation order.
+		if not self.is_default and not self._other_default():
+			self.is_default = 1
+
+	def on_update(self):
+		if self.is_default:
+			for name in self._other_default(all_of_them=True):
+				frappe.db.set_value(self._DOCTYPE_NAME, name, "is_default", 0)
+
+	def _other_default(self, all_of_them: bool = False):
+		"""Names of the other channels marked default."""
+		return frappe.get_all(
+			self._DOCTYPE_NAME,
+			filters={"is_default": 1, "name": ("!=", self.name)},
+			pluck="name",
+			limit=0 if all_of_them else 1,
+		)
+
 	def on_trash(self):
 		"""Keep the channel invariants whichever way a channel is deleted.
 
