@@ -130,6 +130,7 @@ export function ProjectDetailPage() {
   const { call: callEnableSharing } = useFrappePostCall("vms.api.enable_project_sharing")
   const { call: callDisableSharing } = useFrappePostCall("vms.api.disable_project_sharing")
   const { call: callConvertToMp4 } = useFrappePostCall("vms.api.convert_asset_to_mp4")
+  const { call: callMoveFolder } = useFrappePostCall("vms.api.move_folder")
 
   const { data: project, mutate: mutateProject } = useFrappeGetDoc<VMSProject>(
     "VMS Project",
@@ -379,6 +380,26 @@ export function ProjectDetailPage() {
     [callMoveToFolder, mutateAssets],
   )
 
+  const handleDropFolder = useCallback(
+    async (folderName: string, parentFolder: string | null) => {
+      const moved = (allFolders ?? []).find((f: VMSFolder) => f.name === folderName)
+      const label = moved?.folder_name ?? "folder"
+      // Dropping a folder back where it already lives — the backend no-ops, but a
+      // "Moved" toast for a move that didn't happen would be a lie.
+      if (moved && (moved.parent_folder || null) === parentFolder) return
+      try {
+        await callMoveFolder({ folder_name_id: folderName, parent_folder: parentFolder })
+        toast.success(`Moved “${label}”`)
+        mutateFolders()
+        mutateAssets()
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "Failed to move folder"
+        toast.error(message)
+      }
+    },
+    [callMoveFolder, allFolders, mutateFolders, mutateAssets],
+  )
+
   // Individual asset menu handlers (select one asset, open dialog)
   const handleMenuRename = useCallback(
     (asset: VMSAsset) => {
@@ -551,6 +572,7 @@ export function ProjectDetailPage() {
           onNavigateToRoot={handleNavigateToRoot}
           onNavigateToFolder={handleFolderClick}
           onDropToFolder={handleDropToFolder}
+          onDropFolder={handleDropFolder}
         />
       )}
 
@@ -747,6 +769,7 @@ export function ProjectDetailPage() {
             onFolderMove={hideFolders ? undefined : handleCardFolderMove}
             onFolderDelete={hideFolders ? undefined : handleCardFolderDelete}
             onDropToFolder={hideFolders ? undefined : handleDropToFolder}
+            onDropFolder={hideFolders ? undefined : handleDropFolder}
             draggable={(folders ?? []).length > 0 || !!currentFolder}
             isLoading={isLoadingFolder}
             emptyMessage={
@@ -1052,11 +1075,20 @@ function ProjectSharePopover({
   )
 }
 
+/**
+ * The folder being dragged right now. dataTransfer payloads are unreadable until
+ * the drop event, so a target can't otherwise tell a self-drop from a valid one
+ * while deciding whether to highlight.
+ */
+let draggedFolder: string | null = null
+
 function FolderCard({
   folder,
   view,
   onClick,
   onDrop,
+  onDropFolder,
+  draggable,
   onRename,
   onMove,
   onDelete,
@@ -1065,14 +1097,24 @@ function FolderCard({
   view: "list" | "grid"
   onClick: () => void
   onDrop?: (assetNames: string[]) => void
+  onDropFolder?: (folderName: string) => void
+  draggable?: boolean
   onRename?: () => void
   onMove?: () => void
   onDelete?: () => void
 }) {
   const [dragOver, setDragOver] = useState(false)
 
+  // Cards only ever render siblings, so a card can never be its own descendant's
+  // target — rejecting self is the whole check the client needs.
+  const acceptsFolder = (e: React.DragEvent) =>
+    !!onDropFolder &&
+    e.dataTransfer.types.includes("application/vms-folder") &&
+    draggedFolder !== folder.name
+
   const handleDragOver = (e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes("application/vms-assets")) return
+    const assets = !!onDrop && e.dataTransfer.types.includes("application/vms-assets")
+    if (!assets && !acceptsFolder(e)) return
     e.preventDefault()
     e.dataTransfer.dropEffect = "move"
     setDragOver(true)
@@ -1086,6 +1128,13 @@ function FolderCard({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setDragOver(false)
+
+    const movedFolder = e.dataTransfer.getData("application/vms-folder")
+    if (movedFolder) {
+      if (movedFolder !== folder.name) onDropFolder?.(movedFolder)
+      return
+    }
+
     const data = e.dataTransfer.getData("application/vms-assets")
     if (!data) return
     try {
@@ -1094,10 +1143,22 @@ function FolderCard({
     } catch { /* ignore */ }
   }
 
-  const dropProps = onDrop ? {
+  const handleDragStart = (e: React.DragEvent) => {
+    draggedFolder = folder.name
+    e.dataTransfer.setData("application/vms-folder", folder.name)
+    e.dataTransfer.effectAllowed = "move"
+  }
+
+  const dropProps = onDrop || onDropFolder ? {
     onDragOver: handleDragOver,
     onDragLeave: handleDragLeave,
     onDrop: handleDrop,
+  } : {}
+
+  const dragProps = draggable ? {
+    draggable: true,
+    onDragStart: handleDragStart,
+    onDragEnd: () => { draggedFolder = null },
   } : {}
 
   const dropHighlight = dragOver ? "ring-2 ring-primary bg-primary/5" : ""
@@ -1165,6 +1226,7 @@ function FolderCard({
         size="sm"
         className={`cursor-pointer transition-shadow hover:shadow-md ${dropHighlight}`}
         onClick={onClick}
+        {...dragProps}
         {...dropProps}
       >
         <CardHeader>
@@ -1201,6 +1263,7 @@ function FolderCard({
     <Card
       className={`flex cursor-pointer flex-col overflow-hidden pt-0 transition-shadow hover:shadow-md ${dropHighlight}`}
       onClick={onClick}
+      {...dragProps}
       {...dropProps}
     >
       <div className="flex aspect-video w-full items-center justify-center bg-muted">
@@ -1237,6 +1300,7 @@ function BreadcrumbNav({
   onNavigateToRoot,
   onNavigateToFolder,
   onDropToFolder,
+  onDropFolder,
 }: {
   projectName: string
   /** Root-most ancestor first, the folder being viewed last. */
@@ -1244,6 +1308,7 @@ function BreadcrumbNav({
   onNavigateToRoot: () => void
   onNavigateToFolder: (folderName: string) => void
   onDropToFolder: (assetNames: string[], folderName: string | null) => void
+  onDropFolder?: (folderName: string, parentFolder: string | null) => void
 }) {
   // The current folder is the last crumb — it's a label, not a link.
   const ancestors = trail.slice(0, -1)
@@ -1255,6 +1320,7 @@ function BreadcrumbNav({
         label={projectName}
         onClick={onNavigateToRoot}
         onDrop={(names) => onDropToFolder(names, null)}
+        onDropFolder={onDropFolder ? (name) => onDropFolder(name, null) : undefined}
       />
       {ancestors.map((folder) => (
         <Fragment key={folder.name}>
@@ -1263,6 +1329,7 @@ function BreadcrumbNav({
             label={folder.folder_name}
             onClick={() => onNavigateToFolder(folder.name)}
             onDrop={(names) => onDropToFolder(names, folder.name)}
+            onDropFolder={onDropFolder ? (name) => onDropFolder(name, folder.name) : undefined}
           />
         </Fragment>
       ))}
@@ -1276,20 +1343,24 @@ function BreadcrumbNav({
   )
 }
 
-/** One clickable ancestor crumb, doubling as a drop target for moving assets up. */
+/** One clickable ancestor crumb, doubling as a drop target for moving items up. */
 function BreadcrumbCrumb({
   label,
   onClick,
   onDrop,
+  onDropFolder,
 }: {
   label: string
   onClick: () => void
   onDrop: (assetNames: string[]) => void
+  onDropFolder?: (folderName: string) => void
 }) {
   const [dragOver, setDragOver] = useState(false)
 
   const handleDragOver = (e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes("application/vms-assets")) return
+    const assets = e.dataTransfer.types.includes("application/vms-assets")
+    const folder = !!onDropFolder && e.dataTransfer.types.includes("application/vms-folder")
+    if (!assets && !folder) return
     e.preventDefault()
     e.dataTransfer.dropEffect = "move"
     setDragOver(true)
@@ -1298,6 +1369,13 @@ function BreadcrumbCrumb({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setDragOver(false)
+
+    const movedFolder = e.dataTransfer.getData("application/vms-folder")
+    if (movedFolder) {
+      onDropFolder?.(movedFolder)
+      return
+    }
+
     const data = e.dataTransfer.getData("application/vms-assets")
     if (!data) return
     try {
@@ -1353,6 +1431,7 @@ function AssetList({
   onFolderMove,
   onFolderDelete,
   onDropToFolder,
+  onDropFolder,
   draggable: canDragProp,
   isLoading,
 }: {
@@ -1379,6 +1458,7 @@ function AssetList({
   onFolderMove?: (folder: VMSFolder) => void
   onFolderDelete?: (folder: VMSFolder) => void
   onDropToFolder?: (assetNames: string[], folderName: string) => void
+  onDropFolder?: (folderName: string, parentFolder: string | null) => void
   draggable?: boolean
   isLoading?: boolean
 }) {
@@ -1500,6 +1580,8 @@ function AssetList({
               view="list"
               onClick={() => onFolderClick?.(folder.name)}
               onDrop={onDropToFolder ? (names) => onDropToFolder(names, folder.name) : undefined}
+              onDropFolder={onDropFolder ? (name) => onDropFolder(name, folder.name) : undefined}
+              draggable={!!onDropFolder}
               onRename={onFolderRename ? () => onFolderRename(folder) : undefined}
               onMove={onFolderMove ? () => onFolderMove(folder) : undefined}
               onDelete={onFolderDelete ? () => onFolderDelete(folder) : undefined}
@@ -1601,6 +1683,8 @@ function AssetList({
               view="grid"
               onClick={() => onFolderClick?.(folder.name)}
               onDrop={onDropToFolder ? (names) => onDropToFolder(names, folder.name) : undefined}
+              onDropFolder={onDropFolder ? (name) => onDropFolder(name, folder.name) : undefined}
+              draggable={!!onDropFolder}
               onRename={onFolderRename ? () => onFolderRename(folder) : undefined}
               onMove={onFolderMove ? () => onFolderMove(folder) : undefined}
               onDelete={onFolderDelete ? () => onFolderDelete(folder) : undefined}
