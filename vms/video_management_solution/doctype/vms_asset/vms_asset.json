@@ -40,6 +40,7 @@
   "youtube_video_id",
   "column_break_youtube",
   "youtube_video_url",
+  "youtube_channel",
   "section_break_versions",
   "version",
   "section_break_appearance",
@@ -252,6 +253,13 @@
    "fieldname": "youtube_video_url",
    "fieldtype": "Data",
    "label": "YouTube Video URL",
+   "read_only": 1
+  },
+  {
+   "fieldname": "youtube_channel",
+   "fieldtype": "Link",
+   "label": "YouTube Channel",
+   "options": "VMS YouTube Channel",
    "read_only": 1
   },
   {

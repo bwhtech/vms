@@ -8,10 +8,19 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 
+interface YouTubeChannel {
+  name: string
+  channel_name: string
+  channel_id: string
+  connected_by: string
+  is_default: number
+}
+
 interface YouTubeStatus {
   connected: boolean
   channel_name: string
   has_credentials: boolean
+  channels: YouTubeChannel[]
 }
 
 export function YouTubeSection() {
@@ -43,8 +52,11 @@ export function YouTubeSection() {
   const { call: callConnect, loading: connecting } = useFrappePostCall("vms.youtube.connect_youtube")
   const { call: callFinalize } = useFrappePostCall("vms.youtube.finalize_youtube_connection")
   const { call: callDisconnect, loading: disconnecting } = useFrappePostCall("vms.youtube.disconnect_youtube")
+  const { call: callDisconnectChannel } = useFrappePostCall("vms.youtube.disconnect_youtube_channel")
+  const { call: callSetDefault } = useFrappePostCall("vms.youtube.set_default_youtube_channel")
 
   const status = statusData?.message
+  const channels = status?.channels ?? []
   const redirectUri = redirectData?.message?.redirect_uri || ""
 
   // Handle OAuth redirect callback
@@ -68,14 +80,19 @@ export function YouTubeSection() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleConnect = async () => {
-    if (!clientId.trim() || !clientSecret.trim()) {
+  // Credentials are per-site, so adding a second channel reuses the stored ones
+  const handleConnect = async (reuseCredentials = false) => {
+    if (!reuseCredentials && (!clientId.trim() || !clientSecret.trim())) {
       toast.error("Please enter both Client ID and Client Secret")
       return
     }
 
     try {
-      const res = await callConnect({ client_id: clientId.trim(), client_secret: clientSecret.trim() })
+      const res = await callConnect(
+        reuseCredentials
+          ? {}
+          : { client_id: clientId.trim(), client_secret: clientSecret.trim() }
+      )
       const authUrl = (res as { message: { auth_url: string } }).message.auth_url
       if (authUrl) {
         window.location.href = authUrl
@@ -99,6 +116,28 @@ export function YouTubeSection() {
     }
   }
 
+  const handleDisconnectChannel = async (channel: YouTubeChannel) => {
+    try {
+      await callDisconnectChannel({ channel: channel.name })
+      toast.success(`Disconnected ${channel.channel_name}`)
+      mutate()
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Failed to disconnect channel"
+      toast.error(message)
+    }
+  }
+
+  const handleSetDefault = async (channel: YouTubeChannel) => {
+    try {
+      await callSetDefault({ channel: channel.name })
+      toast.success(`${channel.channel_name} is now the default channel`)
+      mutate()
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Failed to set default channel"
+      toast.error(message)
+    }
+  }
+
   if (isFinalizing || statusLoading || redirectLoading) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8">
@@ -118,21 +157,51 @@ export function YouTubeSection() {
             <div>
               <h3 className="text-sm font-semibold">YouTube</h3>
               <p className="text-xs text-muted-foreground">
-                Connect your YouTube account to upload videos directly from VMS.
+                Connect one or more YouTube accounts to upload videos directly from VMS.
               </p>
             </div>
 
             {status?.connected ? (
               <div className="space-y-3">
-                <div className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-2.5">
-                  <div className="size-2 rounded-full bg-green-500 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium">Connected</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {status.channel_name}
-                    </p>
+                {channels.map((channel) => (
+                  <div
+                    key={channel.name}
+                    className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-2.5"
+                  >
+                    <div className="size-2 rounded-full bg-green-500 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{channel.channel_name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {channel.is_default ? "Default channel" : "Connected"}
+                      </p>
+                    </div>
+                    {!channel.is_default && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => handleSetDefault(channel)}
+                      >
+                        Make default
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0 text-destructive hover:text-destructive"
+                      onClick={() => handleDisconnectChannel(channel)}
+                    >
+                      Remove
+                    </Button>
                   </div>
-                </div>
+                ))}
+                <Button variant="outline" onClick={() => handleConnect(true)} disabled={connecting}>
+                  {connecting ? "Redirecting..." : "Connect another channel"}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Google will ask which account to use. Pick a different one to add a second
+                  channel.
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -207,10 +276,14 @@ export function YouTubeSection() {
       <div className="flex items-center justify-end border-t border-border px-4 py-3 md:px-6">
         {status?.connected ? (
           <Button variant="destructive" onClick={handleDisconnect} disabled={disconnecting}>
-            {disconnecting ? "Disconnecting..." : "Disconnect YouTube"}
+            {disconnecting
+              ? "Disconnecting..."
+              : channels.length > 1
+                ? "Disconnect all channels"
+                : "Disconnect YouTube"}
           </Button>
         ) : (
-          <Button onClick={handleConnect} disabled={connecting}>
+          <Button onClick={() => handleConnect()} disabled={connecting}>
             {connecting ? "Redirecting..." : "Connect YouTube"}
           </Button>
         )}

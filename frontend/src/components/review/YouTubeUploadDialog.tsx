@@ -22,6 +22,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+interface YouTubeChannel {
+  name: string
+  channel_name: string
+  is_default: number
+}
+
 interface YouTubeUploadDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -50,9 +56,10 @@ export function YouTubeUploadDialog({
   const [title, setTitle] = useState(fileName.replace(/\.[^/.]+$/, ""))
   const [description, setDescription] = useState("")
   const [privacyStatus, setPrivacyStatus] = useState("unlisted")
+  const [selectedChannel, setSelectedChannel] = useState("")
 
   const { data: statusData } = useFrappeGetCall<{
-    message: { connected: boolean; channel_name: string }
+    message: { connected: boolean; channel_name: string; channels: YouTubeChannel[] }
   }>("vms.youtube.get_youtube_status", undefined, "youtube-status-check", {
     revalidateOnFocus: false,
   })
@@ -62,6 +69,13 @@ export function YouTubeUploadDialog({
   )
 
   const isConnected = statusData?.message?.connected
+  const channels = statusData?.message?.channels ?? []
+  // Channels come back default-first, so the head is the pre-selected one
+  const channel = selectedChannel || channels[0]?.name || ""
+  const channelName =
+    channels.find((c) => c.name === channel)?.channel_name ||
+    statusData?.message?.channel_name ||
+    "YouTube"
   const isInProgress = uploadStatus === "Queued" || uploadStatus === "Uploading"
   const isComplete = uploadStatus === "Complete"
   const isError = uploadStatus === "Error"
@@ -78,6 +92,7 @@ export function YouTubeUploadDialog({
         title: title.trim(),
         description: description.trim(),
         privacy_status: privacyStatus,
+        channel,
       })
       onUploadStarted()
     } catch (e: unknown) {
@@ -100,9 +115,7 @@ export function YouTubeUploadDialog({
         <DialogHeader>
           <DialogTitle>Upload to YouTube</DialogTitle>
           <DialogDescription>
-            {isConnected
-              ? `Uploading to ${statusData?.message?.channel_name || "YouTube"}`
-              : "YouTube is not connected"}
+            {isConnected ? `Uploading to ${channelName}` : "YouTube is not connected"}
           </DialogDescription>
         </DialogHeader>
 
@@ -183,6 +196,30 @@ export function YouTubeUploadDialog({
         ) : (
           <>
             <div className="space-y-4">
+              {channels.length > 1 && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="yt-channel" className="text-xs">
+                    Channel
+                  </Label>
+                  <Select value={channel} onValueChange={setSelectedChannel}>
+                    <SelectTrigger id="yt-channel" className="w-full">
+                      <SelectValue>
+                        {(value: string | null) =>
+                          channels.find((c) => c.name === value)?.channel_name ?? value
+                        }
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {channels.map((c) => (
+                        <SelectItem key={c.name} value={c.name}>
+                          {c.channel_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <Label htmlFor="yt-title" className="text-xs">
                   Title

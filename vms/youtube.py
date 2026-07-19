@@ -63,9 +63,8 @@ def _get_or_create_connected_app(client_id: str, client_secret: str):
 	return app
 
 
-def _fetch_channel_name(token_cache):
-	"""Fetch the YouTube channel name using the stored access token."""
-	access_token = token_cache.get_password("access_token")
+def _fetch_channel(access_token: str):
+	"""Fetch the authorized YouTube channel's id and title."""
 	resp = requests.get(
 		"https://www.googleapis.com/youtube/v3/channels",
 		params={"part": "snippet", "mine": "true"},
@@ -76,24 +75,33 @@ def _fetch_channel_name(token_cache):
 	data = resp.json()
 
 	items = data.get("items", [])
-	if items:
-		return items[0]["snippet"]["title"]
-	return "Unknown Channel"
+	if not items:
+		frappe.throw(_("No YouTube channel found for this Google account"))
+
+	return {"id": items[0]["id"], "name": items[0]["snippet"]["title"]}
 
 
 @frappe.whitelist()
-def connect_youtube(client_id: str, client_secret: str):
-	"""Save OAuth credentials, create Connected App, and return the auth URL."""
+def connect_youtube(client_id: str | None = None, client_secret: str | None = None):
+	"""Save OAuth credentials, create Connected App, and return the auth URL.
+
+	Credentials are per-site (one Google Cloud project), so connecting an
+	additional channel can omit them and reuse what is already stored.
+	"""
 	frappe.only_for("System Manager")
+
+	settings = frappe.get_single("VMS Settings")
+
+	if not client_id:
+		client_id = settings.youtube_client_id
+		client_secret = settings.get_password("youtube_client_secret", raise_exception=False)
+	else:
+		settings.youtube_client_id = client_id
+		settings.youtube_client_secret = client_secret
+		settings.save(ignore_permissions=True)
 
 	if not client_id or not client_secret:
 		frappe.throw(_("Client ID and Client Secret are required"))
-
-	# Save credentials to VMS Settings
-	settings = frappe.get_single("VMS Settings")
-	settings.youtube_client_id = client_id
-	settings.youtube_client_secret = client_secret
-	settings.save(ignore_permissions=True)
 
 	# Create/update Connected App
 	connected_app = _get_or_create_connected_app(client_id, client_secret)
@@ -106,9 +114,35 @@ def connect_youtube(client_id: str, client_secret: str):
 	return {"auth_url": auth_url}
 
 
+def _unlink_channel_from_assets(channel: str):
+	"""Drop the link from assets published to a channel that is going away."""
+	for name in frappe.get_all("VMS Asset", filters={"youtube_channel": channel}, pluck="name"):
+		frappe.db.set_value("VMS Asset", name, "youtube_channel", None)
+
+
+def _sync_settings_summary():
+	"""Keep the VMS Settings connection flags in step with the channel list."""
+	channels = frappe.get_all(
+		"VMS YouTube Channel",
+		fields=["channel_name", "connected_by", "is_default"],
+		order_by="is_default desc, creation asc",
+	)
+
+	settings = frappe.get_single("VMS Settings")
+	settings.youtube_connected = 1 if channels else 0
+	settings.youtube_connected_user = channels[0].connected_by if channels else None
+	settings.youtube_channel_name = channels[0].channel_name if channels else None
+	settings.save(ignore_permissions=True)
+
+
 @frappe.whitelist()
 def finalize_youtube_connection():
-	"""Called after OAuth redirect — verify token exists and fetch channel info."""
+	"""Called after OAuth redirect — turn the fresh token into a channel record.
+
+	The Connected App holds one Token Cache per user, so the token is copied
+	onto a VMS YouTube Channel and the cache is cleared. That frees the
+	Connected App for the next channel while keeping a single redirect URI.
+	"""
 	frappe.only_for("System Manager")
 
 	if not frappe.db.exists("Connected App", CONNECTED_APP_NAME):
@@ -124,46 +158,100 @@ def finalize_youtube_connection():
 	if not token_cache:
 		frappe.throw(_("No YouTube token found. Please connect again."))
 
-	# Fetch channel name
-	try:
-		channel_name = _fetch_channel_name(token_cache)
-	except Exception as e:
-		frappe.log_error(f"Failed to fetch YouTube channel name: {e}")
-		channel_name = "Connected"
+	token = token_cache.get_json()
+	if not token.get("refresh_token"):
+		frappe.throw(
+			_(
+				"Google did not return a refresh token. Please remove VMS from your Google account's third-party access and connect again."
+			)
+		)
 
-	# Update VMS Settings
-	settings = frappe.get_single("VMS Settings")
-	settings.youtube_connected = 1
-	settings.youtube_connected_user = frappe.session.user
-	settings.youtube_channel_name = channel_name
-	settings.save(ignore_permissions=True)
+	channel = _fetch_channel(token["access_token"])
 
-	return {"connected": True, "channel_name": channel_name}
+	existing = frappe.db.exists("VMS YouTube Channel", {"channel_id": channel["id"]})
+	doc = (
+		frappe.get_doc("VMS YouTube Channel", existing) if existing else frappe.new_doc("VMS YouTube Channel")
+	)
+	doc.channel_id = channel["id"]
+	doc.channel_name = channel["name"]
+	doc.refresh_token = token["refresh_token"]
+	doc.connected_by = frappe.session.user
+	if not existing and not frappe.db.count("VMS YouTube Channel"):
+		doc.is_default = 1
+	doc.save(ignore_permissions=True)
+
+	# Free the cache so the next connect starts a clean authorization
+	frappe.delete_doc("Token Cache", token_cache.name, ignore_permissions=True, force=True)
+
+	_sync_settings_summary()
+
+	return {"connected": True, "channel": doc.name, "channel_name": doc.channel_name}
+
+
+@frappe.whitelist()
+def disconnect_youtube_channel(channel: str):
+	"""Remove a single connected channel."""
+	frappe.only_for("System Manager")
+
+	if not frappe.db.exists("VMS YouTube Channel", channel):
+		frappe.throw(_("Channel {0} does not exist").format(channel))
+
+	was_default = frappe.db.get_value("VMS YouTube Channel", channel, "is_default")
+	_unlink_channel_from_assets(channel)
+	frappe.delete_doc("VMS YouTube Channel", channel, ignore_permissions=True, force=True)
+
+	if was_default:
+		remaining = frappe.get_all("VMS YouTube Channel", pluck="name", order_by="creation asc", limit=1)
+		if remaining:
+			frappe.db.set_value("VMS YouTube Channel", remaining[0], "is_default", 1)
+
+	_sync_settings_summary()
+
+	return {"status": "ok"}
+
+
+@frappe.whitelist()
+def set_default_youtube_channel(channel: str):
+	"""Mark one channel as the default pick for uploads."""
+	frappe.only_for("System Manager")
+
+	if not frappe.db.exists("VMS YouTube Channel", channel):
+		frappe.throw(_("Channel {0} does not exist").format(channel))
+
+	for name in frappe.get_all("VMS YouTube Channel", pluck="name"):
+		frappe.db.set_value("VMS YouTube Channel", name, "is_default", 1 if name == channel else 0)
+
+	_sync_settings_summary()
+
+	return {"status": "ok"}
+
+
+@frappe.whitelist(methods=["GET"])
+def get_youtube_channels():
+	"""List the connected YouTube channels, default first."""
+	return frappe.get_all(
+		"VMS YouTube Channel",
+		fields=["name", "channel_name", "channel_id", "connected_by", "is_default"],
+		order_by="is_default desc, creation asc",
+	)
 
 
 @frappe.whitelist()
 def disconnect_youtube():
-	"""Disconnect YouTube — clear tokens and settings."""
+	"""Disconnect YouTube entirely — remove every channel and the Connected App."""
 	frappe.only_for("System Manager")
 
-	settings = frappe.get_single("VMS Settings")
-	user = settings.youtube_connected_user
+	for name in frappe.get_all("VMS YouTube Channel", pluck="name"):
+		_unlink_channel_from_assets(name)
+		frappe.delete_doc("VMS YouTube Channel", name, ignore_permissions=True, force=True)
 
-	# Delete Token Cache first (linked to Connected App)
-	if user:
-		token_cache_name = f"{CONNECTED_APP_NAME}-{user}"
-		if frappe.db.exists("Token Cache", token_cache_name):
-			frappe.delete_doc("Token Cache", token_cache_name, ignore_permissions=True, force=True)
+	for name in frappe.get_all("Token Cache", filters={"connected_app": CONNECTED_APP_NAME}, pluck="name"):
+		frappe.delete_doc("Token Cache", name, ignore_permissions=True, force=True)
 
-	# Then delete Connected App
 	if frappe.db.exists("Connected App", CONNECTED_APP_NAME):
 		frappe.delete_doc("Connected App", CONNECTED_APP_NAME, ignore_permissions=True, force=True)
 
-	# Clear settings
-	settings.youtube_connected = 0
-	settings.youtube_connected_user = None
-	settings.youtube_channel_name = None
-	settings.save(ignore_permissions=True)
+	_sync_settings_summary()
 
 	return {"connected": False}
 
@@ -180,12 +268,30 @@ def get_youtube_redirect_uri():
 def get_youtube_status():
 	"""Return current YouTube connection status."""
 	settings = frappe.get_single("VMS Settings")
+	channels = get_youtube_channels()
 
 	return {
-		"connected": bool(settings.youtube_connected),
-		"channel_name": settings.youtube_channel_name or "",
+		"connected": bool(channels),
+		"channel_name": channels[0].channel_name if channels else "",
 		"has_credentials": bool(settings.youtube_client_id),
+		"channels": channels,
 	}
+
+
+def _resolve_channel(channel: str | None):
+	"""Return the channel to publish to, falling back to the default one."""
+	if channel:
+		if not frappe.db.exists("VMS YouTube Channel", channel):
+			frappe.throw(_("Selected YouTube channel is no longer connected"))
+		return channel
+
+	channels = frappe.get_all(
+		"VMS YouTube Channel", pluck="name", order_by="is_default desc, creation asc", limit=1
+	)
+	if not channels:
+		frappe.throw(_("YouTube is not connected. Please connect in Settings."))
+
+	return channels[0]
 
 
 @frappe.whitelist()
@@ -194,14 +300,13 @@ def upload_to_youtube(
 	title: str,
 	description: str = "",
 	privacy_status: str = "unlisted",
+	channel: str | None = None,
 ):
 	"""Validate and enqueue a YouTube upload job."""
 	if not frappe.db.exists("VMS Asset", asset_name):
 		frappe.throw(_("Asset {0} does not exist").format(asset_name))
 
-	settings = frappe.get_single("VMS Settings")
-	if not settings.youtube_connected:
-		frappe.throw(_("YouTube is not connected. Please connect in Settings."))
+	channel = _resolve_channel(channel)
 
 	asset = frappe.get_doc("VMS Asset", asset_name)
 	if not asset.r2_key:
@@ -214,7 +319,11 @@ def upload_to_youtube(
 		frappe.throw(_("Invalid privacy status"))
 
 	# Mark as queued
-	frappe.db.set_value("VMS Asset", asset_name, "youtube_upload_status", "Queued")
+	frappe.db.set_value(
+		"VMS Asset",
+		asset_name,
+		{"youtube_upload_status": "Queued", "youtube_channel": channel},
+	)
 	frappe.db.commit()
 
 	frappe.enqueue(
@@ -223,6 +332,7 @@ def upload_to_youtube(
 		title=title,
 		description=description,
 		privacy_status=privacy_status,
+		channel=channel,
 		queue="default",
 		enqueue_after_commit=True,
 		timeout=3600,
@@ -264,6 +374,7 @@ def reset_youtube_upload(asset_name: str):
 			"youtube_upload_status": None,
 			"youtube_video_id": None,
 			"youtube_video_url": None,
+			"youtube_channel": None,
 		},
 	)
 
@@ -275,6 +386,7 @@ def process_youtube_upload(
 	title: str,
 	description: str,
 	privacy_status: str,
+	channel: str | None = None,
 ):
 	"""Background job: download from R2 and upload to YouTube."""
 	from google.oauth2.credentials import Credentials
@@ -294,22 +406,20 @@ def process_youtube_upload(
 
 		settings = frappe.get_single("VMS Settings")
 
-		# Get OAuth token
-		connected_app = frappe.get_doc("Connected App", CONNECTED_APP_NAME)
-		token_cache = connected_app.get_active_token(settings.youtube_connected_user)
+		channel_doc = frappe.get_doc("VMS YouTube Channel", _resolve_channel(channel))
+		refresh_token = channel_doc.get_password("refresh_token", raise_exception=False)
 
-		if not token_cache:
-			raise Exception("YouTube token not found or expired. Please reconnect.")
+		if not refresh_token:
+			raise Exception(f"No stored token for channel {channel_doc.channel_name}. Please reconnect it.")
 
-		token_data = token_cache.get_json()
-
-		# Build Google credentials from token cache
+		# google-auth exchanges the refresh token for an access token on first use
 		credentials = Credentials(
-			token=token_data.get("access_token"),
-			refresh_token=token_data.get("refresh_token"),
+			token=None,
+			refresh_token=refresh_token,
 			token_uri=TOKEN_URI,
 			client_id=settings.youtube_client_id,
 			client_secret=settings.get_password("youtube_client_secret"),
+			scopes=SCOPES,
 		)
 
 		youtube = build("youtube", "v3", credentials=credentials)

@@ -1,0 +1,95 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-07-19 21:45:31.045902",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "channel_name",
+  "channel_id",
+  "refresh_token",
+  "connected_by",
+  "is_default"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "no_copy": 1,
+   "options": "VMS-YTC-.#####",
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "channel_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Channel Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "channel_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Channel ID",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "refresh_token",
+   "fieldtype": "Password",
+   "label": "Refresh Token"
+  },
+  {
+   "fieldname": "connected_by",
+   "fieldtype": "Link",
+   "label": "Connected By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "label": "Default Channel"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-07-19 21:45:31.045902",
+ "modified_by": "Administrator",
+ "module": "Video Management Solution",
+ "name": "VMS YouTube Channel",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Video Manager"
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "channel_name"
+}
