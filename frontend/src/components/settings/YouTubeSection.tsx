@@ -58,6 +58,8 @@ export function YouTubeSection() {
   // Held by name rather than by object so the dialog reads the latest counts.
   const [pendingRemoval, setPendingRemoval] = useState<string | "all" | null>(null)
   const [removing, setRemoving] = useState(false)
+  // Set when the user wants to replace credentials that are already stored
+  const [editingCredentials, setEditingCredentials] = useState(false)
 
   const {
     data: statusData,
@@ -94,6 +96,8 @@ export function YouTubeSection() {
       ? channels.find((channel) => channel.name === pendingRemoval)
       : undefined
   const redirectUri = redirectData?.message?.redirect_uri || ""
+  // Credentials outlive a single channel's removal, so a reconnect can skip the paste step
+  const reuseSavedCredentials = Boolean(status?.has_credentials) && !editingCredentials
 
   // Counts come from page load, so refresh them before the dialog quotes one
   const openRemoval = (target: string | "all") => {
@@ -166,6 +170,7 @@ export function YouTubeSection() {
         await callDisconnect({})
         setClientId("")
         setClientSecret("")
+        setEditingCredentials(false)
         toast.success("YouTube disconnected")
       } else {
         await callDisconnectChannel({ channel: pendingRemoval })
@@ -261,6 +266,19 @@ export function YouTubeSection() {
                   channel.
                 </p>
               </div>
+            ) : reuseSavedCredentials ? (
+              <div className="space-y-3">
+                <div className="rounded-md border border-border bg-muted/30 px-3 py-2.5">
+                  <p className="text-sm font-medium">OAuth credentials saved</p>
+                  <p className="text-xs text-muted-foreground">
+                    No channel is connected. Authorize a YouTube account to start uploading —
+                    the stored Client ID and Secret will be reused.
+                  </p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setEditingCredentials(true)}>
+                  Enter different credentials
+                </Button>
+              </div>
             ) : (
               <div className="space-y-4">
                 {/* Step 1: Show redirect URI */}
@@ -345,7 +363,7 @@ export function YouTubeSection() {
                 : "Disconnect YouTube"}
           </Button>
         ) : (
-          <Button onClick={() => handleConnect()} disabled={connecting}>
+          <Button onClick={() => handleConnect(reuseSavedCredentials)} disabled={connecting}>
             {connecting ? "Redirecting..." : "Connect YouTube"}
           </Button>
         )}

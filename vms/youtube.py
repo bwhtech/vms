@@ -121,8 +121,13 @@ def _unlink_channel_from_assets(channel: str):
 		frappe.db.set_value("VMS Asset", name, "youtube_channel", None)
 
 
-def _sync_settings_summary():
-	"""Keep the VMS Settings connection flags in step with the channel list."""
+def _sync_settings_summary(clear_credentials: bool = False):
+	"""Keep the VMS Settings connection flags in step with the channel list.
+
+	`clear_credentials` also drops the stored OAuth client id and secret, which
+	only a full disconnect wants — removing one channel leaves the credentials
+	in place so the remaining ones keep working.
+	"""
 	channels = frappe.get_all(
 		"VMS YouTube Channel",
 		fields=["channel_name", "connected_by", "is_default"],
@@ -133,6 +138,9 @@ def _sync_settings_summary():
 	settings.youtube_connected = 1 if channels else 0
 	settings.youtube_connected_user = channels[0].connected_by if channels else None
 	settings.youtube_channel_name = channels[0].channel_name if channels else None
+	if clear_credentials:
+		settings.youtube_client_id = None
+		settings.youtube_client_secret = None
 	settings.save(ignore_permissions=True)
 
 
@@ -271,7 +279,8 @@ def disconnect_youtube():
 	if frappe.db.exists("Connected App", CONNECTED_APP_NAME):
 		frappe.delete_doc("Connected App", CONNECTED_APP_NAME, ignore_permissions=True, force=True)
 
-	_sync_settings_summary()
+	# The confirmation says the credentials go too — make that true
+	_sync_settings_summary(clear_credentials=True)
 
 	return {"connected": False}
 
