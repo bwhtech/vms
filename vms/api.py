@@ -960,16 +960,36 @@ def add_asset_tag(asset_name: str, tag: str):
 
 
 @frappe.whitelist(methods=["GET"])
-def get_project_tags(project: str):
+def get_project_tags(project: str, folder=None):
 	"""Return distinct tags applied to non-trashed assets in this project, with usage counts.
 
 	Used by the project page tag filter dropdown.
+
+	Parameters:
+		folder: VMS Folder ID. Counts are scoped to that folder's subtree, matching how
+			`get_project_assets` scopes a tag filter — otherwise a tag could read "3"
+			in the dropdown and yield 2 rows once picked. None counts the whole project,
+			minus assets in trashed folders, which are unreachable in the UI.
 	"""
 	if not frappe.db.exists("VMS Project", project):
 		frappe.throw(_("Project {0} does not exist").format(project))
 
+	conditions = ""
+	values = [project]
+
+	if folder:
+		subtree = _folder_subtree(folder)
+		conditions = " AND a.folder IN %s"
+		values.append(tuple(subtree))
+	else:
+		trashed = _trashed_folders(project)
+		if trashed:
+			# a.folder IS NULL is the project root, which `NOT IN` would otherwise drop.
+			conditions = " AND (a.folder IS NULL OR a.folder NOT IN %s)"
+			values.append(tuple(trashed))
+
 	rows = frappe.db.sql(
-		"""
+		f"""
 		SELECT tl.tag AS tag, COUNT(*) AS count
 		FROM `tabTag Link` tl
 		INNER JOIN `tabVMS Asset` a ON a.name = tl.document_name
@@ -977,10 +997,11 @@ def get_project_tags(project: str):
 			AND a.project = %s
 			AND a.deleted_at IS NULL
 			AND a.status != 'Uploading'
+			{conditions}
 		GROUP BY tl.tag
 		ORDER BY tl.tag ASC
 		""",
-		(project,),
+		tuple(values),
 		as_dict=True,
 	)
 	return {"tags": rows}

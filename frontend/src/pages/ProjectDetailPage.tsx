@@ -695,6 +695,9 @@ export function ProjectDetailPage() {
             />
             <AssetTagFilter
               project={projectId!}
+              // Only the All tab is folder-scoped; the category tabs span every folder,
+              // so scoping their counts to the current folder would mismatch their rows.
+              folder={activeTab === "all" ? currentFolder : null}
               value={tagFilter}
               onChange={(t) => { setTagFilter(t); setLimit(PAGE_SIZE); clearSelection() }}
             />

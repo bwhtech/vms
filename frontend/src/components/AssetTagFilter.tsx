@@ -14,13 +14,15 @@ interface AssetTagFilterProps {
   project: string
   value: string | null
   onChange: (tag: string | null) => void
+  /** Scopes the counts to this folder's subtree. Omit for the whole project. */
+  folder?: string | null
 }
 
-export function AssetTagFilter({ project, value, onChange }: AssetTagFilterProps) {
+export function AssetTagFilter({ project, value, onChange, folder }: AssetTagFilterProps) {
   const { data } = useFrappeGetCall<{ message: { tags: ProjectTag[] } }>(
     "vms.api.get_project_tags",
-    { project },
-    `project-tags-${project}`,
+    { project, folder: folder ?? undefined },
+    `project-tags-${project}-${folder ?? "root"}`,
   )
 
   const tags = data?.message?.tags ?? []
@@ -69,7 +71,7 @@ export function AssetTagFilter({ project, value, onChange }: AssetTagFilterProps
           </button>
           {tags.length === 0 ? (
             <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-              No tags in this project yet
+              {folder ? "No tags in this folder yet" : "No tags in this project yet"}
             </div>
           ) : (
             tags.map((t) => (
