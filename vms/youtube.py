@@ -194,7 +194,14 @@ def finalize_youtube_connection():
 
 	_sync_settings_summary()
 
-	return {"connected": True, "channel": doc.name, "channel_name": doc.channel_name}
+	return {
+		"connected": True,
+		"channel": doc.name,
+		"channel_name": doc.channel_name,
+		# Re-authorizing an already-connected account refreshes its token in place,
+		# which otherwise looks identical to adding a channel.
+		"is_new": not existing,
+	}
 
 
 @frappe.whitelist()

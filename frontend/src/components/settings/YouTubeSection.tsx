@@ -125,8 +125,20 @@ export function YouTubeSection() {
 
       setIsFinalizing(true)
       callFinalize({})
-        .then(() => {
-          toast.success("YouTube connected successfully")
+        .then((res) => {
+          const result = (res as { message?: { is_new?: boolean; channel_name?: string } })
+            ?.message
+          const name = result?.channel_name
+          if (result?.is_new === false) {
+            // Same account picked twice — say so, or the reconnect looks like a no-op
+            toast.success(
+              name
+                ? `${name} was already connected — its access has been refreshed`
+                : "That channel was already connected — its access has been refreshed"
+            )
+          } else {
+            toast.success(name ? `Connected ${name}` : "YouTube connected successfully")
+          }
           mutate()
         })
         .catch(() => {
