@@ -4,6 +4,7 @@ import tempfile
 import frappe
 import requests
 from frappe import _
+from frappe.query_builder.functions import Count
 
 from vms.r2 import generate_presigned_download_url
 
@@ -228,12 +229,31 @@ def set_default_youtube_channel(channel: str):
 
 @frappe.whitelist(methods=["GET"])
 def get_youtube_channels():
-	"""List the connected YouTube channels, default first."""
-	return frappe.get_all(
+	"""List the connected YouTube channels, default first, with their asset counts."""
+	channels = frappe.get_all(
 		"VMS YouTube Channel",
 		fields=["name", "channel_name", "channel_id", "connected_by", "is_default"],
 		order_by="is_default desc, creation asc",
 	)
+
+	counts = _asset_counts_by_channel()
+	for channel in channels:
+		channel["asset_count"] = counts.get(channel.name, 0)
+
+	return channels
+
+
+def _asset_counts_by_channel():
+	"""How many assets point at each channel, so removal can say what it will unlink."""
+	asset = frappe.qb.DocType("VMS Asset")
+	rows = (
+		frappe.qb.from_(asset)
+		.select(asset.youtube_channel, Count(asset.name).as_("total"))
+		.where(asset.youtube_channel.isnotnull() & (asset.youtube_channel != ""))
+		.groupby(asset.youtube_channel)
+	).run(as_dict=True)
+
+	return {row.youtube_channel: row.total for row in rows}
 
 
 @frappe.whitelist()

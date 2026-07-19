@@ -22,6 +22,24 @@ interface YouTubeChannel {
   channel_id: string
   connected_by: string
   is_default: number
+  asset_count: number
+}
+
+/** "1 asset" / "3 assets" — the count of what a removal will unlink. */
+function assetCountLabel(count: number) {
+  return `${count} ${count === 1 ? "asset" : "assets"}`
+}
+
+/** What a removal costs, e.g. "1 asset uploaded to it will no longer show which channel it went to." */
+function unlinkWarning(count: number, target: "it" | "them") {
+  if (count === 0) {
+    return `No assets were uploaded ${target === "it" ? "to it" : "through them"}.`
+  }
+
+  const subject = count === 1 ? "it" : "they"
+  return `${assetCountLabel(count)} uploaded ${
+    target === "it" ? "to it" : "through them"
+  } will no longer show which channel ${subject} went to.`
 }
 
 interface YouTubeStatus {
@@ -68,6 +86,7 @@ export function YouTubeSection() {
 
   const status = statusData?.message
   const channels = status?.channels ?? []
+  const totalAssetCount = channels.reduce((sum, channel) => sum + (channel.asset_count ?? 0), 0)
   const redirectUri = redirectData?.message?.redirect_uri || ""
 
   // Handle OAuth redirect callback
@@ -187,6 +206,7 @@ export function YouTubeSection() {
                       <p className="text-sm font-medium truncate">{channel.channel_name}</p>
                       <p className="text-xs text-muted-foreground truncate">
                         {channel.is_default ? "Default channel" : "Connected"}
+                        {channel.asset_count > 0 && ` · ${assetCountLabel(channel.asset_count)}`}
                       </p>
                     </div>
                     {!channel.is_default && (
@@ -325,9 +345,9 @@ export function YouTubeSection() {
             <AlertDialogDescription>
               {pendingRemoval === "all" ? (
                 <>
-                  Every connected channel and the stored OAuth credentials will be removed, and
-                  assets uploaded through them will no longer show which channel they went to.
-                  Videos already on YouTube are unaffected. You will need to enter the Client ID
+                  Every connected channel and the stored OAuth credentials will be removed.{" "}
+                  {unlinkWarning(totalAssetCount, "them")} Videos already on YouTube are
+                  unaffected. You will need to enter the Client ID
                   and Secret again to reconnect.
                 </>
               ) : (
@@ -335,8 +355,9 @@ export function YouTubeSection() {
                   <strong className="text-foreground">
                     {pendingRemoval ? pendingRemoval.channel_name : ""}
                   </strong>{" "}
-                  will be disconnected, and assets uploaded to it will no longer show which
-                  channel they went to. Videos already on YouTube are unaffected.
+                  will be disconnected.{" "}
+                  {unlinkWarning(pendingRemoval ? pendingRemoval.asset_count : 0, "it")} Videos
+                  already on YouTube are unaffected.
                 </>
               )}
             </AlertDialogDescription>
