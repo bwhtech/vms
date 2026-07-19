@@ -199,8 +199,13 @@ def _child_folders(folder_name: str, trashed: bool):
 	)
 
 
-def soft_delete_folder(folder_name: str):
-	"""Soft-delete a folder and everything nested under it. Assets stay in their folder."""
+def soft_delete_folder(folder_name: str, with_parent: bool = False):
+	"""Soft-delete a folder and everything nested under it. Assets stay in their folder.
+
+	`with_parent` marks the folder as collateral damage — trashed only because an
+	ancestor was — so restoring that ancestor knows to bring it back, and so the
+	trash list doesn't show it as a separate entry.
+	"""
 	folder = frappe.get_doc("VMS Folder", folder_name)
 
 	if folder.deleted_at:
@@ -209,10 +214,11 @@ def soft_delete_folder(folder_name: str):
 	# A subfolder is only reachable through its parent, so leaving children behind
 	# would make them unreachable rather than untouched.
 	for child in _child_folders(folder_name, trashed=False):
-		soft_delete_folder(child)
+		soft_delete_folder(child, with_parent=True)
 
 	folder.deleted_at = now_datetime()
 	folder.deleted_by = frappe.session.user
+	folder.trashed_with_parent = 1 if with_parent else 0
 	folder.save(ignore_permissions=True)
 
 	_create_audit_log(
@@ -241,11 +247,12 @@ def hard_delete_folder(folder_name: str):
 	)
 
 	# Any subfolder still pointing here would keep a dangling link; promote it instead.
+	# The parent is gone, so "trashed with parent" no longer means anything for it —
+	# clear the flag so it shows up in trash as a restorable entry of its own.
 	frappe.db.set_value(
 		"VMS Folder",
 		{"parent_folder": folder_name},
-		"parent_folder",
-		None,
+		{"parent_folder": None, "trashed_with_parent": 0},
 		update_modified=False,
 	)
 
@@ -270,12 +277,23 @@ def restore_folder(folder_name: str):
 	if not folder.deleted_at:
 		frappe.throw(_("Folder is not in trash"))
 
+	# A folder under a trashed parent would be live but unreachable — the only way in
+	# is through the parent. Cascade restores hit this after the parent is already back.
+	if folder.parent_folder and frappe.db.get_value("VMS Folder", folder.parent_folder, "deleted_at"):
+		frappe.throw(
+			_("Restore the parent folder first — this folder lives inside a folder that is in the trash.")
+		)
+
 	folder.deleted_at = None
 	folder.deleted_by = None
+	folder.trashed_with_parent = 0
 	folder.save(ignore_permissions=True)
 
+	# Only children that went down with this folder come back with it. One that was
+	# trashed on its own beforehand stays in the trash, where the user put it.
 	for child in _child_folders(folder_name, trashed=True):
-		restore_folder(child)
+		if frappe.db.get_value("VMS Folder", child, "trashed_with_parent"):
+			restore_folder(child)
 
 	_create_audit_log(
 		action="Restore",

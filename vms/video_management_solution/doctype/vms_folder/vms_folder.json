@@ -13,6 +13,7 @@
   "parent_folder",
   "section_break_trash",
   "deleted_at",
+  "trashed_with_parent",
   "column_break_trash",
   "deleted_by"
  ],
@@ -55,6 +56,14 @@
    "fieldname": "deleted_at",
    "fieldtype": "Datetime",
    "label": "Deleted At",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Set when this folder was trashed only because an ancestor was. Restoring the ancestor restores it too.",
+   "fieldname": "trashed_with_parent",
+   "fieldtype": "Check",
+   "label": "Trashed With Parent",
    "read_only": 1
   },
   {

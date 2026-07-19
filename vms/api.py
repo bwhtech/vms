@@ -559,9 +559,7 @@ def move_folder(folder_name_id: str, parent_folder: str | None = None):
 	if (folder.parent_folder or None) == parent_folder:
 		return {"name": folder.name, "parent_folder": folder.parent_folder}
 
-	_check_duplicate_folder_name(
-		folder.folder_name, folder.project, parent_folder, exclude=folder.name
-	)
+	_check_duplicate_folder_name(folder.folder_name, folder.project, parent_folder, exclude=folder.name)
 
 	folder.parent_folder = parent_folder
 	folder.save(ignore_permissions=True)
@@ -603,7 +601,9 @@ def get_trash_folders(page=1, page_size=20):
 	page_size = min(500, max(1, int(page_size)))
 	start = (page - 1) * page_size
 
-	filters = {"deleted_at": ["is", "set"]}
+	# Folders trashed only because an ancestor was aren't separate entries — they come
+	# back with the ancestor, and restoring one on its own would strand it.
+	filters = {"deleted_at": ["is", "set"], "trashed_with_parent": 0}
 
 	total = frappe.db.count("VMS Folder", filters=filters)
 
@@ -1729,7 +1729,16 @@ def restore_version(asset_name: str, version_number: int):
 	ver = frappe.db.get_value(
 		"VMS Asset Version",
 		{"asset": asset_name, "version_number": version_number},
-		["name", "r2_key", "file_name", "file_size", "file_type", "uploaded_by", "uploaded_at", "thumbnail_url"],
+		[
+			"name",
+			"r2_key",
+			"file_name",
+			"file_size",
+			"file_type",
+			"uploaded_by",
+			"uploaded_at",
+			"thumbnail_url",
+		],
 		as_dict=True,
 	)
 	if not ver:
