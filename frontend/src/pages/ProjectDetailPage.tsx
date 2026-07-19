@@ -17,6 +17,7 @@ import {
   Copy01Icon,
   MoreVerticalIcon,
   PencilEdit01Icon,
+  Search01Icon,
   Share01Icon,
 } from "@hugeicons/core-free-icons"
 import { Badge } from "@/components/ui/badge"
@@ -64,9 +65,11 @@ import { DropZoneOverlay } from "@/components/DropZoneOverlay"
 import { CategoryBadge } from "@/components/CategoryBadge"
 import { AssetTags } from "@/components/AssetTags"
 import { AssetTagFilter } from "@/components/AssetTagFilter"
+import { AssetSearchInput } from "@/components/AssetSearchInput"
 import { AssetSortMenu, DEFAULT_ASSET_SORT } from "@/components/AssetSortMenu"
 import type { AssetSort } from "@/components/AssetSortMenu"
 import { AssetCardColor, CARD_COLOR_BORDER_CLASS } from "@/components/AssetCardColor"
+import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useDownload } from "@/hooks/useDownload"
 import { UserAvatar } from "@/components/UserAvatar"
 import { toast } from "sonner"
@@ -113,6 +116,9 @@ export function ProjectDetailPage() {
   // assets stay on screen. Reset to PAGE_SIZE whenever the underlying list changes.
   const [limit, setLimit] = useState(PAGE_SIZE)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
+  // `searchInput` drives the box; `search` is the settled value that hits the API.
+  const [searchInput, setSearchInput] = useState("")
+  const search = useDebouncedValue(searchInput.trim())
   const [sort, setSort] = useState<AssetSort>(DEFAULT_ASSET_SORT)
   const { downloadOne, downloadMany, isDownloading } = useDownload()
 
@@ -130,8 +136,8 @@ export function ProjectDetailPage() {
 
   const { data: folderAssetsData, mutate: mutateFolderAssets, isLoading: isLoadingFolder } = useFrappeGetCall<{ message: PaginatedAssets }>(
     "vms.api.get_project_assets",
-    { project: projectId!, folder: currentFolder ?? undefined, tag: tagFilter ?? undefined, page: 1, page_size: activeTab === "all" ? limit : PAGE_SIZE, sort_by: sort.field, sort_order: sort.order },
-    `project-assets-folder-${projectId}-${currentFolder ?? "root"}-t${tagFilter ?? ""}-l${activeTab === "all" ? limit : PAGE_SIZE}-s${sort.field}-${sort.order}`,
+    { project: projectId!, folder: currentFolder ?? undefined, tag: tagFilter ?? undefined, search: search || undefined, page: 1, page_size: activeTab === "all" ? limit : PAGE_SIZE, sort_by: sort.field, sort_order: sort.order },
+    `project-assets-folder-${projectId}-${currentFolder ?? "root"}-t${tagFilter ?? ""}-q${search}-l${activeTab === "all" ? limit : PAGE_SIZE}-s${sort.field}-${sort.order}`,
     // growing the limit changes the SWR key; keep the loaded cards on screen while the
     // bigger page fetches instead of flashing back to skeletons
     { keepPreviousData: true },
@@ -139,15 +145,15 @@ export function ProjectDetailPage() {
 
   const { data: forReviewData, mutate: mutateForReview, isLoading: isLoadingForReview } = useFrappeGetCall<{ message: PaginatedAssets }>(
     "vms.api.get_project_assets",
-    { project: projectId!, category: "For Review", tag: tagFilter ?? undefined, page: 1, page_size: activeTab === "for-review" ? limit : PAGE_SIZE, sort_by: sort.field, sort_order: sort.order },
-    `project-assets-review-${projectId}-t${tagFilter ?? ""}-l${activeTab === "for-review" ? limit : PAGE_SIZE}-s${sort.field}-${sort.order}`,
+    { project: projectId!, category: "For Review", tag: tagFilter ?? undefined, search: search || undefined, page: 1, page_size: activeTab === "for-review" ? limit : PAGE_SIZE, sort_by: sort.field, sort_order: sort.order },
+    `project-assets-review-${projectId}-t${tagFilter ?? ""}-q${search}-l${activeTab === "for-review" ? limit : PAGE_SIZE}-s${sort.field}-${sort.order}`,
     { keepPreviousData: true },
   )
 
   const { data: deliverablesData, mutate: mutateDeliverables, isLoading: isLoadingDeliverables } = useFrappeGetCall<{ message: PaginatedAssets }>(
     "vms.api.get_project_assets",
-    { project: projectId!, category: "Deliverable", tag: tagFilter ?? undefined, page: 1, page_size: activeTab === "deliverables" ? limit : PAGE_SIZE, sort_by: sort.field, sort_order: sort.order },
-    `project-assets-deliverables-${projectId}-t${tagFilter ?? ""}-l${activeTab === "deliverables" ? limit : PAGE_SIZE}-s${sort.field}-${sort.order}`,
+    { project: projectId!, category: "Deliverable", tag: tagFilter ?? undefined, search: search || undefined, page: 1, page_size: activeTab === "deliverables" ? limit : PAGE_SIZE, sort_by: sort.field, sort_order: sort.order },
+    `project-assets-deliverables-${projectId}-t${tagFilter ?? ""}-q${search}-l${activeTab === "deliverables" ? limit : PAGE_SIZE}-s${sort.field}-${sort.order}`,
     { keepPreviousData: true },
   )
 
@@ -261,15 +267,28 @@ export function ProjectDetailPage() {
     mutateAssets()
   }
 
+  // Folder cards only make sense at the project root with an unfiltered list — a tag
+  // filter or a search spans folders, so the results are files, not a directory listing.
+  const hideFolders = !!currentFolder || !!tagFilter || !!search
+
+  const handleSearchChange = useCallback((q: string) => {
+    setSearchInput(q)
+    setLimit(PAGE_SIZE)
+    clearSelection()
+  }, [clearSelection])
+
   const handleFolderClick = (folderName: string) => {
     navigate(`/projects/${projectId}/folder/${folderName}`)
     setLimit(PAGE_SIZE)
+    // search scope changes with the folder, so a stale term would be misleading
+    setSearchInput("")
     clearSelection()
   }
 
   const handleNavigateToRoot = () => {
     navigate(`/projects/${projectId}`)
     setLimit(PAGE_SIZE)
+    setSearchInput("")
     clearSelection()
   }
 
@@ -583,6 +602,11 @@ export function ProjectDetailPage() {
                 </Button>
               </>
             )}
+            <AssetSearchInput
+              value={searchInput}
+              onChange={handleSearchChange}
+              placeholder={currentFolder ? "Search this folder..." : "Search this project..."}
+            />
             <AssetTagFilter
               project={projectId!}
               value={tagFilter}
@@ -665,15 +689,30 @@ export function ProjectDetailPage() {
             onMoveToFolder={handleMenuMoveToFolder}
             onCopyShareLink={handleMenuCopyShareLink}
             onToggleSharing={handleMenuToggleSharing}
-            folders={currentFolder || tagFilter ? undefined : folders ?? undefined}
+            folders={hideFolders ? undefined : folders ?? undefined}
             onFolderClick={handleFolderClick}
-            onFolderRename={currentFolder || tagFilter ? undefined : handleCardFolderRename}
-            onFolderDelete={currentFolder || tagFilter ? undefined : handleCardFolderDelete}
-            onDropToFolder={currentFolder || tagFilter ? undefined : handleDropToFolder}
+            onFolderRename={hideFolders ? undefined : handleCardFolderRename}
+            onFolderDelete={hideFolders ? undefined : handleCardFolderDelete}
+            onDropToFolder={hideFolders ? undefined : handleDropToFolder}
             draggable={(folders ?? []).length > 0 || !!currentFolder}
             isLoading={isLoadingFolder}
             emptyMessage={
-              currentFolder ? (
+              search ? (
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <HugeiconsIcon icon={Search01Icon} strokeWidth={1.5} />
+                    </EmptyMedia>
+                    <EmptyTitle>No files found</EmptyTitle>
+                    <EmptyDescription>
+                      Nothing matches “{search}” in {currentFolder ? "this folder" : "this project"}.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <Button variant="outline" size="sm" onClick={() => handleSearchChange("")}>
+                    Clear search
+                  </Button>
+                </Empty>
+              ) : currentFolder ? (
                 <Empty>
                   <EmptyHeader>
                     <EmptyMedia variant="icon">

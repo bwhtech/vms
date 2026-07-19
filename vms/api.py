@@ -641,6 +641,11 @@ def move_assets_to_folder(asset_names: str | list, folder: str | None = None):
 SORTABLE_ASSET_FIELDS = ("creation", "file_size", "file_name")
 
 
+def _escape_like(term):
+	"""Neutralise LIKE wildcards so a literal % or _ in the search term matches itself."""
+	return term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 def _asset_order_by(sort_by=None, sort_order=None):
 	"""Build a safe `order_by` clause from user input, defaulting to newest first."""
 	field = sort_by if sort_by in SORTABLE_ASSET_FIELDS else "creation"
@@ -650,9 +655,17 @@ def _asset_order_by(sort_by=None, sort_order=None):
 
 @frappe.whitelist(methods=["GET"])
 def get_project_assets(
-	project, folder=None, category=None, tag=None, page=1, page_size=20, sort_by=None, sort_order=None
+	project,
+	folder=None,
+	category=None,
+	tag=None,
+	search=None,
+	page=1,
+	page_size=20,
+	sort_by=None,
+	sort_order=None,
 ):
-	"""Get project assets with server-side folder/category/tag filtering, sorting and pagination.
+	"""Get project assets with server-side folder/category/tag/name filtering, sorting and pagination.
 
 	Parameters:
 		project: VMS Project ID (required)
@@ -660,6 +673,8 @@ def get_project_assets(
 		category: "For Review" or "Deliverable". Returns matching assets across ALL folders.
 		tag: Filter to assets tagged with this tag. Crosses folder/category boundaries
 			like category does (returns matching assets across ALL folders).
+		search: Substring match on file_name. Searching from the project root spans every
+			folder; inside a folder it stays scoped to that folder.
 		page: Page number (1-indexed, default 1)
 		page_size: Items per page (default 20, max 500)
 		sort_by: "creation", "file_size" or "file_name" (default "creation")
@@ -675,6 +690,8 @@ def get_project_assets(
 
 	filters = {"project": project, "status": ["!=", "Uploading"], "deleted_at": ["is", "not set"]}
 
+	search = (search or "").strip()
+
 	if category:
 		filters["category"] = category
 	elif tag:
@@ -682,8 +699,14 @@ def get_project_assets(
 		pass
 	elif folder:
 		filters["folder"] = folder
+	elif search:
+		# searching from the project root spans every folder, like the tag filter
+		pass
 	else:
 		filters["folder"] = ["is", "not set"]
+
+	if search:
+		filters["file_name"] = ["like", f"%{_escape_like(search)}%"]
 
 	if tag:
 		tagged_names = frappe.get_all(
