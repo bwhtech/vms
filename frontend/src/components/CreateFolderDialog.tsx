@@ -17,6 +17,10 @@ interface CreateFolderDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   project: string
+  /** Folder the new one goes inside. Null/undefined creates it at the project root. */
+  parentFolder?: string | null
+  /** Name of the parent folder, for the dialog copy. */
+  parentFolderName?: string | null
   onComplete?: () => void
 }
 
@@ -24,6 +28,8 @@ export function CreateFolderDialog({
   open,
   onOpenChange,
   project,
+  parentFolder,
+  parentFolderName,
   onComplete,
 }: CreateFolderDialogProps) {
   const [folderName, setFolderName] = useState("")
@@ -37,7 +43,7 @@ export function CreateFolderDialog({
     }
 
     try {
-      await createFolder({ folder_name: trimmed, project })
+      await createFolder({ folder_name: trimmed, project, parent_folder: parentFolder ?? undefined })
       toast.success(`Folder "${trimmed}" created`)
       setFolderName("")
       onOpenChange(false)
@@ -54,7 +60,9 @@ export function CreateFolderDialog({
         <DialogHeader>
           <DialogTitle>New Folder</DialogTitle>
           <DialogDescription>
-            Create a new folder in this project.
+            {parentFolder
+              ? `Create a new folder inside “${parentFolderName ?? "this folder"}”.`
+              : "Create a new folder in this project."}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">

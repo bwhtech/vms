@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react"
+import { Fragment, useState, useMemo, useCallback } from "react"
 import { useSelection } from "@/hooks/useSelection"
 import { useParams, useNavigate } from "react-router"
 import { useFrappeGetDoc, useFrappeGetDocList, useFrappeGetCall, useFrappePostCall, useFrappeEventListener } from "frappe-react-sdk"
@@ -181,20 +181,41 @@ export function ProjectDetailPage() {
     })
   }, [openUpload, mutateAssets])
 
-  const { data: folders, mutate: mutateFolders } = useFrappeGetDocList<VMSFolder>("VMS Folder", {
-    fields: ["name", "folder_name", "creation"],
+  // Every live folder in the project, at any depth — the tree is small enough to hold
+  // in one list, and the breadcrumb needs the ancestors anyway.
+  const { data: allFolders, mutate: mutateFolders } = useFrappeGetDocList<VMSFolder>("VMS Folder", {
+    fields: ["name", "folder_name", "parent_folder", "creation"],
     filters: [["project", "=", projectId!], ["deleted_at", "is", "not set"]],
     orderBy: { field: "folder_name", order: "asc" },
-    limit: 100,
+    limit: 500,
   })
 
   const currentFolderDoc = useMemo(
-    () => (folders ?? []).find((f) => f.name === currentFolder) ?? null,
-    [folders, currentFolder],
+    () => (allFolders ?? []).find((f) => f.name === currentFolder) ?? null,
+    [allFolders, currentFolder],
   )
 
+  // Only the folders directly inside wherever we are.
+  const folders = useMemo(
+    () => (allFolders ?? []).filter((f) => (f.parent_folder ?? null) === currentFolder),
+    [allFolders, currentFolder],
+  )
+
+  // Root -> ... -> current, for the breadcrumb trail.
+  const folderTrail = useMemo(() => {
+    if (!currentFolderDoc) return []
+    const byName = new Map((allFolders ?? []).map((f) => [f.name, f]))
+    const trail: VMSFolder[] = []
+    let node: VMSFolder | undefined = currentFolderDoc
+    while (node && trail.length < 50) {
+      trail.unshift(node)
+      node = node.parent_folder ? byName.get(node.parent_folder) : undefined
+    }
+    return trail
+  }, [allFolders, currentFolderDoc])
+
   // Folder in URL but doesn't exist (deleted or invalid)
-  const folderNotFound = !!currentFolder && !currentFolderDoc && !!folders
+  const folderNotFound = !!currentFolder && !currentFolderDoc && !!allFolders
 
   // Listen for asset conversion completion to refresh the list
   useFrappeEventListener<{
@@ -267,9 +288,9 @@ export function ProjectDetailPage() {
     mutateAssets()
   }
 
-  // Folder cards only make sense at the project root with an unfiltered list — a tag
-  // filter or a search spans folders, so the results are files, not a directory listing.
-  const hideFolders = !!currentFolder || !!tagFilter || !!search
+  // Folder cards only make sense with an unfiltered list — a tag filter or a search
+  // spans folders, so the results are files, not a directory listing.
+  const hideFolders = !!tagFilter || !!search
 
   const handleSearchChange = useCallback((q: string) => {
     setSearchInput(q)
@@ -298,7 +319,11 @@ export function ProjectDetailPage() {
   }
 
   const handleDeleteFolderComplete = () => {
-    navigate(`/projects/${projectId}`, { replace: true })
+    // Land in the deleted folder's parent, not all the way back at the project root.
+    const parent = currentFolderDoc?.parent_folder
+    navigate(parent ? `/projects/${projectId}/folder/${parent}` : `/projects/${projectId}`, {
+      replace: true,
+    })
     mutateFolders()
     mutateAssets()
   }
@@ -509,20 +534,22 @@ export function ProjectDetailPage() {
       {currentFolder && currentFolderDoc && (
         <BreadcrumbNav
           projectName={project.project_name}
-          folderName={currentFolderDoc.folder_name}
+          trail={folderTrail}
           onNavigateToRoot={handleNavigateToRoot}
-          onDropToRoot={(names) => handleDropToFolder(names, null)}
+          onNavigateToFolder={handleFolderClick}
+          onDropToFolder={handleDropToFolder}
         />
       )}
 
       {/* Folder not found */}
-      {currentFolder && !currentFolderDoc && folders && (
+      {currentFolder && !currentFolderDoc && allFolders && (
         <div className="space-y-4">
           <BreadcrumbNav
             projectName={project.project_name}
-            folderName="..."
+            trail={[]}
             onNavigateToRoot={handleNavigateToRoot}
-            onDropToRoot={() => {}}
+            onNavigateToFolder={() => {}}
+            onDropToFolder={() => {}}
           />
           <Empty>
             <EmptyHeader>
@@ -630,16 +657,14 @@ export function ProjectDetailPage() {
                 <HugeiconsIcon icon={GridViewIcon} strokeWidth={2} />
               </ToggleGroupItem>
             </ToggleGroup>
-            {!currentFolder && (
-              <Button variant="outline" size="sm" onClick={() => setCreateFolderOpen(true)}>
-                <HugeiconsIcon
-                  icon={FolderAddIcon}
-                  strokeWidth={1.5}
-                  data-icon="inline-start"
-                />
-                <span className="hidden sm:inline">New Folder</span>
-              </Button>
-            )}
+            <Button variant="outline" size="sm" onClick={() => setCreateFolderOpen(true)}>
+              <HugeiconsIcon
+                icon={FolderAddIcon}
+                strokeWidth={1.5}
+                data-icon="inline-start"
+              />
+              <span className="hidden sm:inline">New Folder</span>
+            </Button>
             {currentFolder && (
               <>
                 <Button variant="outline" size="sm" onClick={() => setRenameFolderOpen(true)}>
@@ -850,6 +875,8 @@ export function ProjectDetailPage() {
         open={createFolderOpen}
         onOpenChange={setCreateFolderOpen}
         project={projectId!}
+        parentFolder={currentFolder}
+        parentFolderName={currentFolderDoc?.folder_name}
         onComplete={handleFolderCreated}
       />
 
@@ -1157,14 +1184,58 @@ function FolderCard({
 
 function BreadcrumbNav({
   projectName,
-  folderName,
+  trail,
   onNavigateToRoot,
-  onDropToRoot,
+  onNavigateToFolder,
+  onDropToFolder,
 }: {
   projectName: string
-  folderName: string
+  /** Root-most ancestor first, the folder being viewed last. */
+  trail: VMSFolder[]
   onNavigateToRoot: () => void
-  onDropToRoot: (assetNames: string[]) => void
+  onNavigateToFolder: (folderName: string) => void
+  onDropToFolder: (assetNames: string[], folderName: string | null) => void
+}) {
+  // The current folder is the last crumb — it's a label, not a link.
+  const ancestors = trail.slice(0, -1)
+  const current = trail[trail.length - 1]
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 text-sm">
+      <BreadcrumbCrumb
+        label={projectName}
+        onClick={onNavigateToRoot}
+        onDrop={(names) => onDropToFolder(names, null)}
+      />
+      {ancestors.map((folder) => (
+        <Fragment key={folder.name}>
+          <span className="text-muted-foreground">/</span>
+          <BreadcrumbCrumb
+            label={folder.folder_name}
+            onClick={() => onNavigateToFolder(folder.name)}
+            onDrop={(names) => onDropToFolder(names, folder.name)}
+          />
+        </Fragment>
+      ))}
+      {current && (
+        <>
+          <span className="text-muted-foreground">/</span>
+          <span className="font-medium">{current.folder_name}</span>
+        </>
+      )}
+    </div>
+  )
+}
+
+/** One clickable ancestor crumb, doubling as a drop target for moving assets up. */
+function BreadcrumbCrumb({
+  label,
+  onClick,
+  onDrop,
+}: {
+  label: string
+  onClick: () => void
+  onDrop: (assetNames: string[]) => void
 }) {
   const [dragOver, setDragOver] = useState(false)
 
@@ -1175,8 +1246,6 @@ function BreadcrumbNav({
     setDragOver(true)
   }
 
-  const handleDragLeave = () => { setDragOver(false) }
-
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setDragOver(false)
@@ -1184,24 +1253,20 @@ function BreadcrumbNav({
     if (!data) return
     try {
       const assetNames: string[] = JSON.parse(data)
-      if (assetNames.length > 0) onDropToRoot(assetNames)
+      if (assetNames.length > 0) onDrop(assetNames)
     } catch { /* ignore */ }
   }
 
   return (
-    <div className="flex items-center gap-1.5 text-sm">
-      <button
-        onClick={onNavigateToRoot}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={`rounded px-1.5 py-0.5 transition-colors ${dragOver ? "bg-primary/10 text-primary ring-1 ring-primary" : "text-muted-foreground hover:text-foreground"}`}
-      >
-        {projectName}
-      </button>
-      <span className="text-muted-foreground">/</span>
-      <span className="font-medium">{folderName}</span>
-    </div>
+    <button
+      onClick={onClick}
+      onDragOver={handleDragOver}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+      className={`rounded px-1.5 py-0.5 transition-colors ${dragOver ? "bg-primary/10 text-primary ring-1 ring-primary" : "text-muted-foreground hover:text-foreground"}`}
+    >
+      {label}
+    </button>
   )
 }
 

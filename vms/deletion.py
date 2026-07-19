@@ -187,12 +187,29 @@ def restore_asset(asset_name: str):
 # ── Folder Deletion ─────────────────────────────────────────────────────────
 
 
+def _child_folders(folder_name: str, trashed: bool):
+	"""Direct subfolders of a folder, either the live ones or the trashed ones."""
+	return frappe.get_all(
+		"VMS Folder",
+		filters={
+			"parent_folder": folder_name,
+			"deleted_at": ["is", "set" if trashed else "not set"],
+		},
+		pluck="name",
+	)
+
+
 def soft_delete_folder(folder_name: str):
-	"""Soft-delete a folder. Assets stay in folder (not moved)."""
+	"""Soft-delete a folder and everything nested under it. Assets stay in their folder."""
 	folder = frappe.get_doc("VMS Folder", folder_name)
 
 	if folder.deleted_at:
 		return
+
+	# A subfolder is only reachable through its parent, so leaving children behind
+	# would make them unreachable rather than untouched.
+	for child in _child_folders(folder_name, trashed=False):
+		soft_delete_folder(child)
 
 	folder.deleted_at = now_datetime()
 	folder.deleted_by = frappe.session.user
@@ -223,6 +240,15 @@ def hard_delete_folder(folder_name: str):
 		update_modified=False,
 	)
 
+	# Any subfolder still pointing here would keep a dangling link; promote it instead.
+	frappe.db.set_value(
+		"VMS Folder",
+		{"parent_folder": folder_name},
+		"parent_folder",
+		None,
+		update_modified=False,
+	)
+
 	audit_data = {
 		"file_name": folder.folder_name,
 		"project": folder.project,
@@ -247,6 +273,9 @@ def restore_folder(folder_name: str):
 	folder.deleted_at = None
 	folder.deleted_by = None
 	folder.save(ignore_permissions=True)
+
+	for child in _child_folders(folder_name, trashed=True):
+		restore_folder(child)
 
 	_create_audit_log(
 		action="Restore",

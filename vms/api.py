@@ -475,31 +475,52 @@ def move_asset(asset_name: str, target_project: str):
 
 
 @frappe.whitelist()
-def create_folder(folder_name: str, project: str):
-	"""Create a folder within a project."""
+def create_folder(folder_name: str, project: str, parent_folder: str | None = None):
+	"""Create a folder within a project, optionally nested inside another folder."""
 	folder_name = (folder_name or "").strip()
 	if not folder_name:
 		frappe.throw(_("Folder name cannot be empty"))
 	if not frappe.db.exists("VMS Project", project):
 		frappe.throw(_("Project {0} does not exist").format(project))
 
-	# Check for duplicate folder name in the same project (exclude trashed)
-	existing = frappe.db.exists(
-		"VMS Folder", {"folder_name": folder_name, "project": project, "deleted_at": ["is", "not set"]}
-	)
-	if existing:
-		frappe.throw(_("A folder named '{0}' already exists in this project").format(folder_name))
+	parent_folder = parent_folder or None
+	if parent_folder and not frappe.db.exists("VMS Folder", parent_folder):
+		frappe.throw(_("Parent folder {0} does not exist").format(parent_folder))
+
+	_check_duplicate_folder_name(folder_name, project, parent_folder)
 
 	doc = frappe.get_doc(
 		{
 			"doctype": "VMS Folder",
 			"folder_name": folder_name,
 			"project": project,
+			"parent_folder": parent_folder,
 		}
 	)
 	doc.insert(ignore_permissions=True)
 
-	return {"name": doc.name, "folder_name": doc.folder_name, "project": doc.project}
+	return {
+		"name": doc.name,
+		"folder_name": doc.folder_name,
+		"project": doc.project,
+		"parent_folder": doc.parent_folder,
+	}
+
+
+def _check_duplicate_folder_name(folder_name, project, parent_folder, exclude=None):
+	"""Names only have to be unique among siblings, the way a filesystem works."""
+	filters = {
+		"folder_name": folder_name,
+		"project": project,
+		"parent_folder": parent_folder if parent_folder else ["is", "not set"],
+		"deleted_at": ["is", "not set"],
+	}
+	if exclude:
+		filters["name"] = ["!=", exclude]
+
+	if frappe.db.exists("VMS Folder", filters):
+		where = _("in this folder") if parent_folder else _("in this project")
+		frappe.throw(_("A folder named '{0}' already exists {1}").format(folder_name, where))
 
 
 @frappe.whitelist()
@@ -511,18 +532,7 @@ def rename_folder(folder_name_id: str, new_name: str):
 
 	folder = frappe.get_doc("VMS Folder", folder_name_id)
 
-	# Check for duplicate name in same project (exclude trashed)
-	existing = frappe.db.exists(
-		"VMS Folder",
-		{
-			"folder_name": new_name,
-			"project": folder.project,
-			"name": ["!=", folder.name],
-			"deleted_at": ["is", "not set"],
-		},
-	)
-	if existing:
-		frappe.throw(_("A folder named '{0}' already exists in this project").format(new_name))
+	_check_duplicate_folder_name(new_name, folder.project, folder.parent_folder, exclude=folder.name)
 
 	folder.folder_name = new_name
 	folder.save(ignore_permissions=True)

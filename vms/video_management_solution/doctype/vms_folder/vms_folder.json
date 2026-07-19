@@ -10,6 +10,7 @@
   "naming_series",
   "folder_name",
   "project",
+  "parent_folder",
   "section_break_trash",
   "deleted_at",
   "column_break_trash",
@@ -38,6 +39,12 @@
    "label": "Project",
    "options": "VMS Project",
    "reqd": 1
+  },
+  {
+   "fieldname": "parent_folder",
+   "fieldtype": "Link",
+   "label": "Parent Folder",
+   "options": "VMS Folder"
   },
   {
    "fieldname": "section_break_trash",
