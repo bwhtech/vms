@@ -19,29 +19,34 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { VMSFolder } from "@/types"
-import { buildFolderOptions } from "@/lib/folderPaths"
+import { buildFolderOptions, collectDescendants } from "@/lib/folderPaths"
 
-interface MoveToFolderDialogProps {
+interface MoveFolderDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  assetNames: string[]
+  folder: VMSFolder
   project: string
-  currentFolder?: string | null
   onComplete?: () => void
 }
 
 const ROOT_VALUE = "__root__"
 
-export function MoveToFolderDialog({
+export function MoveFolderDialog({
   open,
   onOpenChange,
-  assetNames,
+  folder,
   project,
-  currentFolder,
   onComplete,
-}: MoveToFolderDialogProps) {
-  const [targetFolder, setTargetFolder] = useState<string>("")
-  const [moving, setMoving] = useState(false)
+}: MoveFolderDialogProps) {
+  const [target, setTarget] = useState<string>("")
+  const { call: moveFolder, loading } = useFrappePostCall("vms.api.move_folder")
+
+  // Reset on close rather than in an effect on open — the dialog is unmounted-ish
+  // between uses anyway, and a stale destination from the last folder would be wrong.
+  const handleOpenChange = (next: boolean) => {
+    if (!next) setTarget("")
+    onOpenChange(next)
+  }
 
   const { data: folders } = useFrappeGetDocList<VMSFolder>("VMS Folder", {
     fields: ["name", "folder_name", "parent_folder"],
@@ -50,71 +55,60 @@ export function MoveToFolderDialog({
     limit: 500,
   })
 
-  const { call: moveAssets } = useFrappePostCall("vms.api.move_assets_to_folder")
+  // A folder can't move into itself or into anything beneath it, and moving it
+  // where it already is would be a no-op.
+  const destinations = useMemo(() => {
+    const all = folders ?? []
+    const blocked = collectDescendants(all, folder.name)
+    return buildFolderOptions(all).filter(
+      (f) => !blocked.has(f.name) && f.name !== folder.parent_folder,
+    )
+  }, [folders, folder.name, folder.parent_folder])
 
   const handleMove = async () => {
-    if (!targetFolder) {
+    if (!target) {
       toast.error("Please select a destination")
       return
     }
 
-    setMoving(true)
     try {
-      const folder = targetFolder === ROOT_VALUE ? null : targetFolder
-      await moveAssets({
-        asset_names: JSON.stringify(assetNames),
-        folder,
-      })
-      toast.success(
-        `Moved ${assetNames.length} asset${assetNames.length > 1 ? "s" : ""}`
-      )
-      setTargetFolder("")
-      onOpenChange(false)
+      const parent = target === ROOT_VALUE ? null : target
+      await moveFolder({ folder_name_id: folder.name, parent_folder: parent })
+      toast.success(`Moved "${folder.folder_name}"`)
+      handleOpenChange(false)
       onComplete?.()
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Failed to move assets"
+      const message = e instanceof Error ? e.message : "Failed to move folder"
       toast.error(message)
-    } finally {
-      setMoving(false)
     }
   }
 
-  // Filter out the current folder from options
-  const availableFolders = useMemo(
-    () =>
-      buildFolderOptions(folders ?? []).filter((f) => f.name !== currentFolder),
-    [folders, currentFolder],
-  )
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Move to Folder</DialogTitle>
+          <DialogTitle>Move Folder</DialogTitle>
           <DialogDescription>
-            Move {assetNames.length} asset{assetNames.length > 1 ? "s" : ""} to
-            a folder.
+            Move “{folder.folder_name}” and everything inside it to another folder.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
           <Label>Destination</Label>
-          <Select value={targetFolder} onValueChange={setTargetFolder}>
+          <Select value={target} onValueChange={setTarget}>
             <SelectTrigger className="w-full">
               <SelectValue>
                 {(value: string | null) => {
                   if (!value) return "Select a folder..."
                   if (value === ROOT_VALUE) return "Project Root (no folder)"
-                  return availableFolders.find((f) => f.name === value)?.path ?? value
+                  return destinations.find((f) => f.name === value)?.path ?? value
                 }}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {currentFolder && (
-                <SelectItem value={ROOT_VALUE}>
-                  Project Root (no folder)
-                </SelectItem>
+              {folder.parent_folder && (
+                <SelectItem value={ROOT_VALUE}>Project Root (no folder)</SelectItem>
               )}
-              {availableFolders.map((f) => (
+              {destinations.map((f) => (
                 <SelectItem key={f.name} value={f.name}>
                   {f.ancestors.length > 0 && (
                     <span className="text-muted-foreground">
@@ -128,15 +122,11 @@ export function MoveToFolderDialog({
           </Select>
         </div>
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={moving}
-          >
+          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={handleMove} disabled={moving || !targetFolder}>
-            {moving ? "Moving..." : "Move"}
+          <Button onClick={handleMove} disabled={loading || !target}>
+            {loading ? "Moving..." : "Move"}
           </Button>
         </DialogFooter>
       </DialogContent>

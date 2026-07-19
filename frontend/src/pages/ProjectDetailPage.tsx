@@ -59,6 +59,7 @@ import { MediaPlayerDialog } from "@/components/MediaPlayerDialog"
 import { CreateFolderDialog } from "@/components/CreateFolderDialog"
 import { RenameFolderDialog } from "@/components/RenameFolderDialog"
 import { MoveToFolderDialog } from "@/components/MoveToFolderDialog"
+import { MoveFolderDialog } from "@/components/MoveFolderDialog"
 import { DeleteFolderDialog } from "@/components/DeleteFolderDialog"
 import { DropZoneOverlay } from "@/components/DropZoneOverlay"
 import { CategoryBadge } from "@/components/CategoryBadge"
@@ -108,6 +109,7 @@ export function ProjectDetailPage() {
   const [previewAsset, setPreviewAsset] = useState<VMSAsset | null>(null)
   const [folderToAction, setFolderToAction] = useState<VMSFolder | null>(null)
   const [cardRenameFolderOpen, setCardRenameFolderOpen] = useState(false)
+  const [cardMoveFolderOpen, setCardMoveFolderOpen] = useState(false)
   const [cardDeleteFolderOpen, setCardDeleteFolderOpen] = useState(false)
   const [view, setView] = useState<"list" | "grid">("grid")
   const { selected, toggleSelect, toggleSelectAll, clearSelection } = useSelection()
@@ -434,10 +436,21 @@ export function ProjectDetailPage() {
     setCardRenameFolderOpen(true)
   }, [])
 
+  const handleCardFolderMove = useCallback((folder: VMSFolder) => {
+    setFolderToAction(folder)
+    setCardMoveFolderOpen(true)
+  }, [])
+
   const handleCardFolderDelete = useCallback((folder: VMSFolder) => {
     setFolderToAction(folder)
     setCardDeleteFolderOpen(true)
   }, [])
+
+  const handleCardFolderMoveComplete = () => {
+    mutateFolders()
+    mutateAssets()
+    setFolderToAction(null)
+  }
 
   const handleCardFolderRenameComplete = () => {
     mutateFolders()
@@ -675,6 +688,20 @@ export function ProjectDetailPage() {
                   />
                   <span className="hidden sm:inline">Rename</span>
                 </Button>
+                {currentFolderDoc && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCardFolderMove(currentFolderDoc)}
+                  >
+                    <HugeiconsIcon
+                      icon={FolderTransferIcon}
+                      strokeWidth={2}
+                      data-icon="inline-start"
+                    />
+                    <span className="hidden sm:inline">Move</span>
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" onClick={handleDeleteFolder}>
                   <HugeiconsIcon
                     icon={Delete02Icon}
@@ -717,6 +744,7 @@ export function ProjectDetailPage() {
             folders={hideFolders ? undefined : folders ?? undefined}
             onFolderClick={handleFolderClick}
             onFolderRename={hideFolders ? undefined : handleCardFolderRename}
+            onFolderMove={hideFolders ? undefined : handleCardFolderMove}
             onFolderDelete={hideFolders ? undefined : handleCardFolderDelete}
             onDropToFolder={hideFolders ? undefined : handleDropToFolder}
             draggable={(folders ?? []).length > 0 || !!currentFolder}
@@ -908,6 +936,13 @@ export function ProjectDetailPage() {
             folderDisplayName={folderToAction.folder_name}
             onComplete={handleCardFolderRenameComplete}
           />
+          <MoveFolderDialog
+            open={cardMoveFolderOpen}
+            onOpenChange={setCardMoveFolderOpen}
+            folder={folderToAction}
+            project={projectId!}
+            onComplete={handleCardFolderMoveComplete}
+          />
           <DeleteFolderDialog
             open={cardDeleteFolderOpen}
             onOpenChange={setCardDeleteFolderOpen}
@@ -1023,6 +1058,7 @@ function FolderCard({
   onClick,
   onDrop,
   onRename,
+  onMove,
   onDelete,
 }: {
   folder: VMSFolder
@@ -1030,6 +1066,7 @@ function FolderCard({
   onClick: () => void
   onDrop?: (assetNames: string[]) => void
   onRename?: () => void
+  onMove?: () => void
   onDelete?: () => void
 }) {
   const [dragOver, setDragOver] = useState(false)
@@ -1065,7 +1102,7 @@ function FolderCard({
 
   const dropHighlight = dragOver ? "ring-2 ring-primary bg-primary/5" : ""
 
-  const hasMenu = !!onRename || !!onDelete
+  const hasMenu = !!onRename || !!onMove || !!onDelete
 
   const menuContent = hasMenu ? (
     <>
@@ -1075,7 +1112,13 @@ function FolderCard({
           Rename
         </ContextMenuItem>
       )}
-      {onRename && onDelete && <ContextMenuSeparator />}
+      {onMove && (
+        <ContextMenuItem onClick={(e) => { e.stopPropagation(); onMove() }}>
+          <HugeiconsIcon icon={FolderTransferIcon} strokeWidth={2} />
+          Move to...
+        </ContextMenuItem>
+      )}
+      {(onRename || onMove) && onDelete && <ContextMenuSeparator />}
       {onDelete && (
         <ContextMenuItem variant="destructive" onClick={(e) => { e.stopPropagation(); onDelete() }}>
           <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
@@ -1098,7 +1141,13 @@ function FolderCard({
               Rename
             </DropdownMenuItem>
           )}
-          {onRename && onDelete && <DropdownMenuSeparator />}
+          {onMove && (
+            <DropdownMenuItem onClick={onMove}>
+              <HugeiconsIcon icon={FolderTransferIcon} strokeWidth={2} />
+              Move to...
+            </DropdownMenuItem>
+          )}
+          {(onRename || onMove) && onDelete && <DropdownMenuSeparator />}
           {onDelete && (
             <DropdownMenuItem variant="destructive" onClick={onDelete}>
               <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
@@ -1301,6 +1350,7 @@ function AssetList({
   folders,
   onFolderClick,
   onFolderRename,
+  onFolderMove,
   onFolderDelete,
   onDropToFolder,
   draggable: canDragProp,
@@ -1326,6 +1376,7 @@ function AssetList({
   folders?: VMSFolder[]
   onFolderClick?: (folderName: string) => void
   onFolderRename?: (folder: VMSFolder) => void
+  onFolderMove?: (folder: VMSFolder) => void
   onFolderDelete?: (folder: VMSFolder) => void
   onDropToFolder?: (assetNames: string[], folderName: string) => void
   draggable?: boolean
@@ -1450,6 +1501,7 @@ function AssetList({
               onClick={() => onFolderClick?.(folder.name)}
               onDrop={onDropToFolder ? (names) => onDropToFolder(names, folder.name) : undefined}
               onRename={onFolderRename ? () => onFolderRename(folder) : undefined}
+              onMove={onFolderMove ? () => onFolderMove(folder) : undefined}
               onDelete={onFolderDelete ? () => onFolderDelete(folder) : undefined}
             />
           ))}
@@ -1550,6 +1602,7 @@ function AssetList({
               onClick={() => onFolderClick?.(folder.name)}
               onDrop={onDropToFolder ? (names) => onDropToFolder(names, folder.name) : undefined}
               onRename={onFolderRename ? () => onFolderRename(folder) : undefined}
+              onMove={onFolderMove ? () => onFolderMove(folder) : undefined}
               onDelete={onFolderDelete ? () => onFolderDelete(folder) : undefined}
             />
           ))}

@@ -541,6 +541,35 @@ def rename_folder(folder_name_id: str, new_name: str):
 
 
 @frappe.whitelist()
+def move_folder(folder_name_id: str, parent_folder: str | None = None):
+	"""Reparent a folder. `parent_folder` empty means move it to the project root.
+
+	Cycle and same-project checks live in the VMS Folder controller, so they also
+	cover desk edits; this only adds the sibling-name collision check.
+	"""
+	folder = frappe.get_doc("VMS Folder", folder_name_id)
+
+	parent_folder = parent_folder or None
+	if parent_folder:
+		if not frappe.db.exists("VMS Folder", parent_folder):
+			frappe.throw(_("Destination folder {0} does not exist").format(parent_folder))
+		if frappe.db.get_value("VMS Folder", parent_folder, "deleted_at"):
+			frappe.throw(_("Cannot move a folder into the trash"))
+
+	if (folder.parent_folder or None) == parent_folder:
+		return {"name": folder.name, "parent_folder": folder.parent_folder}
+
+	_check_duplicate_folder_name(
+		folder.folder_name, folder.project, parent_folder, exclude=folder.name
+	)
+
+	folder.parent_folder = parent_folder
+	folder.save(ignore_permissions=True)
+
+	return {"name": folder.name, "parent_folder": folder.parent_folder}
+
+
+@frappe.whitelist()
 def delete_folder(folder_name: str):
 	"""Soft-delete a folder (move to trash)."""
 	from vms.deletion import soft_delete_folder
