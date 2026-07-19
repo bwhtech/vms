@@ -32,6 +32,7 @@ import { useUploadContext } from "@/contexts/UploadContext"
 import { MoveAssetDialog } from "@/components/MoveAssetDialog"
 import { DeleteAssetDialog } from "@/components/DeleteAssetDialog"
 import { LoadMoreControls } from "@/components/LoadMoreControls"
+import { AssetCardPreview } from "@/components/AssetCardPreview"
 import { RenameAssetDialog } from "@/components/RenameAssetDialog"
 import { MediaPlayerDialog } from "@/components/MediaPlayerDialog"
 import { useDownload } from "@/hooks/useDownload"
@@ -400,20 +401,7 @@ export function UncategorisedPage() {
                     )}
                     onClick={() => handleAssetClick(asset)}
                   >
-                    <div className="relative flex aspect-video w-full items-center justify-center bg-muted">
-                      {asset.thumbnail_url ? (
-                        <img src={asset.thumbnail_url} alt="" className="h-full w-full object-contain" />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-muted-foreground/40">
-                          <HugeiconsIcon icon={Film01Icon} size={32} strokeWidth={1.5} />
-                        </div>
-                      )}
-                      {!!asset.duration_seconds && (
-                        <span className="absolute right-1.5 bottom-1.5 rounded bg-black/75 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-white">
-                          {formatDuration(asset.duration_seconds)}
-                        </span>
-                      )}
-                    </div>
+                    <AssetCardPreview asset={asset} />
                     <CardHeader>
                       <div className="flex min-w-0 items-center justify-between gap-2">
                         <div className="flex min-w-0 items-start gap-2">
