@@ -304,6 +304,14 @@ export function ProjectDetailPage() {
     [hideFolders, allFolders, currentFolder],
   )
 
+  // The For Review / Deliverables tabs are project-wide by design, so they always
+  // span folders — every result needs a label, filtering or not. Paths are absolute
+  // because those tabs ignore the folder the breadcrumb is sitting in.
+  const categoryFolderPaths = useMemo(
+    () => buildFolderPathMap(allFolders ?? [], null),
+    [allFolders],
+  )
+
   const handleSearchChange = useCallback((q: string) => {
     setSearchInput(q)
     setLimit(PAGE_SIZE)
@@ -316,6 +324,13 @@ export function ProjectDetailPage() {
     // search scope changes with the folder, so a stale term would be misleading
     setSearchInput("")
     clearSelection()
+  }
+
+  // A category tab ignores the current folder, so landing in one and staying on that
+  // tab would show a list the navigation had no effect on. Switch to All.
+  const handleCategoryFolderClick = (folderName: string) => {
+    setActiveTab("all")
+    handleFolderClick(folderName)
   }
 
   const handleNavigateToRoot = () => {
@@ -851,6 +866,8 @@ export function ProjectDetailPage() {
             onMoveToFolder={handleMenuMoveToFolder}
             onCopyShareLink={handleMenuCopyShareLink}
             onToggleSharing={handleMenuToggleSharing}
+            folderPaths={categoryFolderPaths}
+            onFolderClick={handleCategoryFolderClick}
             isLoading={isLoadingForReview}
             emptyMessage={
               <Empty>
@@ -885,6 +902,8 @@ export function ProjectDetailPage() {
             onMoveToFolder={handleMenuMoveToFolder}
             onCopyShareLink={handleMenuCopyShareLink}
             onToggleSharing={handleMenuToggleSharing}
+            folderPaths={categoryFolderPaths}
+            onFolderClick={handleCategoryFolderClick}
             isLoading={isLoadingDeliverables}
             emptyMessage={
               <Empty>
@@ -1483,7 +1502,8 @@ function AssetList({
   onToggleSharing?: (asset: VMSAsset) => void
   emptyMessage: React.ReactNode
   folders?: VMSFolder[]
-  /** Folder name -> path relative to the current view. Set only while filtering. */
+  /** Folder name -> path relative to the current view. Unset when every row is
+   * already where the breadcrumb says it is. */
   folderPaths?: Map<string, string>
   onFolderClick?: (folderName: string) => void
   onFolderRename?: (folder: VMSFolder) => void
