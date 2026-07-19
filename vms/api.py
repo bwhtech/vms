@@ -746,7 +746,8 @@ def get_project_assets(
 		folder: VMS Folder ID. None = root-level assets only. Ignored when category is set.
 			With `tag` or `search` it scopes to the folder's whole subtree instead of
 			just its direct contents.
-		category: "For Review" or "Deliverable". Returns matching assets across ALL folders.
+		category: "For Review" or "Deliverable". Returns matching assets across ALL live
+			folders; assets in trashed folders are excluded, since they're unreachable.
 		tag: Filter to assets tagged with this tag. Scoped to the current subtree — the
 			whole project from the root, folder + descendants inside a folder. Assets
 			in trashed folders are excluded either way, since they're unreachable.
@@ -769,7 +770,13 @@ def get_project_assets(
 	search = (search or "").strip()
 
 	if category:
+		# Category tabs span every folder by design, but assets in a trashed folder
+		# are unreachable in the UI, so they stay out here too — same rule the
+		# subtree scoping below applies, and what the tag counts already assume.
 		filters["category"] = category
+		trashed = _trashed_folders(project)
+		if trashed:
+			filters["folder"] = ["not in", trashed]
 	elif tag or search:
 		# A tag filter or a search is scoped to the current subtree: from the project
 		# root that's every folder, inside a folder it's that folder plus everything
