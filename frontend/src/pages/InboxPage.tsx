@@ -9,7 +9,7 @@ import { useFrappeGetCall } from "frappe-react-sdk"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { CloudUploadIcon, Delete02Icon, Download04Icon, Film01Icon, GridViewIcon, Album01Icon, ListViewIcon, Move01Icon, PencilEdit01Icon } from "@hugeicons/core-free-icons"
 import { Badge } from "@/components/ui/badge"
-import { cn, formatBytes } from "@/lib/utils"
+import { cn, formatBytes, formatDuration } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { AssetDropdownMenu, AssetContextMenu } from "@/components/AssetCardMenu"
 import type { AssetMenuActions } from "@/components/AssetCardMenu"
@@ -364,6 +364,11 @@ export function UncategorisedPage() {
                       />
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <UserAvatar name={asset.uploader_name} image={asset.uploader_image} />
+                        {!!asset.duration_seconds && (
+                          <span className="tabular-nums">
+                            {formatDuration(asset.duration_seconds)}
+                          </span>
+                        )}
                         {asset.file_size && (
                           <span>
                             {formatBytes(asset.file_size)}
@@ -392,13 +397,18 @@ export function UncategorisedPage() {
                     )}
                     onClick={() => handleAssetClick(asset)}
                   >
-                    <div className="flex aspect-video w-full items-center justify-center bg-muted">
+                    <div className="relative flex aspect-video w-full items-center justify-center bg-muted">
                       {asset.thumbnail_url ? (
                         <img src={asset.thumbnail_url} alt="" className="h-full w-full object-contain" />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-muted-foreground/40">
                           <HugeiconsIcon icon={Film01Icon} size={32} strokeWidth={1.5} />
                         </div>
+                      )}
+                      {!!asset.duration_seconds && (
+                        <span className="absolute right-1.5 bottom-1.5 rounded bg-black/75 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-white">
+                          {formatDuration(asset.duration_seconds)}
+                        </span>
                       )}
                     </div>
                     <CardHeader>
