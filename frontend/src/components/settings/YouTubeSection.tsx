@@ -62,6 +62,7 @@ export function YouTubeSection() {
   const {
     data: statusData,
     isLoading: statusLoading,
+    isValidating: statusValidating,
     mutate,
   } = useFrappeGetCall<{ message: YouTubeStatus }>(
     "vms.youtube.get_youtube_status",
@@ -99,6 +100,18 @@ export function YouTubeSection() {
     setPendingRemoval(target)
     mutate()
   }
+
+  // A fast refresh shouldn't flash "Checking..." — only say so once the
+  // cached count has been on screen long enough to be worth doubting.
+  const [countIsStale, setCountIsStale] = useState(false)
+  useEffect(() => {
+    if (!statusValidating) {
+      setCountIsStale(false)
+      return
+    }
+    const timer = setTimeout(() => setCountIsStale(true), 300)
+    return () => clearTimeout(timer)
+  }, [statusValidating])
 
   // Handle OAuth redirect callback
   useEffect(() => {
@@ -357,8 +370,12 @@ export function YouTubeSection() {
               {pendingRemoval === "all" ? (
                 <>
                   Every connected channel and the stored OAuth credentials will be removed.{" "}
-                  {unlinkWarning(totalAssetCount, "them")} Videos already on YouTube are
-                  unaffected. You will need to enter the Client ID
+                  {countIsStale ? (
+                    <span className="italic">Checking how many assets this affects...</span>
+                  ) : (
+                    unlinkWarning(totalAssetCount, "them")
+                  )}{" "}
+                  Videos already on YouTube are unaffected. You will need to enter the Client ID
                   and Secret again to reconnect.
                 </>
               ) : (
@@ -367,8 +384,12 @@ export function YouTubeSection() {
                     {pendingChannel?.channel_name ?? ""}
                   </strong>{" "}
                   will be disconnected.{" "}
-                  {unlinkWarning(pendingChannel?.asset_count ?? 0, "it")} Videos
-                  already on YouTube are unaffected.
+                  {countIsStale ? (
+                    <span className="italic">Checking how many assets this affects...</span>
+                  ) : (
+                    unlinkWarning(pendingChannel?.asset_count ?? 0, "it")
+                  )}{" "}
+                  Videos already on YouTube are unaffected.
                 </>
               )}
             </AlertDialogDescription>
