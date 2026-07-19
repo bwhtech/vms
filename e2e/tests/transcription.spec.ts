@@ -209,6 +209,17 @@ test.describe("Transcription – API", () => {
 	});
 });
 
+/**
+ * The transcription entry point lives inside the review header's "Tools"
+ * dropdown, so it isn't in the DOM until the menu is opened. Returns the
+ * menu item, whose label is "Transcript" once transcription is complete
+ * and "Transcribe" otherwise.
+ */
+async function openToolsMenu(page: import("@playwright/test").Page) {
+	await page.getByRole("button", { name: /tools/i }).click();
+	return page.getByRole("menuitem", { name: /transcri(be|pt)/i });
+}
+
 test.describe("Transcription – UI", () => {
 	let projectName: string;
 	let assetWithTranscript: string;
@@ -279,9 +290,9 @@ test.describe("Transcription – UI", () => {
 		await page.goto(`/vms/review/${assetNoTranscript}`);
 		await page.waitForLoadState("networkidle");
 
-		// Look for the Transcribe button in the header
-		const transcribeBtn = page.getByRole("button", { name: /transcribe/i });
-		await expect(transcribeBtn).toBeVisible();
+		// Look for the Transcribe entry in the header's Tools menu
+		const transcribeItem = await openToolsMenu(page);
+		await expect(transcribeItem).toHaveText(/transcribe/i);
 	});
 
 	test("review page should show Transcript button for transcribed asset", async ({
@@ -290,9 +301,9 @@ test.describe("Transcription – UI", () => {
 		await page.goto(`/vms/review/${assetWithTranscript}`);
 		await page.waitForLoadState("networkidle");
 
-		// When transcription is complete, button text changes to "Transcript"
-		const transcriptBtn = page.getByRole("button", { name: /transcript/i });
-		await expect(transcriptBtn).toBeVisible();
+		// When transcription is complete, the menu item reads "Transcript"
+		const transcriptItem = await openToolsMenu(page);
+		await expect(transcriptItem).toHaveText(/^transcript$/i);
 	});
 
 	test("transcription sheet should open and show CTA for untranscribed asset", async ({
@@ -302,8 +313,7 @@ test.describe("Transcription – UI", () => {
 		await page.waitForLoadState("networkidle");
 
 		// Click to open transcription sheet
-		const transcribeBtn = page.getByRole("button", { name: /transcribe/i });
-		await transcribeBtn.click();
+		await (await openToolsMenu(page)).click();
 
 		// Sheet should show the CTA
 		await expect(
@@ -324,8 +334,7 @@ test.describe("Transcription – UI", () => {
 		await page.waitForLoadState("networkidle");
 
 		// Click to open transcription sheet
-		const transcriptBtn = page.getByRole("button", { name: /transcript/i });
-		await transcriptBtn.click();
+		await (await openToolsMenu(page)).click();
 
 		// Should show the transcript content
 		await expect(
@@ -348,8 +357,7 @@ test.describe("Transcription – UI", () => {
 		await page.waitForLoadState("networkidle");
 
 		// Click to open transcription sheet
-		const transcriptBtn = page.getByRole("button", { name: /transcript/i });
-		await transcriptBtn.click();
+		await (await openToolsMenu(page)).click();
 
 		// Should show the Speakers bar
 		await expect(page.locator("text=Speakers:")).toBeVisible();
