@@ -561,7 +561,7 @@ def permanently_delete_folder(folder_name: str):
 def get_trash_folders(page=1, page_size=20):
 	"""Get paginated folders in trash (deleted_at is set)."""
 	page = max(1, int(page))
-	page_size = min(100, max(1, int(page_size)))
+	page_size = min(500, max(1, int(page_size)))
 	start = (page - 1) * page_size
 
 	filters = {"deleted_at": ["is", "set"]}
@@ -931,7 +931,7 @@ def delete_asset(asset_name: str):
 def get_trash_assets(page=1, page_size=20):
 	"""Get paginated assets in trash (deleted_at is set)."""
 	page = max(1, int(page))
-	page_size = min(100, max(1, int(page_size)))
+	page_size = min(500, max(1, int(page_size)))
 	start = (page - 1) * page_size
 
 	filters = {"deleted_at": ["is", "set"]}

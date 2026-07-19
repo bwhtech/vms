@@ -41,15 +41,17 @@ import {
 import { UserAvatar } from "@/components/UserAvatar"
 import { formatBytes } from "@/lib/utils"
 import type { VMSAsset, VMSFolder } from "@/types"
+import { LoadMoreControls } from "@/components/LoadMoreControls"
+
+const PAGE_SIZE = 20
 
 export function TrashPage() {
   const [tab, setTab] = useState("assets")
-  const [assetPage, setAssetPage] = useState(1)
-  const [folderPage, setFolderPage] = useState(1)
+  const [assetLimit, setAssetLimit] = useState(PAGE_SIZE)
+  const [folderLimit, setFolderLimit] = useState(PAGE_SIZE)
   const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set())
   const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set())
   const [emptyTrashOpen, setEmptyTrashOpen] = useState(false)
-  const pageSize = 20
 
   // Assets data
   const { data: assetData, isLoading: assetsLoading, mutate: mutateAssets } = useFrappeGetCall<{
@@ -60,7 +62,14 @@ export function TrashPage() {
       page_size: number
       total_pages: number
     }
-  }>("vms.api.get_trash_assets", { page: assetPage, page_size: pageSize })
+  }>(
+    "vms.api.get_trash_assets",
+    { page: 1, page_size: assetLimit },
+    `trash-assets-l${assetLimit}`,
+    // growing the limit changes the SWR key; keep loaded rows on screen while the
+    // bigger page fetches instead of flashing back to skeletons
+    { keepPreviousData: true },
+  )
 
   // Folders data
   const { data: folderData, isLoading: foldersLoading, mutate: mutateFolders } = useFrappeGetCall<{
@@ -71,7 +80,12 @@ export function TrashPage() {
       page_size: number
       total_pages: number
     }
-  }>("vms.api.get_trash_folders", { page: folderPage, page_size: pageSize })
+  }>(
+    "vms.api.get_trash_folders",
+    { page: 1, page_size: folderLimit },
+    `trash-folders-l${folderLimit}`,
+    { keepPreviousData: true },
+  )
 
   const { call: restoreAsset, loading: restoringAsset } = useFrappePostCall("vms.api.restore_asset")
   const { call: permanentlyDelete, loading: permDeleting } = useFrappePostCall("vms.api.permanently_delete_asset")
@@ -81,11 +95,9 @@ export function TrashPage() {
 
   const assets = assetData?.message?.assets ?? []
   const assetTotal = assetData?.message?.total ?? 0
-  const assetTotalPages = assetData?.message?.total_pages ?? 1
 
   const folders = folderData?.message?.folders ?? []
   const folderTotal = folderData?.message?.total ?? 0
-  const folderTotalPages = folderData?.message?.total_pages ?? 1
 
   const totalItems = assetTotal + folderTotal
 
@@ -351,19 +363,13 @@ export function TrashPage() {
             </Table>
           </div>
 
-          {assetTotalPages > 1 && (
-            <div className="flex items-center justify-end gap-2 mt-4">
-              <Button variant="outline" size="sm" disabled={assetPage <= 1} onClick={() => setAssetPage((p) => p - 1)}>
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {assetPage} of {assetTotalPages}
-              </span>
-              <Button variant="outline" size="sm" disabled={assetPage >= assetTotalPages} onClick={() => setAssetPage((p) => p + 1)}>
-                Next
-              </Button>
-            </div>
-          )}
+          <LoadMoreControls
+            loaded={assets.length}
+            total={assetTotal}
+            pageSize={PAGE_SIZE}
+            isLoading={assetsLoading}
+            onLoadMore={() => setAssetLimit((l) => l + PAGE_SIZE)}
+          />
         </TabsContent>
 
         {/* Folders Tab */}
@@ -462,19 +468,13 @@ export function TrashPage() {
             </Table>
           </div>
 
-          {folderTotalPages > 1 && (
-            <div className="flex items-center justify-end gap-2 mt-4">
-              <Button variant="outline" size="sm" disabled={folderPage <= 1} onClick={() => setFolderPage((p) => p - 1)}>
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {folderPage} of {folderTotalPages}
-              </span>
-              <Button variant="outline" size="sm" disabled={folderPage >= folderTotalPages} onClick={() => setFolderPage((p) => p + 1)}>
-                Next
-              </Button>
-            </div>
-          )}
+          <LoadMoreControls
+            loaded={folders.length}
+            total={folderTotal}
+            pageSize={PAGE_SIZE}
+            isLoading={foldersLoading}
+            onLoadMore={() => setFolderLimit((l) => l + PAGE_SIZE)}
+          />
         </TabsContent>
       </Tabs>
 
