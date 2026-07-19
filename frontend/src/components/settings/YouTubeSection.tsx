@@ -2,10 +2,18 @@ import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk"
 import { useState, useEffect } from "react"
 import { useSearchParams } from "react-router"
 import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 
 interface YouTubeChannel {
@@ -28,6 +36,9 @@ export function YouTubeSection() {
   const [clientId, setClientId] = useState("")
   const [clientSecret, setClientSecret] = useState("")
   const [isFinalizing, setIsFinalizing] = useState(false)
+  // Either a single channel to remove, or "all" for a full disconnect
+  const [pendingRemoval, setPendingRemoval] = useState<YouTubeChannel | "all" | null>(null)
+  const [removing, setRemoving] = useState(false)
 
   const {
     data: statusData,
@@ -103,27 +114,30 @@ export function YouTubeSection() {
     }
   }
 
-  const handleDisconnect = async () => {
-    try {
-      await callDisconnect({})
-      setClientId("")
-      setClientSecret("")
-      toast.success("YouTube disconnected")
-      mutate()
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Failed to disconnect YouTube"
-      toast.error(message)
-    }
-  }
+  const handleConfirmRemoval = async () => {
+    if (!pendingRemoval) return
 
-  const handleDisconnectChannel = async (channel: YouTubeChannel) => {
+    setRemoving(true)
     try {
-      await callDisconnectChannel({ channel: channel.name })
-      toast.success(`Disconnected ${channel.channel_name}`)
+      if (pendingRemoval === "all") {
+        await callDisconnect({})
+        setClientId("")
+        setClientSecret("")
+        toast.success("YouTube disconnected")
+      } else {
+        await callDisconnectChannel({ channel: pendingRemoval.name })
+        toast.success(`Disconnected ${pendingRemoval.channel_name}`)
+      }
+      setPendingRemoval(null)
       mutate()
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Failed to disconnect channel"
-      toast.error(message)
+      const fallback =
+        pendingRemoval === "all"
+          ? "Failed to disconnect YouTube"
+          : "Failed to disconnect channel"
+      toast.error(e instanceof Error ? e.message : fallback)
+    } finally {
+      setRemoving(false)
     }
   }
 
@@ -189,7 +203,7 @@ export function YouTubeSection() {
                       variant="ghost"
                       size="sm"
                       className="shrink-0 text-destructive hover:text-destructive"
-                      onClick={() => handleDisconnectChannel(channel)}
+                      onClick={() => setPendingRemoval(channel)}
                     >
                       Remove
                     </Button>
@@ -275,7 +289,11 @@ export function YouTubeSection() {
       {/* Sticky footer */}
       <div className="flex items-center justify-end border-t border-border px-4 py-3 md:px-6">
         {status?.connected ? (
-          <Button variant="destructive" onClick={handleDisconnect} disabled={disconnecting}>
+          <Button
+            variant="destructive"
+            onClick={() => setPendingRemoval("all")}
+            disabled={disconnecting}
+          >
             {disconnecting
               ? "Disconnecting..."
               : channels.length > 1
@@ -288,6 +306,53 @@ export function YouTubeSection() {
           </Button>
         )}
       </div>
+
+      <AlertDialog
+        open={pendingRemoval !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingRemoval(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingRemoval === "all"
+                ? channels.length > 1
+                  ? "Disconnect all channels?"
+                  : "Disconnect YouTube?"
+                : "Remove this channel?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingRemoval === "all" ? (
+                <>
+                  Every connected channel and the stored OAuth credentials will be removed, and
+                  assets uploaded through them will no longer show which channel they went to.
+                  Videos already on YouTube are unaffected. You will need to enter the Client ID
+                  and Secret again to reconnect.
+                </>
+              ) : (
+                <>
+                  <strong className="text-foreground">
+                    {pendingRemoval ? pendingRemoval.channel_name : ""}
+                  </strong>{" "}
+                  will be disconnected, and assets uploaded to it will no longer show which
+                  channel they went to. Videos already on YouTube are unaffected.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removing}>Cancel</AlertDialogCancel>
+            <Button variant="destructive" onClick={handleConfirmRemoval} disabled={removing}>
+              {removing
+                ? "Removing..."
+                : pendingRemoval === "all"
+                  ? "Disconnect"
+                  : "Remove"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
