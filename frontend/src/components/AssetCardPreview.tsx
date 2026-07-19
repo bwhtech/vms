@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useFrappePostCall } from "frappe-react-sdk"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Film01Icon, PlayIcon } from "@hugeicons/core-free-icons"
@@ -8,6 +8,13 @@ import type { VMSAsset } from "@/types"
 
 /** Video containers browsers can actually decode. .mkv/.avi/.wmv etc. must be converted first. */
 const PLAYABLE_EXTENSIONS = new Set([".mp4", ".webm", ".m4v", ".ogv", ".mov"])
+
+/**
+ * The one card currently playing, across every grid on the page. Module scope
+ * rather than context: the cards never share a parent, and only one video
+ * should ever be audible at a time.
+ */
+let activeVideo: HTMLVideoElement | null = null
 
 function isPlayableInBrowser(asset: VMSAsset): boolean {
   if (asset.status !== "Ready") return false
@@ -27,6 +34,17 @@ export function AssetCardPreview({ asset }: AssetCardPreviewProps) {
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  // Don't leave a torn-down element as the active one — it would keep the
+  // unmounted <video> (and its buffered data) alive. Reading videoRef at
+  // cleanup time is deliberate: we only clear the slot if it is still ours.
+  useEffect(() => {
+    const video = videoRef
+    return () => {
+      if (activeVideo === video.current) activeVideo = null
+    }
+  }, [])
 
   const { call: getViewUrl } = useFrappePostCall("vms.api.get_view_url")
 
@@ -55,12 +73,17 @@ export function AssetCardPreview({ asset }: AssetCardPreviewProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <video
+          ref={videoRef}
           src={videoUrl}
           controls
           autoPlay
           playsInline
           controlsList="nodownload"
           className="h-full w-full object-contain"
+          onPlay={() => {
+            if (activeVideo && activeVideo !== videoRef.current) activeVideo.pause()
+            activeVideo = videoRef.current
+          }}
           onError={() => {
             setVideoUrl(null)
             setError(true)
