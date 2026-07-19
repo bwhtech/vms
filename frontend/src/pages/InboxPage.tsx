@@ -31,6 +31,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useUploadContext } from "@/contexts/UploadContext"
 import { MoveAssetDialog } from "@/components/MoveAssetDialog"
 import { DeleteAssetDialog } from "@/components/DeleteAssetDialog"
+import { LoadMoreControls } from "@/components/LoadMoreControls"
 import { RenameAssetDialog } from "@/components/RenameAssetDialog"
 import { MediaPlayerDialog } from "@/components/MediaPlayerDialog"
 import { useDownload } from "@/hooks/useDownload"
@@ -57,18 +58,20 @@ export function UncategorisedPage() {
   const [previewAsset, setPreviewAsset] = useState<VMSAsset | null>(null)
   const { selected, toggleSelect, toggleSelectAll, clearSelection } = useSelection()
   const [view, setView] = useState<"list" | "grid">("grid")
-  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(PAGE_SIZE)
   const { downloadOne, downloadMany, isDownloading } = useDownload()
 
-  const { data: inboxData, mutate } = useFrappeGetCall<{ message: PaginatedInboxAssets }>(
+  const { data: inboxData, mutate, isLoading } = useFrappeGetCall<{ message: PaginatedInboxAssets }>(
     "vms.api.get_inbox_assets",
-    { page, page_size: PAGE_SIZE },
-    `inbox-assets-p${page}`,
+    { page: 1, page_size: limit },
+    `inbox-assets-l${limit}`,
+    // growing the limit changes the SWR key; keep the loaded cards on screen while the
+    // bigger page fetches instead of flashing back to skeletons
+    { keepPreviousData: true },
   )
 
   const assets = inboxData?.message?.assets ?? null
   const total = inboxData?.message?.total ?? 0
-  const totalPages = inboxData?.message?.total_pages ?? 1
 
   const handleMoveComplete = (targetProject: string) => {
     clearSelection()
@@ -476,29 +479,14 @@ export function UncategorisedPage() {
             </div>
           )}
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-end gap-2 pt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage(page - 1)}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {page} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage(page + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          )}
+          <LoadMoreControls
+            loaded={assets?.length ?? 0}
+            total={total}
+            pageSize={PAGE_SIZE}
+            isLoading={isLoading}
+            onLoadMore={() => setLimit((l) => l + PAGE_SIZE)}
+          />
+
         </div>
       )}
 

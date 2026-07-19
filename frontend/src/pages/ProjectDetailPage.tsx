@@ -53,6 +53,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUploadContext } from "@/contexts/UploadContext"
 import { DeleteAssetDialog } from "@/components/DeleteAssetDialog"
+import { LoadMoreControls } from "@/components/LoadMoreControls"
 import { RenameAssetDialog } from "@/components/RenameAssetDialog"
 import { MediaPlayerDialog } from "@/components/MediaPlayerDialog"
 import { CreateFolderDialog } from "@/components/CreateFolderDialog"
@@ -696,7 +697,7 @@ export function ProjectDetailPage() {
               )
             }
           />
-          <LoadMoreControls loaded={folderAssets.length} total={folderTotal} isLoading={isLoadingFolder} onLoadMore={loadMore} />
+          <LoadMoreControls pageSize={PAGE_SIZE} loaded={folderAssets.length} total={folderTotal} isLoading={isLoadingFolder} onLoadMore={loadMore} />
         </TabsContent>
 
         <TabsContent value="for-review">
@@ -730,7 +731,7 @@ export function ProjectDetailPage() {
               </Empty>
             }
           />
-          <LoadMoreControls loaded={forReviewItems.length} total={forReviewTotal} isLoading={isLoadingForReview} onLoadMore={loadMore} />
+          <LoadMoreControls pageSize={PAGE_SIZE} loaded={forReviewItems.length} total={forReviewTotal} isLoading={isLoadingForReview} onLoadMore={loadMore} />
         </TabsContent>
 
         <TabsContent value="deliverables">
@@ -764,7 +765,7 @@ export function ProjectDetailPage() {
               </Empty>
             }
           />
-          <LoadMoreControls loaded={deliverableItems.length} total={deliverableTotal} isLoading={isLoadingDeliverables} onLoadMore={loadMore} />
+          <LoadMoreControls pageSize={PAGE_SIZE} loaded={deliverableItems.length} total={deliverableTotal} isLoading={isLoadingDeliverables} onLoadMore={loadMore} />
         </TabsContent>
       </Tabs>}
 
@@ -1154,35 +1155,6 @@ function BreadcrumbNav({
       </button>
       <span className="text-muted-foreground">/</span>
       <span className="font-medium">{folderName}</span>
-    </div>
-  )
-}
-
-function LoadMoreControls({
-  loaded,
-  total,
-  isLoading,
-  onLoadMore,
-}: {
-  loaded: number
-  total: number
-  isLoading: boolean
-  onLoadMore: () => void
-}) {
-  if (total <= PAGE_SIZE) return null
-
-  const remaining = total - loaded
-
-  return (
-    <div className="flex flex-col items-center gap-2 pt-6">
-      <span className="text-sm text-muted-foreground">
-        Showing {loaded} of {total}
-      </span>
-      {remaining > 0 && (
-        <Button variant="outline" size="sm" disabled={isLoading} onClick={onLoadMore}>
-          {isLoading ? "Loading..." : `Load more (${remaining} left)`}
-        </Button>
-      )}
     </div>
   )
 }

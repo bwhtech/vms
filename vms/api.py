@@ -754,10 +754,10 @@ def get_inbox_assets(page=1, page_size=20):
 
 	Parameters:
 		page: Page number (1-indexed, default 1)
-		page_size: Items per page (default 20, max 100)
+		page_size: Items per page (default 20, max 500)
 	"""
 	page = max(1, int(page))
-	page_size = min(100, max(1, int(page_size)))
+	page_size = min(500, max(1, int(page_size)))
 	start = (page - 1) * page_size
 
 	filters = {"project": ["is", "not set"], "status": ["!=", "Uploading"], "deleted_at": ["is", "not set"]}
