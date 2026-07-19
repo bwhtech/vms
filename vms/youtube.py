@@ -212,16 +212,9 @@ def disconnect_youtube_channel(channel: str):
 	if not frappe.db.exists("VMS YouTube Channel", channel):
 		frappe.throw(_("Channel {0} does not exist").format(channel))
 
-	was_default = frappe.db.get_value("VMS YouTube Channel", channel, "is_default")
-	_unlink_channel_from_assets(channel)
+	# Unlinking assets, promoting a successor default and syncing the settings
+	# summary all live on the doctype's on_trash / after_delete.
 	frappe.delete_doc("VMS YouTube Channel", channel, ignore_permissions=True, force=True)
-
-	if was_default:
-		remaining = frappe.get_all("VMS YouTube Channel", pluck="name", order_by="creation asc", limit=1)
-		if remaining:
-			frappe.db.set_value("VMS YouTube Channel", remaining[0], "is_default", 1)
-
-	_sync_settings_summary()
 
 	return {"status": "ok"}
 
@@ -277,7 +270,6 @@ def disconnect_youtube():
 	frappe.only_for("System Manager")
 
 	for name in frappe.get_all("VMS YouTube Channel", pluck="name"):
-		_unlink_channel_from_assets(name)
 		frappe.delete_doc("VMS YouTube Channel", name, ignore_permissions=True, force=True)
 
 	for name in frappe.get_all("Token Cache", filters={"connected_app": CONNECTED_APP_NAME}, pluck="name"):
