@@ -72,6 +72,21 @@ export function YouTubeUploadDialog({
   const [selectedChannel, setSelectedChannel] = useState("")
   const navigate = useNavigate()
 
+  // The dialog stays mounted with the review page, so its state outlives a
+  // close. Reset the form as it reopens, otherwise an abandoned edit comes
+  // back the next time the dialog is opened. Adjusted during render rather
+  // than in an effect, so the stale values are never painted.
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    if (open) {
+      setTitle(fileName.replace(/\.[^/.]+$/, ""))
+      setDescription("")
+      setPrivacyStatus("unlisted")
+      setSelectedChannel("")
+    }
+  }
+
   const { data: statusData } = useFrappeGetCall<{
     message: { connected: boolean; channel_name: string; channels: YouTubeChannel[] }
   }>("vms.youtube.get_youtube_status", undefined, "youtube-status-check", {
