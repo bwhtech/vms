@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router"
 import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk"
 import { toast } from "sonner"
 import {
@@ -66,6 +67,7 @@ export function YouTubeUploadDialog({
   const [description, setDescription] = useState("")
   const [privacyStatus, setPrivacyStatus] = useState("unlisted")
   const [selectedChannel, setSelectedChannel] = useState("")
+  const navigate = useNavigate()
 
   const { data: statusData } = useFrappeGetCall<{
     message: { connected: boolean; channel_name: string; channels: YouTubeChannel[] }
@@ -145,9 +147,10 @@ export function YouTubeUploadDialog({
               variant="outline"
               onClick={() => {
                 onOpenChange(false)
-                window.dispatchEvent(
-                  new CustomEvent("open-settings", { detail: { tab: "youtube" } })
-                )
+                // The "open-settings" event is only listened for in AppLayout, and
+                // the review page renders outside it — so leave the review route
+                // and let AppLayout's ?settings= param open the panel on arrival.
+                navigate("/?settings=youtube")
               }}
             >
               Open Settings
