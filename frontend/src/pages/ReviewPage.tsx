@@ -155,7 +155,10 @@ function ReviewPageInner({
   }>(
     "vms.transcription.get_transcription",
     { asset_name: asset.name },
-    `transcription-${asset.name}`,
+    // Guests can't reach this endpoint (it isn't allow_guest) and have no UI
+    // for it either — the Tools menu it feeds is auth-only. null disables SWR;
+    // undefined would make the hook fall back to a method-name key and fetch.
+    isGuest ? null : `transcription-${asset.name}`,
     {
       revalidateOnFocus: false,
       refreshInterval: isPolling ? 5000 : 0,
@@ -177,7 +180,7 @@ function ReviewPageInner({
     // null, not undefined: the hook falls back to a key built from the method
     // name when the key is undefined, so the request fires anyway — with no
     // params, which the endpoint answers with a 500. null disables SWR.
-    isProxyPolling ? `proxy-status-${asset.name}` : null,
+    isProxyPolling && !isGuest ? `proxy-status-${asset.name}` : null,
     {
       revalidateOnFocus: false,
       refreshInterval: isProxyPolling ? 5000 : 0,
@@ -361,7 +364,7 @@ function ReviewPageInner({
   }>(
     "vms.video_split.get_split_status",
     { asset_name: asset.name },
-    isSplitPolling ? `split-status-${asset.name}` : null,
+    isSplitPolling && !isGuest ? `split-status-${asset.name}` : null,
     {
       revalidateOnFocus: false,
       refreshInterval: isSplitPolling ? 5000 : 0,
