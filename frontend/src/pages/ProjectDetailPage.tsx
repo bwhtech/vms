@@ -387,8 +387,9 @@ export function ProjectDetailPage() {
         clearSelection()
         mutateAssets()
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : "Failed to move assets"
-        toast.error(message)
+        toast.error("Failed to move assets", {
+          description: serverMessage(e) || "Try again in a moment.",
+        })
       }
     },
     [callMoveToFolder, mutateAssets],
@@ -407,8 +408,14 @@ export function ProjectDetailPage() {
         mutateFolders()
         mutateAssets()
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : "Failed to move folder"
-        toast.error(message)
+        // move_folder throws for a name collision with a sibling, a drop into
+        // the folder's own subtree, or a destination that has since been
+        // deleted or trashed. Every one of those reasons only reaches the
+        // browser in _server_messages — the error's own `message` is the
+        // generic "There was an error."
+        toast.error("Failed to move folder", {
+          description: serverMessage(e) || "Try again in a moment.",
+        })
       }
     },
     [callMoveFolder, allFolders, mutateFolders, mutateAssets],
