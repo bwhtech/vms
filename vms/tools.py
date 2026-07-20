@@ -338,7 +338,12 @@ def _ffmpeg_convert(input_path: str, output_path: str):
 
 
 def _publish_conversion_progress(asset, status, error_message=None):
-	"""Send realtime update about asset conversion."""
+	"""Send realtime update about asset conversion to whoever asked for it.
+
+	`frappe.enqueue` records the enqueuing user and `execute_job` restores it,
+	so inside the background job this is the user who clicked Convert — not
+	necessarily the one who uploaded the asset.
+	"""
 	frappe.publish_realtime(
 		"asset_conversion_progress",
 		{
@@ -346,5 +351,5 @@ def _publish_conversion_progress(asset, status, error_message=None):
 			"status": status,
 			"error_message": error_message,
 		},
-		user=asset.uploaded_by or frappe.session.user,
+		user=frappe.session.user,
 	)
