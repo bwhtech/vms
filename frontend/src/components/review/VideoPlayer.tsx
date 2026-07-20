@@ -4,6 +4,7 @@ import { useVideoPlayer } from "@/hooks/useVideoPlayer"
 import { useFullscreen } from "@/hooks/useFullscreen"
 import { useReviewContext } from "@/hooks/useReviewContext"
 import { Spinner } from "@/components/ui/spinner"
+import { Button } from "@/components/ui/button"
 import { VideoControls } from "./VideoControls"
 import { VideoTimeline } from "./VideoTimeline"
 import { AnnotationCanvas } from "./AnnotationCanvas"
@@ -43,6 +44,10 @@ export function VideoPlayer({ assetName, preferProxy = false }: VideoPlayerProps
   // `videoUrl`, which would have to go in the effect's deps and re-run it.
   const hasSourceRef = useRef(false)
   const switchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // What a stalled swap falls back to: the source that was playing before it,
+  // with the position and play state captured at the same moment.
+  const revertRef = useRef<{ url: string; at: number; playing: boolean } | null>(null)
+  const currentUrlRef = useRef<string | null>(null)
 
   const { call: getViewUrl } = useFrappePostCall("vms.review_api.get_review_view_url")
 
@@ -64,9 +69,15 @@ export function VideoPlayer({ assetName, preferProxy = false }: VideoPlayerProps
 
     getViewUrl(params).then((res) => {
       const isSwap = hasSourceRef.current
+      const previousUrl = currentUrlRef.current
       hasSourceRef.current = true
+      currentUrlRef.current = res.message.url
       setVideoUrl(res.message.url)
       if (!isSwap) return
+
+      revertRef.current = previousUrl
+        ? { url: previousUrl, at: resumeAt, playing: wasPlaying }
+        : null
 
       // The new URL buffers from scratch, so without this the picture just
       // freezes with nothing saying why.
@@ -113,6 +124,38 @@ export function VideoPlayer({ assetName, preferProxy = false }: VideoPlayerProps
       }
     }
   }, [assetName, token, getViewUrl, preferProxy])
+
+  // Escape hatch for a swap that never finishes: put the previous source back
+  // rather than leaving the user with an overlay that only explains the stall.
+  // The proxy is an optimisation, so falling back to the original costs nothing
+  // but bandwidth.
+  const keepOriginalSource = useCallback(() => {
+    const revert = revertRef.current
+    if (!revert) return
+
+    if (switchTimerRef.current) {
+      clearTimeout(switchTimerRef.current)
+      switchTimerRef.current = null
+    }
+    setIsSwitchingSource(false)
+    setSwitchTakingLong(false)
+    revertRef.current = null
+    currentUrlRef.current = revert.url
+    setVideoUrl(revert.url)
+
+    const el = videoRef.current
+    if (!el) return
+    // Same reason as the swap itself: assigning src resets currentTime, and a
+    // seek before metadata is known is discarded.
+    el.addEventListener(
+      "loadedmetadata",
+      () => {
+        if (revert.at > 0) el.currentTime = revert.at
+        if (revert.playing) void el.play()
+      },
+      { once: true },
+    )
+  }, [])
 
   // Expose seek function to parent via context ref
   useEffect(() => {
@@ -320,6 +363,16 @@ export function VideoPlayer({ assetName, preferProxy = false }: VideoPlayerProps
                 ? "Still switching to the streaming proxy — the connection looks slow."
                 : "Switching to streaming proxy..."}
             </span>
+            {switchTakingLong && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="pointer-events-auto"
+                onClick={keepOriginalSource}
+              >
+                Keep playing the original
+              </Button>
+            )}
           </div>
         )}
         {videoUrl && !isSwitchingSource && player.isBuffering && (
