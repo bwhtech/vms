@@ -182,6 +182,9 @@ function ReviewPageInner({
 
   // Realtime beats the 5s poll when it arrives; the poll stays as a fallback.
   const [realtimeProxyStatus, setRealtimeProxyStatus] = useState("")
+  // Only realtime carries a reason for the failure; the poll returns the status
+  // alone, so the toast falls back to a generic message.
+  const [realtimeProxyError, setRealtimeProxyError] = useState("")
 
   const proxyStatus =
     realtimeProxyStatus || proxyStatusData?.message?.proxy_status || asset.proxy_status || ""
@@ -285,10 +288,10 @@ function ReviewPageInner({
   const youtubePrivacy =
     youtubeStatusPoll?.message?.youtube_privacy || asset.youtube_privacy || ""
 
-  // Stop proxy polling when done. The toast is gated on the previous status
-  // being "Processing": an asset that already had a proxy when the page loaded
-  // arrives here as "Ready" on mount, and announcing a generation that
-  // happened days ago is noise.
+  // Stop proxy polling when done. Both toasts are gated on the previous status
+  // being "Processing": an asset that already had a proxy — or already failed —
+  // when the page loaded arrives here in a terminal state on mount, and
+  // announcing a generation that happened days ago is noise.
   useFrappeEventListener<{
     asset_name: string
     status: string
@@ -296,6 +299,7 @@ function ReviewPageInner({
   }>("proxy_generation_progress", useCallback((data) => {
     if (data.asset_name !== asset.name) return
     setRealtimeProxyStatus(data.status)
+    setRealtimeProxyError(data.error_message || "")
     if (data.status === "Ready") mutateReviewData()
   }, [asset.name, mutateReviewData]))
 
@@ -305,11 +309,16 @@ function ReviewPageInner({
     prevProxyStatus.current = proxyStatus
     if (proxyStatus === "Ready" || proxyStatus === "Error") {
       setIsProxyPolling(false)
-      if (proxyStatus === "Ready" && wasProcessing) {
+      if (!wasProcessing) return
+      if (proxyStatus === "Ready") {
         toast.success("Streaming proxy generated! Reload to use it.")
+      } else {
+        toast.error("Streaming proxy generation failed", {
+          description: realtimeProxyError || "Try generating it again.",
+        })
       }
     }
-  }, [proxyStatus])
+  }, [proxyStatus, realtimeProxyError])
 
 
 
