@@ -65,7 +65,7 @@ export function ReviewPage() {
     assetId
       ? { asset_name: assetId, ...(token ? { token } : {}) }
       : undefined,
-    assetId ? `review-data-${assetId}` : undefined,
+    assetId ? `review-data-${assetId}` : null,
     { revalidateOnFocus: false },
   )
 
@@ -173,8 +173,11 @@ function ReviewPageInner({
     message: { proxy_status: string; has_proxy: boolean }
   }>(
     "vms.proxy.get_proxy_status",
-    isProxyPolling ? { asset_name: asset.name } : undefined,
-    isProxyPolling ? `proxy-status-${asset.name}` : undefined,
+    { asset_name: asset.name },
+    // null, not undefined: the hook falls back to a key built from the method
+    // name when the key is undefined, so the request fires anyway — with no
+    // params, which the endpoint answers with a 500. null disables SWR.
+    isProxyPolling ? `proxy-status-${asset.name}` : null,
     {
       revalidateOnFocus: false,
       refreshInterval: isProxyPolling ? 5000 : 0,
@@ -252,8 +255,8 @@ function ReviewPageInner({
     }
   }>(
     "vms.youtube.get_youtube_upload_status",
-    isYouTubeActive ? { asset_name: asset.name } : undefined,
-    isYouTubeActive ? `youtube-poll-${asset.name}` : undefined,
+    { asset_name: asset.name },
+    isYouTubeActive ? `youtube-poll-${asset.name}` : null,
     { revalidateOnFocus: false, refreshInterval: isYouTubeActive ? 5000 : 0 },
   )
 
@@ -357,8 +360,8 @@ function ReviewPageInner({
     message: { status: string; progress?: { stage: string; current: number; total: number } | null }
   }>(
     "vms.video_split.get_split_status",
-    isSplitPolling ? { asset_name: asset.name } : undefined,
-    isSplitPolling ? `split-status-${asset.name}` : undefined,
+    { asset_name: asset.name },
+    isSplitPolling ? `split-status-${asset.name}` : null,
     {
       revalidateOnFocus: false,
       refreshInterval: isSplitPolling ? 5000 : 0,
