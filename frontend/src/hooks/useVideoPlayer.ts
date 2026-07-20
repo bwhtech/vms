@@ -62,6 +62,13 @@ export function useVideoPlayer(videoRef: React.RefObject<HTMLVideoElement | null
       cancelAnimationFrame(animationRef.current)
     }
 
+    // While paused nothing else advances currentTime — the rAF loop only runs
+    // during playback — so a seek made straight on the element (restoring the
+    // position after a source swap) would leave the controls reading 0.
+    const onSeeked = () => {
+      setState((prev) => ({ ...prev, currentTime: video.currentTime }))
+    }
+
     const onVolumeChange = () => {
       setState((prev) => ({
         ...prev,
@@ -88,6 +95,7 @@ export function useVideoPlayer(videoRef: React.RefObject<HTMLVideoElement | null
     video.addEventListener("play", onPlay)
     video.addEventListener("pause", onPause)
     video.addEventListener("ended", onEnded)
+    video.addEventListener("seeked", onSeeked)
     video.addEventListener("volumechange", onVolumeChange)
     video.addEventListener("ratechange", onRateChange)
     video.addEventListener("waiting", onWaiting)
@@ -106,6 +114,7 @@ export function useVideoPlayer(videoRef: React.RefObject<HTMLVideoElement | null
       video.removeEventListener("play", onPlay)
       video.removeEventListener("pause", onPause)
       video.removeEventListener("ended", onEnded)
+      video.removeEventListener("seeked", onSeeked)
       video.removeEventListener("volumechange", onVolumeChange)
       video.removeEventListener("ratechange", onRateChange)
       video.removeEventListener("waiting", onWaiting)

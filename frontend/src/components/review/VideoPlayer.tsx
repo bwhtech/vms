@@ -10,9 +10,15 @@ import { AnnotationCanvas } from "./AnnotationCanvas"
 
 interface VideoPlayerProps {
   assetName: string
+  /**
+   * Whether the asset has a streaming proxy ready. Not read directly — the
+   * backend picks the key — but flipping it refetches the view URL, so a proxy
+   * that finishes generating while the page is open swaps in without a reload.
+   */
+  preferProxy?: boolean
 }
 
-export function VideoPlayer({ assetName }: VideoPlayerProps) {
+export function VideoPlayer({ assetName, preferProxy = false }: VideoPlayerProps) {
   const {
     comments,
     setCurrentTime,
@@ -34,15 +40,34 @@ export function VideoPlayer({ assetName }: VideoPlayerProps) {
   const player = useVideoPlayer(videoRef)
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(containerRef, videoRef)
 
-  // Fetch video URL
+  // Fetch video URL. Refetched when `preferProxy` flips, since the backend
+  // serves the proxy key once one exists — the swap replaces the element's
+  // src, which resets playback, so the position and play state are restored
+  // once the new source reports its metadata.
   useEffect(() => {
     if (!assetName) return
     const params: Record<string, string> = { asset_name: assetName }
     if (token) params.token = token
+
+    const video = videoRef.current
+    const resumeAt = video?.currentTime ?? 0
+    const wasPlaying = video ? !video.paused : false
+
     getViewUrl(params).then((res) => {
       setVideoUrl(res.message.url)
+      if (resumeAt <= 0) return
+      const el = videoRef.current
+      if (!el) return
+      el.addEventListener(
+        "loadedmetadata",
+        () => {
+          el.currentTime = resumeAt
+          if (wasPlaying) void el.play()
+        },
+        { once: true },
+      )
     })
-  }, [assetName, token, getViewUrl])
+  }, [assetName, token, getViewUrl, preferProxy])
 
   // Expose seek function to parent via context ref
   useEffect(() => {

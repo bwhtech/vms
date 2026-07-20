@@ -312,7 +312,9 @@ function ReviewPageInner({
       setIsProxyPolling(false)
       if (!wasProcessing) return
       if (proxyStatus === "Ready") {
-        toast.success("Streaming proxy generated! Reload to use it.")
+        toast.success("Streaming proxy ready", {
+          description: "Playback switched to it, from where you were.",
+        })
       } else {
         toast.error("Streaming proxy generation failed", {
           description: realtimeProxyError || "Try generating it again.",
@@ -464,7 +466,11 @@ function ReviewPageInner({
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
         {/* Media section */}
         <div className="shrink-0 p-2 md:flex-1 md:min-h-0 md:p-4" onClick={replayAnnotation ? dismissReplay : undefined}>
-          {isImage ? <ImageViewer assetName={asset.name} /> : <VideoPlayer assetName={asset.name} />}
+          {isImage ? (
+            <ImageViewer assetName={asset.name} />
+          ) : (
+            <VideoPlayer assetName={asset.name} preferProxy={proxyStatus === "Ready"} />
+          )}
         </div>
 
         {/* Comment panel */}
