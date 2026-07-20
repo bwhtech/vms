@@ -8,6 +8,9 @@ import { VideoControls } from "./VideoControls"
 import { VideoTimeline } from "./VideoTimeline"
 import { AnnotationCanvas } from "./AnnotationCanvas"
 
+/** How long a source swap can buffer before the overlay admits it is slow. */
+const SWITCH_SLOW_MS = 8000
+
 interface VideoPlayerProps {
   assetName: string
   /**
@@ -35,9 +38,11 @@ export function VideoPlayer({ assetName, preferProxy = false }: VideoPlayerProps
   const videoWrapperRef = useRef<HTMLDivElement>(null)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [isSwitchingSource, setIsSwitchingSource] = useState(false)
+  const [switchTakingLong, setSwitchTakingLong] = useState(false)
   // Distinguishes the first fetch from a later swap. A ref rather than reading
   // `videoUrl`, which would have to go in the effect's deps and re-run it.
   const hasSourceRef = useRef(false)
+  const switchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { call: getViewUrl } = useFrappePostCall("vms.review_api.get_review_view_url")
 
@@ -66,6 +71,7 @@ export function VideoPlayer({ assetName, preferProxy = false }: VideoPlayerProps
       // The new URL buffers from scratch, so without this the picture just
       // freezes with nothing saying why.
       setIsSwitchingSource(true)
+      setSwitchTakingLong(false)
       const el = videoRef.current
       if (!el) {
         setIsSwitchingSource(false)
@@ -81,13 +87,31 @@ export function VideoPlayer({ assetName, preferProxy = false }: VideoPlayerProps
       // covered. `error` too, or a source that fails to load hangs the overlay.
       const done = () => {
         setIsSwitchingSource(false)
+        setSwitchTakingLong(false)
+        if (switchTimerRef.current) {
+          clearTimeout(switchTimerRef.current)
+          switchTimerRef.current = null
+        }
         el.removeEventListener("canplay", done)
         el.removeEventListener("error", done)
       }
       el.addEventListener("loadedmetadata", onMetadata, { once: true })
       el.addEventListener("canplay", done)
       el.addEventListener("error", done)
+      // A source that stalls without failing fires neither `canplay` nor
+      // `error`, so the overlay would sit there indefinitely claiming to be
+      // mid-switch. Escalate the copy rather than dropping the overlay: a swap
+      // stalled while paused shows no buffering spinner, so removing it would
+      // leave a frozen frame explaining nothing.
+      switchTimerRef.current = setTimeout(() => setSwitchTakingLong(true), SWITCH_SLOW_MS)
     })
+
+    return () => {
+      if (switchTimerRef.current) {
+        clearTimeout(switchTimerRef.current)
+        switchTimerRef.current = null
+      }
+    }
   }, [assetName, token, getViewUrl, preferProxy])
 
   // Expose seek function to parent via context ref
@@ -291,7 +315,11 @@ export function VideoPlayer({ assetName, preferProxy = false }: VideoPlayerProps
         {videoUrl && isSwitchingSource && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/40">
             <Spinner className="size-10 text-white/80" />
-            <span className="text-sm text-white/80">Switching to streaming proxy...</span>
+            <span className="max-w-xs text-center text-sm text-white/80">
+              {switchTakingLong
+                ? "Still switching to the streaming proxy — the connection looks slow."
+                : "Switching to streaming proxy..."}
+            </span>
           </div>
         )}
         {videoUrl && !isSwitchingSource && player.isBuffering && (
