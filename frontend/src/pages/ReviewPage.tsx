@@ -22,6 +22,23 @@ import { toast } from "sonner"
 
 const noop = () => {}
 
+/** Pull the thrown `frappe.throw` text out of a Frappe API error.
+ *
+ * The error's own `message` is always the generic "There was an error." —
+ * the text the backend actually threw only lives in `_server_messages`, a
+ * JSON string holding an array of JSON strings.
+ */
+function serverMessage(e: unknown): string {
+  const raw = (e as { _server_messages?: string })?._server_messages
+  if (!raw) return ""
+  try {
+    const first = JSON.parse(raw)[0]
+    return (typeof first === "string" ? JSON.parse(first).message : first?.message) || ""
+  } catch {
+    return ""
+  }
+}
+
 interface ReviewData {
   name: string
   file_name: string
@@ -323,7 +340,28 @@ function ReviewPageInner({
 
 
   const handleGenerateProxy = useCallback(async () => {
-    await callGenerateProxy({ asset_name: asset.name })
+    // A retry starts from "Error", and realtimeProxyStatus takes precedence in
+    // the derivation — leaving the old failure there would keep the menu
+    // offering a retry and stop the new "Processing" from ever showing.
+    // Cleared rather than set to "Processing": an optimistic value would
+    // outrank the poll permanently and kill the fallback if realtime is down.
+    //
+    // Cleared *before* the call, not after: generate_proxy publishes
+    // "Processing" and that event beats its own HTTP response, so clearing
+    // afterwards wiped it and read as a Processing -> Error transition — which
+    // fired a spurious "generation failed" toast within a frame of the click.
+    setRealtimeProxyStatus("")
+    setRealtimeProxyError("")
+    try {
+      await callGenerateProxy({ asset_name: asset.name })
+    } catch (e) {
+      // generate_proxy throws on "already generating"/"already exists"/no file.
+      // Without this the rejection is silent and the menu item just does nothing.
+      toast.error("Could not start proxy generation", {
+        description: serverMessage(e) || "Try again in a moment.",
+      })
+      return
+    }
     setIsProxyPolling(true)
     mutateReviewData()
   }, [asset.name, callGenerateProxy, mutateReviewData])

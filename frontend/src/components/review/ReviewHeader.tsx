@@ -301,6 +301,15 @@ export function ReviewHeader({
                 Proxy ready
               </DropdownMenuItem>
             )}
+            {proxyStatus === "Error" && (
+              <DropdownMenuItem
+                onClick={onGenerateProxy}
+                disabled={isGeneratingProxy}
+              >
+                <HugeiconsIcon icon={Video01Icon} strokeWidth={2} size={16} />
+                Retry Proxy Generation
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       )}
