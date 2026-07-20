@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --base=/assets/vms/frontend/ && yarn copy-html-entry",
+    "build": "vite build --base=/assets/vms/frontend/ && yarn copy-html-entry && yarn copy-service-worker",
     "lint": "eslint .",
     "preview": "vite preview",
-    "copy-html-entry": "cp ../vms/public/frontend/index.html ../vms/www/vms.html"
+    "copy-html-entry": "cp ../vms/public/frontend/index.html ../vms/www/vms.html",
+    "copy-service-worker": "cp ../vms/public/frontend/sw.min.js ../vms/www/sw.min.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

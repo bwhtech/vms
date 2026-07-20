@@ -55,10 +55,10 @@ jspm_packages/
 .aider*
 vms/public/frontend/assets
 vms/public/frontend/index.html
-vms/public/frontend/sw.js
-vms/public/frontend/workbox-*.js
+vms/public/frontend/sw.min.js
 vms/public/frontend/manifest.webmanifest
 vms/www/vms.html
+vms/www/sw.min.js
 
 # Playwright
 e2e/.auth/
