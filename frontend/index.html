@@ -14,6 +14,7 @@
     <div id="root"></div>
 		<script>
 			window.csrf_token = '{{ frappe.session.csrf_token }}';
+			window.site_name = '{{ boot.site_name }}';
 			// TODO: load boot data here (context file is created in `www` directory)
 		</script>
     <script type="module" src="/src/main.tsx"></script>

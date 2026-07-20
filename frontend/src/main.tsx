@@ -9,9 +9,17 @@ import { ReloadPrompt } from "@/components/ReloadPrompt"
 import "./index.css"
 import App from "./App"
 
+// The socket.io namespace must equal the Frappe site name, or the connection is
+// rejected with "Invalid namespace" and no realtime event ever arrives. Frappe
+// renders it into the served HTML; under `vite dev` the jinja tag is left
+// unrendered, so fall back to the hostname.
+const injectedSiteName = (window as unknown as { site_name?: string }).site_name
+const siteName =
+  injectedSiteName && !injectedSiteName.includes("{{") ? injectedSiteName : window.location.hostname
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <FrappeProvider>
+    <FrappeProvider siteName={siteName}>
       <ThemeProvider defaultTheme="system" storageKey="vms-ui-theme">
         <TooltipProvider>
           <BrowserRouter basename="/vms">
