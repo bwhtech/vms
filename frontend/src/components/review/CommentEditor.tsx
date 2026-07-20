@@ -114,11 +114,15 @@ MentionList.displayName = "MentionList"
 // --- Main CommentEditor ---
 export const CommentEditor = forwardRef<CommentEditorHandle, CommentEditorProps>(
   ({ placeholder = "Add a comment...", onSubmit, isGuest = false, className, initialContent, onImageUpload }, ref) => {
-    // Fetch mentionable users (only for authenticated users)
+    // Fetch mentionable users (only for authenticated users).
+    // The key must be `null` to disable the request: passing `undefined` makes
+    // the hook fall back to a key built from the method name, which is truthy,
+    // so SWR fetches anyway — and the endpoint is not allow_guest, so a guest
+    // on a public review link gets a 403 on every mount.
     const { data: usersData } = useFrappeGetCall<{ message: MentionUser[] }>(
       "vms.review_api.get_mentionable_users",
-      !isGuest ? {} : undefined,
-      !isGuest ? "mentionable-users" : undefined,
+      {},
+      isGuest ? null : "mentionable-users",
     )
     const mentionUsers = usersData?.message ?? []
 
