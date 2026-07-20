@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useParams, useSearchParams } from "react-router"
 import {
   useFrappeGetCall,
@@ -281,11 +281,17 @@ function ReviewPageInner({
   const youtubePrivacy =
     youtubeStatusPoll?.message?.youtube_privacy || asset.youtube_privacy || ""
 
-  // Stop proxy polling when done
+  // Stop proxy polling when done. The toast is gated on the previous status
+  // being "Processing": an asset that already had a proxy when the page loaded
+  // arrives here as "Ready" on mount, and announcing a generation that
+  // happened days ago is noise.
+  const prevProxyStatus = useRef(proxyStatus)
   useEffect(() => {
+    const wasProcessing = prevProxyStatus.current === "Processing"
+    prevProxyStatus.current = proxyStatus
     if (proxyStatus === "Ready" || proxyStatus === "Error") {
       setIsProxyPolling(false)
-      if (proxyStatus === "Ready") {
+      if (proxyStatus === "Ready" && wasProcessing) {
         toast.success("Streaming proxy generated! Reload to use it.")
       }
     }
