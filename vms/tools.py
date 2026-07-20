@@ -222,6 +222,7 @@ def run_asset_conversion(asset_name: str):
 	"""Background job: convert a VMS Asset to MP4 in-place (replaces original in R2)."""
 	asset = frappe.get_doc("VMS Asset", asset_name)
 	old_r2_key = asset.r2_key
+	new_r2_key = None
 
 	try:
 		_publish_conversion_progress(asset, "Processing")
@@ -282,6 +283,17 @@ def run_asset_conversion(asset_name: str):
 	except Exception as e:
 		frappe.logger("vms").error(f"Conversion failed for {asset_name}: {e}")
 		asset.reload()
+
+		# If the converted file reached R2 but the asset never came to point at
+		# it, nothing else references that object and nothing will clean it up.
+		# The key check matters: on a failure after the save, new_r2_key is the
+		# asset's live file and deleting it would destroy the asset.
+		if new_r2_key and asset.r2_key != new_r2_key:
+			try:
+				delete_r2_object(new_r2_key)
+			except Exception:
+				frappe.logger("vms").warning(f"Failed to delete orphaned R2 object {new_r2_key}")
+
 		asset.status = "Error"
 		asset.save(ignore_permissions=True)
 		frappe.db.commit()
