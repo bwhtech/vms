@@ -6,8 +6,11 @@ import { Toaster } from "sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ReloadPrompt } from "@/components/ReloadPrompt"
+import { cleanupLegacyServiceWorker } from "@/lib/cleanup-legacy-sw"
 import "./index.css"
 import App from "./App"
+
+void cleanupLegacyServiceWorker()
 
 // The socket.io namespace must equal the Frappe site name, or the connection is
 // rejected with "Invalid namespace" and no realtime event ever arrives. Frappe
