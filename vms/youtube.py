@@ -396,6 +396,9 @@ def get_youtube_upload_status(asset_name: str):
 		"youtube_upload_status": data.youtube_upload_status or "",
 		"youtube_video_id": data.youtube_video_id or "",
 		"youtube_video_url": data.youtube_video_url or "",
+		# The docname as well as the label, so a retry can target the channel the
+		# failed upload was actually sent to rather than the current default.
+		"youtube_channel": data.youtube_channel or "",
 		"youtube_channel_name": channel_display_name(data.youtube_channel),
 	}
 

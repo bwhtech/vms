@@ -39,6 +39,8 @@ interface YouTubeUploadDialogProps {
   uploadPercent: number
   uploadError: string
   uploadVideoUrl: string
+  /** Docname of the channel the asset was actually uploaded to; "" before any upload. */
+  uploadChannel: string
   /** Channel the asset was actually uploaded to; "" before any upload. */
   uploadChannelName: string
   onUploadStarted: () => void
@@ -60,6 +62,7 @@ export function YouTubeUploadDialog({
   uploadPercent,
   uploadError,
   uploadVideoUrl,
+  uploadChannel,
   uploadChannelName,
   onUploadStarted,
 }: YouTubeUploadDialogProps) {
@@ -89,6 +92,11 @@ export function YouTubeUploadDialog({
   // Once an upload exists, the channel it went to is the one to report — the
   // picker's selection resets on reload and would fall back to the default.
   const hasUpload = isInProgress || isComplete || isError
+  // Retry has to go back to the channel that failed, not the current default —
+  // that is the channel this dialog names in its header. Falls back to the
+  // picker if that channel has since been removed, which the backend rejects.
+  const targetChannel =
+    hasUpload && channels.some((c) => c.name === uploadChannel) ? uploadChannel : channel
   const channelName =
     (hasUpload ? uploadChannelName : "") ||
     channels.find((c) => c.name === channel)?.channel_name ||
@@ -107,7 +115,7 @@ export function YouTubeUploadDialog({
         title: title.trim(),
         description: description.trim(),
         privacy_status: privacyStatus,
-        channel,
+        channel: targetChannel,
       })
       onUploadStarted()
     } catch (e: unknown) {

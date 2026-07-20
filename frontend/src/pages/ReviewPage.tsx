@@ -35,6 +35,7 @@ interface ReviewData {
   youtube_upload_status?: string
   youtube_video_id?: string
   youtube_video_url?: string
+  youtube_channel?: string
   youtube_channel_name?: string
   version?: number
 }
@@ -218,6 +219,7 @@ function ReviewPageInner({
       youtube_upload_status: string
       youtube_video_id: string
       youtube_video_url: string
+      youtube_channel: string
       youtube_channel_name: string
     }
   }>(
@@ -249,6 +251,8 @@ function ReviewPageInner({
   // default one the dialog would otherwise fall back to showing.
   const youtubeChannelName =
     youtubeStatusPoll?.message?.youtube_channel_name || asset.youtube_channel_name || ""
+  const youtubeChannel =
+    youtubeStatusPoll?.message?.youtube_channel || asset.youtube_channel || ""
 
   // Stop proxy polling when done
   useEffect(() => {
@@ -439,6 +443,7 @@ function ReviewPageInner({
           uploadPercent={youtubeProgress.percent}
           uploadError={youtubeProgress.error}
           uploadVideoUrl={youtubeVideoUrl}
+          uploadChannel={youtubeChannel}
           uploadChannelName={youtubeChannelName}
           onUploadStarted={() => {
             setYoutubeProgress({ status: "Queued", videoUrl: "", percent: 0, stage: "queued", error: "" })
