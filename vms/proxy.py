@@ -152,7 +152,12 @@ def _get_extension(filename: str) -> str:
 
 
 def _publish_proxy_progress(asset, status, error_message=None):
-	"""Send realtime update about proxy generation."""
+	"""Publish proxy progress to the asset's document room.
+
+	Targeting the uploader is wrong on a shared project: whoever clicked
+	Generate hears nothing, and the uploader gets an update for an action they
+	did not take. The doc room reaches the clients watching this asset instead.
+	"""
 	frappe.publish_realtime(
 		"proxy_generation_progress",
 		{
@@ -160,5 +165,6 @@ def _publish_proxy_progress(asset, status, error_message=None):
 			"status": status,
 			"error_message": error_message,
 		},
-		user=asset.uploaded_by or frappe.session.user,
+		doctype="VMS Asset",
+		docname=asset.name,
 	)

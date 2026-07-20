@@ -180,7 +180,11 @@ function ReviewPageInner({
     },
   )
 
-  const proxyStatus = proxyStatusData?.message?.proxy_status || asset.proxy_status || ""
+  // Realtime beats the 5s poll when it arrives; the poll stays as a fallback.
+  const [realtimeProxyStatus, setRealtimeProxyStatus] = useState("")
+
+  const proxyStatus =
+    realtimeProxyStatus || proxyStatusData?.message?.proxy_status || asset.proxy_status || ""
 
   // YouTube upload — realtime + fallback polling
   const [youtubeProgress, setYoutubeProgress] = useState<{
@@ -285,6 +289,16 @@ function ReviewPageInner({
   // being "Processing": an asset that already had a proxy when the page loaded
   // arrives here as "Ready" on mount, and announcing a generation that
   // happened days ago is noise.
+  useFrappeEventListener<{
+    asset_name: string
+    status: string
+    error_message?: string
+  }>("proxy_generation_progress", useCallback((data) => {
+    if (data.asset_name !== asset.name) return
+    setRealtimeProxyStatus(data.status)
+    if (data.status === "Ready") mutateReviewData()
+  }, [asset.name, mutateReviewData]))
+
   const prevProxyStatus = useRef(proxyStatus)
   useEffect(() => {
     const wasProcessing = prevProxyStatus.current === "Processing"
