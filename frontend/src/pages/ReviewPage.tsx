@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from "react"
 import { useParams, useSearchParams } from "react-router"
-import { useFrappeGetCall, useFrappePostCall, useFrappeAuth, useFrappeEventListener } from "frappe-react-sdk"
+import {
+  useFrappeGetCall,
+  useFrappePostCall,
+  useFrappeAuth,
+  useFrappeEventListener,
+  useFrappeDocumentEventListener,
+} from "frappe-react-sdk"
 import { Spinner } from "@/components/ui/spinner"
 import { ReviewProvider } from "@/contexts/ReviewContext"
 import { useReviewContext } from "@/hooks/useReviewContext"
@@ -13,6 +19,8 @@ import { VersionSheet } from "@/components/review/VersionSheet"
 import { SplitVideoDialog } from "@/components/review/SplitVideoDialog"
 import { YouTubeUploadDialog } from "@/components/review/YouTubeUploadDialog"
 import { toast } from "sonner"
+
+const noop = () => {}
 
 interface ReviewData {
   name: string
@@ -190,6 +198,12 @@ function ReviewPageInner({
   })
 
   const isYouTubeActive = youtubeProgress.status === "Queued" || youtubeProgress.status === "Uploading"
+
+  // Upload progress is published to this asset's document room, so we have to
+  // be subscribed to it before the listener below can hear anything. We only
+  // want the room — doc_update/doc_viewers are not used here, hence the no-op
+  // callback and emitOpenCloseEventsOnMount=false.
+  useFrappeDocumentEventListener("VMS Asset", asset.name, noop, false)
 
   // Realtime listener for instant progress
   useFrappeEventListener<{

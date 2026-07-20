@@ -446,6 +446,21 @@ def reset_youtube_upload(asset_name: str):
 	return {"status": "ok"}
 
 
+def _publish_upload_progress(asset_name: str, **payload):
+	"""Publish upload progress to the asset's document room.
+
+	The default site room reaches every System User on the site with every
+	asset's progress, and never reaches a non-System user at all. The doc room
+	is scoped to the clients that subscribed to this asset.
+	"""
+	frappe.publish_realtime(
+		"youtube_upload_progress",
+		{"asset_name": asset_name, **payload},
+		doctype="VMS Asset",
+		docname=asset_name,
+	)
+
+
 def process_youtube_upload(
 	asset_name: str,
 	title: str,
@@ -464,10 +479,7 @@ def process_youtube_upload(
 		frappe.db.set_value("VMS Asset", asset_name, "youtube_upload_status", "Uploading")
 		frappe.db.commit()
 
-		frappe.publish_realtime(
-			"youtube_upload_progress",
-			{"asset_name": asset_name, "stage": "downloading", "percent": 0},
-		)
+		_publish_upload_progress(asset_name, stage="downloading", percent=0)
 
 		settings = frappe.get_single("VMS Settings")
 
@@ -509,15 +521,9 @@ def process_youtube_upload(
 					downloaded += len(chunk)
 					if total_size:
 						percent = int((downloaded / total_size) * 40)  # 0-40% for download
-						frappe.publish_realtime(
-							"youtube_upload_progress",
-							{"asset_name": asset_name, "stage": "downloading", "percent": percent},
-						)
+						_publish_upload_progress(asset_name, stage="downloading", percent=percent)
 
-			frappe.publish_realtime(
-				"youtube_upload_progress",
-				{"asset_name": asset_name, "stage": "uploading", "percent": 40},
-			)
+			_publish_upload_progress(asset_name, stage="uploading", percent=40)
 
 			# Upload to YouTube
 			body = {
@@ -549,10 +555,7 @@ def process_youtube_upload(
 				status, response = request.next_chunk()
 				if status:
 					percent = 40 + int(status.progress() * 60)  # 40-100% for upload
-					frappe.publish_realtime(
-						"youtube_upload_progress",
-						{"asset_name": asset_name, "stage": "uploading", "percent": percent},
-					)
+					_publish_upload_progress(asset_name, stage="uploading", percent=percent)
 
 			video_id = response["id"]
 			video_url = f"https://www.youtube.com/watch?v={video_id}"
@@ -568,15 +571,12 @@ def process_youtube_upload(
 			)
 			frappe.db.commit()
 
-			frappe.publish_realtime(
-				"youtube_upload_progress",
-				{
-					"asset_name": asset_name,
-					"stage": "complete",
-					"percent": 100,
-					"video_id": video_id,
-					"video_url": video_url,
-				},
+			_publish_upload_progress(
+				asset_name,
+				stage="complete",
+				percent=100,
+				video_id=video_id,
+				video_url=video_url,
 			)
 
 			frappe.logger().info(f"YouTube upload complete: {video_url}")
@@ -600,7 +600,4 @@ def process_youtube_upload(
 		except Exception:
 			pass
 
-		frappe.publish_realtime(
-			"youtube_upload_progress",
-			{"asset_name": asset_name, "stage": "error", "percent": 0, "error": error_message},
-		)
+		_publish_upload_progress(asset_name, stage="error", percent=0, error=error_message)
