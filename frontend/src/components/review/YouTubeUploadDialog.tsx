@@ -43,6 +43,10 @@ interface YouTubeUploadDialogProps {
   uploadChannel: string
   /** Channel the asset was actually uploaded to; "" before any upload. */
   uploadChannelName: string
+  /** Metadata the existing upload was submitted with; "" before any upload. */
+  uploadTitle: string
+  uploadDescription: string
+  uploadPrivacy: string
   onUploadStarted: () => void
 }
 
@@ -64,6 +68,9 @@ export function YouTubeUploadDialog({
   uploadVideoUrl,
   uploadChannel,
   uploadChannelName,
+  uploadTitle,
+  uploadDescription,
+  uploadPrivacy,
   onUploadStarted,
 }: YouTubeUploadDialogProps) {
   const [title, setTitle] = useState(fileName.replace(/\.[^/.]+$/, ""))
@@ -118,8 +125,16 @@ export function YouTubeUploadDialog({
     statusData?.message?.channel_name ||
     "YouTube"
 
+  // Retry has to resend what was published, not the form's defaults. The form
+  // is not rendered in the error state, so its title is whatever the file name
+  // seeded and its privacy is back to "unlisted" — republishing a private video
+  // as unlisted would change who can see it.
+  const targetTitle = (hasUpload && uploadTitle) || title.trim()
+  const targetDescription = hasUpload ? uploadDescription : description.trim()
+  const targetPrivacy = (hasUpload && uploadPrivacy) || privacyStatus
+
   const handleUpload = async () => {
-    if (!title.trim()) {
+    if (!targetTitle) {
       toast.error("Title is required")
       return
     }
@@ -127,9 +142,9 @@ export function YouTubeUploadDialog({
     try {
       await callUpload({
         asset_name: assetName,
-        title: title.trim(),
-        description: description.trim(),
-        privacy_status: privacyStatus,
+        title: targetTitle,
+        description: targetDescription,
+        privacy_status: targetPrivacy,
         channel: targetChannel,
       })
       onUploadStarted()

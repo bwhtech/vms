@@ -62,6 +62,9 @@ def get_review_data(asset_name: str, token: str | None = None):
 		"youtube_video_url": asset.youtube_video_url or "",
 		"youtube_channel": asset.youtube_channel or "",
 		"youtube_channel_name": channel_display_name(asset.youtube_channel),
+		"youtube_title": asset.youtube_title or "",
+		"youtube_description": asset.youtube_description or "",
+		"youtube_privacy": asset.youtube_privacy or "",
 		"version": asset.version or 1,
 	}
 

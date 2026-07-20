@@ -37,6 +37,9 @@ interface ReviewData {
   youtube_video_url?: string
   youtube_channel?: string
   youtube_channel_name?: string
+  youtube_title?: string
+  youtube_description?: string
+  youtube_privacy?: string
   version?: number
 }
 
@@ -221,6 +224,9 @@ function ReviewPageInner({
       youtube_video_url: string
       youtube_channel: string
       youtube_channel_name: string
+      youtube_title: string
+      youtube_description: string
+      youtube_privacy: string
     }
   }>(
     "vms.youtube.get_youtube_upload_status",
@@ -253,6 +259,13 @@ function ReviewPageInner({
     youtubeStatusPoll?.message?.youtube_channel_name || asset.youtube_channel_name || ""
   const youtubeChannel =
     youtubeStatusPoll?.message?.youtube_channel || asset.youtube_channel || ""
+  // What was submitted, so Retry resends it rather than the form's defaults.
+  const youtubeTitle =
+    youtubeStatusPoll?.message?.youtube_title || asset.youtube_title || ""
+  const youtubeDescription =
+    youtubeStatusPoll?.message?.youtube_description || asset.youtube_description || ""
+  const youtubePrivacy =
+    youtubeStatusPoll?.message?.youtube_privacy || asset.youtube_privacy || ""
 
   // Stop proxy polling when done
   useEffect(() => {
@@ -445,6 +458,9 @@ function ReviewPageInner({
           uploadVideoUrl={youtubeVideoUrl}
           uploadChannel={youtubeChannel}
           uploadChannelName={youtubeChannelName}
+          uploadTitle={youtubeTitle}
+          uploadDescription={youtubeDescription}
+          uploadPrivacy={youtubePrivacy}
           onUploadStarted={() => {
             setYoutubeProgress({ status: "Queued", videoUrl: "", percent: 0, stage: "queued", error: "" })
             mutateReviewData()

@@ -41,6 +41,9 @@
   "column_break_youtube",
   "youtube_video_url",
   "youtube_channel",
+  "youtube_title",
+  "youtube_description",
+  "youtube_privacy",
   "section_break_versions",
   "version",
   "section_break_appearance",
@@ -260,6 +263,26 @@
    "fieldtype": "Link",
    "label": "YouTube Channel",
    "options": "VMS YouTube Channel",
+   "read_only": 1
+  },
+  {
+   "fieldname": "youtube_title",
+   "fieldtype": "Data",
+   "label": "YouTube Title",
+   "length": 100,
+   "read_only": 1
+  },
+  {
+   "fieldname": "youtube_description",
+   "fieldtype": "Small Text",
+   "label": "YouTube Description",
+   "read_only": 1
+  },
+  {
+   "fieldname": "youtube_privacy",
+   "fieldtype": "Select",
+   "label": "YouTube Privacy",
+   "options": "\npublic\nunlisted\nprivate",
    "read_only": 1
   },
   {

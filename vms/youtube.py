@@ -356,11 +356,19 @@ def upload_to_youtube(
 	if privacy_status not in ("public", "unlisted", "private"):
 		frappe.throw(_("Invalid privacy status"))
 
-	# Mark as queued
+	# Mark as queued. The submitted metadata is stored alongside the channel so a
+	# retry can resend what was actually published rather than re-deriving a
+	# title from the file name and defaulting the privacy back to unlisted.
 	frappe.db.set_value(
 		"VMS Asset",
 		asset_name,
-		{"youtube_upload_status": "Queued", "youtube_channel": channel},
+		{
+			"youtube_upload_status": "Queued",
+			"youtube_channel": channel,
+			"youtube_title": title,
+			"youtube_description": description,
+			"youtube_privacy": privacy_status,
+		},
 	)
 	frappe.db.commit()
 
@@ -388,7 +396,15 @@ def get_youtube_upload_status(asset_name: str):
 	data = frappe.db.get_value(
 		"VMS Asset",
 		asset_name,
-		["youtube_upload_status", "youtube_video_id", "youtube_video_url", "youtube_channel"],
+		[
+			"youtube_upload_status",
+			"youtube_video_id",
+			"youtube_video_url",
+			"youtube_channel",
+			"youtube_title",
+			"youtube_description",
+			"youtube_privacy",
+		],
 		as_dict=True,
 	)
 
@@ -400,6 +416,10 @@ def get_youtube_upload_status(asset_name: str):
 		# failed upload was actually sent to rather than the current default.
 		"youtube_channel": data.youtube_channel or "",
 		"youtube_channel_name": channel_display_name(data.youtube_channel),
+		# What was submitted, so a retry resends it instead of the form defaults.
+		"youtube_title": data.youtube_title or "",
+		"youtube_description": data.youtube_description or "",
+		"youtube_privacy": data.youtube_privacy or "",
 	}
 
 
@@ -417,6 +437,9 @@ def reset_youtube_upload(asset_name: str):
 			"youtube_video_id": None,
 			"youtube_video_url": None,
 			"youtube_channel": None,
+			"youtube_title": None,
+			"youtube_description": None,
+			"youtube_privacy": None,
 		},
 	)
 
