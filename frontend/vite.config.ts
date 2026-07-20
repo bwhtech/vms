@@ -11,7 +11,10 @@ export default defineConfig({
 		react(),
 		tailwindcss(),
 		VitePWA({
-			registerType: 'autoUpdate',
+			// 'prompt', not 'autoUpdate': autoUpdate never calls onNeedRefresh (so
+			// ReloadPrompt's toast is unreachable) and reloads the tab itself on
+			// activate, which would drop an in-progress comment or playback position.
+			registerType: 'prompt',
 			workbox: {
 				navigateFallback: null,
 				globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
