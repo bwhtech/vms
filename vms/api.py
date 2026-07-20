@@ -1,4 +1,5 @@
 import json
+import os
 import uuid
 
 import frappe
@@ -1522,6 +1523,20 @@ def reset_setup():
 
 # ── Asset Format Conversion ──────────────────────────────────────────────────
 
+# .mkv and friends are often stored as application/octet-stream, so the mime
+# type alone is not enough to tell a video from anything else.
+VIDEO_EXTENSIONS = {".mkv", ".avi", ".wmv", ".flv", ".webm", ".mov", ".ts", ".m4v", ".mp4", ".mpg", ".mpeg"}
+
+
+def is_convertible_video(asset) -> bool:
+	"""Whether this asset is a video the MP4 conversion can safely run on."""
+	if (asset.file_type or "").startswith("video/"):
+		return True
+
+	file_name = asset.file_name or ""
+	ext = os.path.splitext(file_name)[1].lower()
+	return ext in VIDEO_EXTENSIONS
+
 
 @frappe.whitelist()
 def convert_asset_to_mp4(asset_name: str):
@@ -1533,6 +1548,11 @@ def convert_asset_to_mp4(asset_name: str):
 
 	if asset.file_type == "video/mp4":
 		frappe.throw(_("Asset is already in MP4 format"))
+
+	# The conversion replaces the asset in place and deletes the original R2
+	# object, so running it on an image or a document destroys the only copy.
+	if not is_convertible_video(asset):
+		frappe.throw(_("Only video files can be converted to MP4"))
 
 	asset.status = "Processing"
 	asset.save(ignore_permissions=True)
