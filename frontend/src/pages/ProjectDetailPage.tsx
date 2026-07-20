@@ -204,13 +204,19 @@ export function ProjectDetailPage() {
   // Folder in URL but doesn't exist (deleted or invalid)
   const folderNotFound = !!currentFolder && !currentFolderDoc && !!allFolders
 
-  // Listen for asset conversion completion to refresh the list
+  // Listen for asset conversion progress to refresh the list
   useFrappeEventListener<{
     asset_name: string
     status: string
     error_message?: string
   }>("asset_conversion_progress", useCallback((data) => {
-    if (data.status === "Ready") {
+    if (data.status === "Processing") {
+      // The tab that clicked Convert already refetched. This event reaches
+      // every tab of the requesting user, so any *other* tab on this project
+      // would keep showing the card as Ready until something else refetched.
+      // No toast: only the clicking tab should be told a conversion started.
+      mutateAssets()
+    } else if (data.status === "Ready") {
       toast.success("Conversion complete", { description: "Asset has been converted to MP4." })
       mutateAssets()
     } else if (data.status === "Error") {
