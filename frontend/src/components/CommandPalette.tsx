@@ -55,15 +55,16 @@ export function CommandPalette({
   const { data: searchData } = useFrappeGetCall<{
     message: { results: SearchResult[] }
   }>(
-    shouldSearch ? "vms.api.search_assets" : null,
-    shouldSearch
-      ? {
-          query: query.trim(),
-          project: currentProjectId || undefined,
-          limit: 8,
-        }
-      : undefined,
-    undefined,
+    "vms.api.search_assets",
+    {
+      query: query.trim(),
+      project: currentProjectId || undefined,
+      limit: 8,
+    },
+    // null, not undefined: the hook falls back to a key built from the method
+    // name when the key is undefined, so the request fires anyway. Passing null
+    // for the method instead made it fire at /api/method/null, a 417.
+    shouldSearch ? `search-assets-${currentProjectId ?? ""}-${query.trim()}` : null,
     {
       revalidateOnFocus: false,
     }
@@ -76,11 +77,9 @@ export function CommandPalette({
   const { data: projectSearchData } = useFrappeGetCall<{
     message: { results: ProjectResult[] }
   }>(
-    shouldSearchProjects ? "vms.api.search_projects" : null,
-    shouldSearchProjects
-      ? { query: query.trim(), limit: 5 }
-      : undefined,
-    undefined,
+    "vms.api.search_projects",
+    { query: query.trim(), limit: 5 },
+    shouldSearchProjects ? `search-projects-${query.trim()}` : null,
     { revalidateOnFocus: false }
   )
 
