@@ -56,6 +56,48 @@ const PRIVACY_OPTIONS = [
   { value: "private", label: "Private" },
 ]
 
+/**
+ * What the video was published with. The form is not rendered in the terminal
+ * states, so this is the only place the stored metadata is visible — and in the
+ * error state it is exactly what Retry will resend.
+ */
+function PublishedMetadata({
+  title,
+  description,
+  privacy,
+}: {
+  title: string
+  description: string
+  privacy: string
+}) {
+  if (!title && !description && !privacy) return null
+
+  const privacyLabel = PRIVACY_OPTIONS.find((o) => o.value === privacy)?.label ?? privacy
+
+  return (
+    <dl className="space-y-1.5 rounded-md border border-border px-3 py-2.5 text-xs">
+      {title && (
+        <div className="flex gap-2">
+          <dt className="w-20 shrink-0 text-muted-foreground">Title</dt>
+          <dd className="min-w-0 break-words">{title}</dd>
+        </div>
+      )}
+      {description && (
+        <div className="flex gap-2">
+          <dt className="w-20 shrink-0 text-muted-foreground">Description</dt>
+          <dd className="min-w-0 whitespace-pre-wrap break-words">{description}</dd>
+        </div>
+      )}
+      {privacyLabel && (
+        <div className="flex gap-2">
+          <dt className="w-20 shrink-0 text-muted-foreground">Privacy</dt>
+          <dd className="min-w-0">{privacyLabel}</dd>
+        </div>
+      )}
+    </dl>
+  )
+}
+
 export function YouTubeUploadDialog({
   open,
   onOpenChange,
@@ -218,6 +260,11 @@ export function YouTubeUploadDialog({
               <div className="size-2 rounded-full bg-green-500 shrink-0" />
               <p className="text-sm font-medium">Upload complete</p>
             </div>
+            <PublishedMetadata
+              title={uploadTitle}
+              description={uploadDescription}
+              privacy={uploadPrivacy}
+            />
             <DialogFooter>
               {uploadVideoUrl && (
                 <Button variant="outline" size="sm" asChild>
@@ -242,6 +289,13 @@ export function YouTubeUploadDialog({
                 )}
               </div>
             </div>
+            {/* The values Retry actually sends, not the form's — the form is not
+                rendered here, so this is the only chance to see them first. */}
+            <PublishedMetadata
+              title={targetTitle}
+              description={targetDescription}
+              privacy={targetPrivacy}
+            />
             <DialogFooter>
               <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
                 Close
