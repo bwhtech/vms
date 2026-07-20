@@ -3,7 +3,7 @@ import { useSelection } from "@/hooks/useSelection"
 import { useParams, useNavigate } from "react-router"
 import { useFrappeGetDoc, useFrappeGetDocList, useFrappeGetCall, useFrappePostCall, useFrappeEventListener } from "frappe-react-sdk"
 import { Badge } from "@/components/ui/badge"
-import { cn, formatBytes, formatDuration } from "@/lib/utils"
+import { cn, formatBytes, formatDuration, serverMessage } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -225,8 +225,15 @@ export function ProjectDetailPage() {
         await callConvertToMp4({ asset_name: assetName })
         toast("Converting to MP4...", { description: "The file will be converted in the background." })
         mutateAssets()
-      } catch {
-        toast.error("Failed to start conversion")
+      } catch (err) {
+        // convert_asset_to_mp4 throws for a stale list — an asset that is no
+        // longer Ready, or already MP4. That reason only lives in
+        // _server_messages; the error's own `message` is the generic
+        // "There was an error."
+        toast.error("Failed to start conversion", {
+          description: serverMessage(err) || "Try again in a moment.",
+        })
+        mutateAssets()
       }
     },
     [callConvertToMp4, mutateAssets],
