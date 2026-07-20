@@ -48,13 +48,13 @@ export function SharedProjectPage() {
   const { data: projectData, isLoading: projectLoading, error: projectError } = useFrappeGetCall<{ message: SharedProject }>(
     "vms.api.get_shared_project",
     { project: projectId!, token: token ?? "" },
-    token ? `shared-project-${projectId}` : undefined,
+    token ? `shared-project-${projectId}` : null,
   )
 
   const { data: assetsData, isLoading: assetsLoading } = useFrappeGetCall<{ message: PaginatedAssets }>(
     "vms.api.get_shared_project_assets",
     { project: projectId!, token: token ?? "", page, page_size: PAGE_SIZE },
-    token ? `shared-assets-${projectId}-p${page}` : undefined,
+    token ? `shared-assets-${projectId}-p${page}` : null,
   )
 
   const project = projectData?.message
