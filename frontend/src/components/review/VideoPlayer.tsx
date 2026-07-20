@@ -34,6 +34,10 @@ export function VideoPlayer({ assetName, preferProxy = false }: VideoPlayerProps
   const containerRef = useRef<HTMLDivElement>(null)
   const videoWrapperRef = useRef<HTMLDivElement>(null)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [isSwitchingSource, setIsSwitchingSource] = useState(false)
+  // Distinguishes the first fetch from a later swap. A ref rather than reading
+  // `videoUrl`, which would have to go in the effect's deps and re-run it.
+  const hasSourceRef = useRef(false)
 
   const { call: getViewUrl } = useFrappePostCall("vms.review_api.get_review_view_url")
 
@@ -54,18 +58,35 @@ export function VideoPlayer({ assetName, preferProxy = false }: VideoPlayerProps
     const wasPlaying = video ? !video.paused : false
 
     getViewUrl(params).then((res) => {
+      const isSwap = hasSourceRef.current
+      hasSourceRef.current = true
       setVideoUrl(res.message.url)
-      if (resumeAt <= 0) return
+      if (!isSwap) return
+
+      // The new URL buffers from scratch, so without this the picture just
+      // freezes with nothing saying why.
+      setIsSwitchingSource(true)
       const el = videoRef.current
-      if (!el) return
-      el.addEventListener(
-        "loadedmetadata",
-        () => {
-          el.currentTime = resumeAt
-          if (wasPlaying) void el.play()
-        },
-        { once: true },
-      )
+      if (!el) {
+        setIsSwitchingSource(false)
+        return
+      }
+      const onMetadata = () => {
+        if (resumeAt <= 0) return
+        el.currentTime = resumeAt
+        if (wasPlaying) void el.play()
+      }
+      // Cleared on `canplay`, not `loadedmetadata`: metadata arrives well
+      // before the restored position is buffered, which is the gap being
+      // covered. `error` too, or a source that fails to load hangs the overlay.
+      const done = () => {
+        setIsSwitchingSource(false)
+        el.removeEventListener("canplay", done)
+        el.removeEventListener("error", done)
+      }
+      el.addEventListener("loadedmetadata", onMetadata, { once: true })
+      el.addEventListener("canplay", done)
+      el.addEventListener("error", done)
     })
   }, [assetName, token, getViewUrl, preferProxy])
 
@@ -267,7 +288,13 @@ export function VideoPlayer({ assetName, preferProxy = false }: VideoPlayerProps
             Loading video...
           </div>
         )}
-        {videoUrl && player.isBuffering && (
+        {videoUrl && isSwitchingSource && (
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/40">
+            <Spinner className="size-10 text-white/80" />
+            <span className="text-sm text-white/80">Switching to streaming proxy...</span>
+          </div>
+        )}
+        {videoUrl && !isSwitchingSource && player.isBuffering && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <Spinner className="size-10 text-white/80" />
           </div>
