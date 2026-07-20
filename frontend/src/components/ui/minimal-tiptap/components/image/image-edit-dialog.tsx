@@ -2,8 +2,7 @@ import type { Editor } from "@tiptap/react"
 import type { VariantProps } from "class-variance-authority"
 import type { toggleVariants } from "@/components/ui/toggle"
 import { useState } from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Image01Icon } from "@hugeicons/core-free-icons"
+import { Image } from "lucide-react"
 import { ToolbarButton } from "../toolbar-button"
 import {
   Dialog,
@@ -24,7 +23,7 @@ const ImageEditDialog = ({ editor, size, variant }: ImageEditDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<ToolbarButton isActive={editor.isActive("image")} tooltip="Image" aria-label="Image" size={size} variant={variant} />}><HugeiconsIcon icon={Image01Icon} className="size-5" /></DialogTrigger>
+      <DialogTrigger render={<ToolbarButton isActive={editor.isActive("image")} tooltip="Image" aria-label="Image" size={size} variant={variant} />}><Image className="size-5" /></DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Select image</DialogTitle>

@@ -1,7 +1,5 @@
 import { useCallback } from "react"
 import { useFrappeGetCall, useFrappePostCall, useFrappeDocTypeEventListener } from "frappe-react-sdk"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Notification01Icon, CheckListIcon } from "@hugeicons/core-free-icons"
 import { formatDistanceToNow } from "date-fns"
 import {
   Sheet,
@@ -16,6 +14,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Spinner } from "@/components/ui/spinner"
 import { Empty, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
+import { Bell, ListChecks } from "lucide-react"
 
 interface NotificationLog {
   name: string
@@ -173,11 +172,7 @@ export function NotificationSheet({
               disabled={markingAll}
               className="mr-8 text-xs"
             >
-              <HugeiconsIcon
-                icon={CheckListIcon}
-                strokeWidth={2}
-                className="size-4"
-              />
+              <ListChecks className="size-4" />
               Mark all as read
             </Button>
           )}
@@ -209,7 +204,7 @@ export function NotificationSheet({
                   <div className="flex h-full items-center justify-center p-6">
                     <Empty className="border-0">
                       <EmptyMedia variant="icon">
-                        <HugeiconsIcon icon={Notification01Icon} strokeWidth={1.5} />
+                        <Bell strokeWidth={1.5} />
                       </EmptyMedia>
                       <EmptyTitle>All caught up</EmptyTitle>
                       <EmptyDescription>No unread notifications</EmptyDescription>
@@ -234,7 +229,7 @@ export function NotificationSheet({
                   <div className="flex h-full items-center justify-center p-6">
                     <Empty className="border-0">
                       <EmptyMedia variant="icon">
-                        <HugeiconsIcon icon={Notification01Icon} strokeWidth={1.5} />
+                        <Bell strokeWidth={1.5} />
                       </EmptyMedia>
                       <EmptyTitle>No notifications</EmptyTitle>
                       <EmptyDescription>

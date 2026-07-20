@@ -2,12 +2,6 @@ import { useState } from "react"
 import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk"
 import { toast } from "sonner"
 import { formatDistanceToNow } from "date-fns"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  Delete02Icon,
-  DeletePutBackIcon,
-  Delete04Icon,
-} from "@hugeicons/core-free-icons"
 import {
   Empty,
   EmptyDescription,
@@ -42,6 +36,7 @@ import { UserAvatar } from "@/components/UserAvatar"
 import { formatBytes } from "@/lib/utils"
 import type { VMSAsset, VMSFolder } from "@/types"
 import { LoadMoreControls } from "@/components/LoadMoreControls"
+import { ArchiveRestore, Shredder, Trash2 } from "lucide-react"
 
 const PAGE_SIZE = 20
 
@@ -215,11 +210,11 @@ export function TrashPage() {
           {tab === "assets" && selectedAssets.size > 0 && (
             <>
               <Button variant="outline" size="sm" onClick={() => handleRestoreAssets()} disabled={busy}>
-                <HugeiconsIcon icon={DeletePutBackIcon} strokeWidth={2} className="mr-1.5 size-4" />
+                <ArchiveRestore className="mr-1.5 size-4" />
                 Restore ({selectedAssets.size})
               </Button>
               <Button variant="destructive" size="sm" onClick={() => handlePermDeleteAssets()} disabled={busy}>
-                <HugeiconsIcon icon={Delete04Icon} strokeWidth={2} className="mr-1.5 size-4" />
+                <Shredder className="mr-1.5 size-4" />
                 Delete forever ({selectedAssets.size})
               </Button>
             </>
@@ -227,18 +222,18 @@ export function TrashPage() {
           {tab === "folders" && selectedFolders.size > 0 && (
             <>
               <Button variant="outline" size="sm" onClick={() => handleRestoreFolders()} disabled={busy}>
-                <HugeiconsIcon icon={DeletePutBackIcon} strokeWidth={2} className="mr-1.5 size-4" />
+                <ArchiveRestore className="mr-1.5 size-4" />
                 Restore ({selectedFolders.size})
               </Button>
               <Button variant="destructive" size="sm" onClick={() => handlePermDeleteFolders()} disabled={busy}>
-                <HugeiconsIcon icon={Delete04Icon} strokeWidth={2} className="mr-1.5 size-4" />
+                <Shredder className="mr-1.5 size-4" />
                 Delete forever ({selectedFolders.size})
               </Button>
             </>
           )}
           {totalItems > 0 && selectedCount === 0 && (
             <Button variant="destructive" size="sm" onClick={() => setEmptyTrashOpen(true)} disabled={busy}>
-              <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} className="mr-1.5 size-4" />
+              <Shredder className="mr-1.5 size-4" />
               Empty Trash
             </Button>
           )}
@@ -298,7 +293,7 @@ export function TrashPage() {
                       <Empty className="border-0">
                         <EmptyHeader>
                           <EmptyMedia variant="icon">
-                            <HugeiconsIcon icon={Delete02Icon} strokeWidth={1.5} />
+                            <Trash2 strokeWidth={1.5} />
                           </EmptyMedia>
                           <EmptyTitle>No deleted assets</EmptyTitle>
                           <EmptyDescription>
@@ -353,7 +348,7 @@ export function TrashPage() {
                           disabled={busy}
                           title="Restore"
                         >
-                          <HugeiconsIcon icon={DeletePutBackIcon} strokeWidth={2} className="size-4" />
+                          <ArchiveRestore className="size-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -411,7 +406,7 @@ export function TrashPage() {
                       <Empty className="border-0">
                         <EmptyHeader>
                           <EmptyMedia variant="icon">
-                            <HugeiconsIcon icon={Delete02Icon} strokeWidth={1.5} />
+                            <Trash2 strokeWidth={1.5} />
                           </EmptyMedia>
                           <EmptyTitle>No deleted folders</EmptyTitle>
                           <EmptyDescription>
@@ -458,7 +453,7 @@ export function TrashPage() {
                           disabled={busy}
                           title="Restore"
                         >
-                          <HugeiconsIcon icon={DeletePutBackIcon} strokeWidth={2} className="size-4" />
+                          <ArchiveRestore className="size-4" />
                         </Button>
                       </TableCell>
                     </TableRow>

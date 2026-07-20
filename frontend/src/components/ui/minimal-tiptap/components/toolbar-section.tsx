@@ -4,8 +4,7 @@ import type { FormatAction } from "../types"
 import type { VariantProps } from "class-variance-authority"
 import type { toggleVariants } from "@/components/ui/toggle"
 import { cn } from "@/lib/utils"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowDown01Icon } from "@hugeicons/core-free-icons"
+import { ChevronDown } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,7 +95,7 @@ export const ToolbarSection: React.FC<ToolbarSectionProps> = ({
       {mainActions.map(renderToolbarButton)}
       {dropdownActions.length > 0 && (
         <DropdownMenu>
-          <DropdownMenuTrigger render={<ToolbarButton isActive={isDropdownActive} tooltip={dropdownTooltip} aria-label={dropdownTooltip} className={cn("gap-0", dropdownClassName)} size={size} variant={variant} />}>{dropdownIcon || <HugeiconsIcon icon={ArrowDown01Icon} className="size-5" />}</DropdownMenuTrigger>
+          <DropdownMenuTrigger render={<ToolbarButton isActive={isDropdownActive} tooltip={dropdownTooltip} aria-label={dropdownTooltip} className={cn("gap-0", dropdownClassName)} size={size} variant={variant} />}>{dropdownIcon || <ChevronDown className="size-5" />}</DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-full">
             {dropdownActions.map(renderDropdownMenuItem)}
           </DropdownMenuContent>

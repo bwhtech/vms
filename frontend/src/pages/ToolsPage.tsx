@@ -2,15 +2,6 @@ import { useState, useCallback, useRef, useEffect } from "react"
 import { useFrappePostCall, useFrappeGetCall, useFrappeEventListener } from "frappe-react-sdk"
 import { toast } from "sonner"
 import { formatDistanceToNow } from "date-fns"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  Upload04Icon,
-  Download04Icon,
-  FileVideoIcon,
-  Cancel01Icon,
-  CheckmarkCircle02Icon,
-  ArrowReloadHorizontalIcon,
-} from "@hugeicons/core-free-icons"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Progress, ProgressLabel, ProgressValue } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
@@ -24,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
+import { CircleCheck, Download, FileVideo, RotateCcw, Upload, X } from "lucide-react"
 
 function formatBytes(bytes: number): string {
   if (!bytes || bytes === 0) return "0 B"
@@ -279,13 +271,13 @@ function CompressTab() {
               />
               {file ? (
                 <div className="flex flex-col items-center gap-2">
-                  <HugeiconsIcon icon={FileVideoIcon} strokeWidth={2} className="size-10 text-muted-foreground" />
+                  <FileVideo className="size-10 text-muted-foreground" />
                   <p className="text-sm font-medium">{file.name}</p>
                   <p className="text-xs text-muted-foreground">{formatBytes(file.size)}</p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                  <HugeiconsIcon icon={Upload04Icon} strokeWidth={2} className="size-10" />
+                  <Upload className="size-10" />
                   <p className="text-sm font-medium">Drop a video file here or click to browse</p>
                   <p className="text-xs">Supports MP4, MOV, MKV, AVI, WebM</p>
                 </div>
@@ -312,7 +304,7 @@ function CompressTab() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <HugeiconsIcon icon={FileVideoIcon} strokeWidth={2} className="size-8 text-muted-foreground" />
+                <FileVideo className="size-8 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">{currentStatus?.original_file_name}</p>
                   <p className="text-xs text-muted-foreground">
@@ -345,11 +337,11 @@ function CompressTab() {
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={handleReset}>
-                    <HugeiconsIcon icon={ArrowReloadHorizontalIcon} strokeWidth={2} className="mr-1 size-4" />
+                    <RotateCcw className="mr-1 size-4" />
                     New
                   </Button>
                   <Button size="sm" onClick={handleDownload}>
-                    <HugeiconsIcon icon={Download04Icon} strokeWidth={2} className="mr-1 size-4" />
+                    <Download className="mr-1 size-4" />
                     Download
                   </Button>
                 </div>
@@ -430,7 +422,7 @@ function CompressTab() {
                         onClick={() => handleDownloadJob(job.name)}
                         title="Download compressed file"
                       >
-                        <HugeiconsIcon icon={Download04Icon} strokeWidth={2} className="size-4" />
+                        <Download className="size-4" />
                       </Button>
                     )}
                   </TableCell>
@@ -449,14 +441,14 @@ function StatusBadge({ status }: { status: string }) {
     case "Complete":
       return (
         <Badge variant="secondary" className="gap-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-          <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-3" />
+          <CircleCheck className="size-3" />
           Complete
         </Badge>
       )
     case "Error":
       return (
         <Badge variant="destructive" className="gap-1">
-          <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3" />
+          <X className="size-3" />
           Error
         </Badge>
       )

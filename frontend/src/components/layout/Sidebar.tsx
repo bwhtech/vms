@@ -1,22 +1,6 @@
 import React, { useState } from "react"
 import { NavLink, useLocation } from "react-router"
 import { useFrappeAuth } from "frappe-react-sdk"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  DashboardSquare02Icon,
-  Album01Icon,
-  FolderVideoIcon,
-  Audit01Icon,
-  Settings01Icon,
-  Notification01Icon,
-  LogoutIcon,
-  Sun02Icon,
-  Moon02Icon,
-  ArrowUp01Icon,
-  Bug01Icon,
-  Delete02Icon,
-  Wrench01Icon,
-} from "@hugeicons/core-free-icons"
 import {
   Sidebar,
   SidebarContent,
@@ -40,13 +24,28 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { NotificationSheet, useNotifications } from "@/components/NotificationSheet"
 import { useUser } from "@/context/UserContext"
 import { useTheme } from "@/components/theme-provider"
+import {
+  Bell,
+  Bug,
+  ChevronUp,
+  ClipboardList,
+  FolderClosed,
+  Images,
+  LayoutDashboard,
+  LogOut,
+  Moon,
+  Sun,
+  Settings,
+  Trash2,
+  Wrench,
+} from "lucide-react"
 
 const navItems = [
-  { to: "/", label: "Dashboard", icon: DashboardSquare02Icon },
-  { to: "/uncategorised", label: "Uncategorised", icon: Album01Icon },
-  { to: "/projects", label: "Projects", icon: FolderVideoIcon },
-  { to: "/audit-logs", label: "Audit Logs", icon: Audit01Icon },
-  { to: "/tools", label: "Tools", icon: Wrench01Icon },
+  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/uncategorised", label: "Uncategorised", icon: Images },
+  { to: "/projects", label: "Projects", icon: FolderClosed },
+  { to: "/audit-logs", label: "Audit Logs", icon: ClipboardList },
+  { to: "/tools", label: "Tools", icon: Wrench },
 ]
 
 export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
@@ -101,11 +100,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
                         }
                         tooltip={item.label}
                       >
-                        <HugeiconsIcon
-                          icon={item.icon}
-                          strokeWidth={2}
-                          className="size-5"
-                        />
+                        <item.icon className="size-5" />
                         <span>{item.label}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -118,11 +113,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
                           }}
                           tooltip="Notifications"
                         >
-                          <HugeiconsIcon
-                            icon={Notification01Icon}
-                            strokeWidth={2}
-                            className="size-5"
-                          />
+                          <Bell className="size-5" />
                           <span>Notifications</span>
                           {unreadCount > 0 && (
                             <span className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground group-data-[collapsible=icon]:hidden">
@@ -146,11 +137,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
                   }
                   tooltip="Trash"
                 >
-                  <HugeiconsIcon
-                    icon={Delete02Icon}
-                    strokeWidth={2}
-                    className="size-5"
-                  />
+                  <Trash2 className="size-5" />
                   <span>Trash</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -162,11 +149,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
                   }}
                   tooltip="Settings"
                 >
-                  <HugeiconsIcon
-                    icon={Settings01Icon}
-                    strokeWidth={2}
-                    className="size-5"
-                  />
+                  <Settings className="size-5" />
                   <span>Settings</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -188,7 +171,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
                   </AvatarFallback>
                 </Avatar>
                 <span className="truncate text-sm">{user?.full_name}</span>
-                <HugeiconsIcon icon={ArrowUp01Icon} strokeWidth={2} className="ml-auto size-4" />
+                <ChevronUp className="ml-auto size-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 side="top"
@@ -198,10 +181,7 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
                 <DropdownMenuItem
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 >
-                  <HugeiconsIcon
-                    icon={theme === "dark" ? Sun02Icon : Moon02Icon}
-                    strokeWidth={2}
-                  />
+                  {theme === "dark" ? <Sun /> : <Moon />}
                   {theme === "dark" ? "Light mode" : "Dark mode"}
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -212,12 +192,12 @@ export function AppSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
                     )
                   }
                 >
-                  <HugeiconsIcon icon={Bug01Icon} strokeWidth={2} />
+                  <Bug />
                   Raise an Issue
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
-                  <HugeiconsIcon icon={LogoutIcon} strokeWidth={2} />
+                  <LogOut />
                   Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>

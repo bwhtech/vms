@@ -1,17 +1,3 @@
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  PlayIcon,
-  PauseIcon,
-  VolumeHighIcon,
-  VolumeLowIcon,
-  VolumeMute01Icon,
-  RepeatIcon,
-  RepeatOffIcon,
-  FullScreenIcon,
-  MinimizeScreenIcon,
-  GoBackward10SecIcon,
-  GoForward10SecIcon,
-} from "@hugeicons/core-free-icons"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
   Popover,
@@ -20,6 +6,7 @@ import {
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { formatTimecode } from "@/hooks/useVideoPlayer"
+import { Maximize, Minimize, Pause, Play, Repeat, RotateCcw, RotateCw, Volume1, Volume2, VolumeX } from "lucide-react"
 
 const SPEED_OPTIONS = [0.5, 1, 1.5, 2]
 
@@ -63,30 +50,26 @@ export function VideoControls({
   popoverContainer,
 }: VideoControlsProps) {
   const VolumeIcon = isMuted || volume === 0
-    ? VolumeMute01Icon
+    ? VolumeX
     : volume < 0.5
-      ? VolumeLowIcon
-      : VolumeHighIcon
+      ? Volume1
+      : Volume2
 
   return (
     <div className="flex items-center gap-1 px-2 py-1.5">
       <Button variant="ghost" size="icon-sm" onClick={onSkipBackward} title="Skip back 10s (←)">
-        <HugeiconsIcon icon={GoBackward10SecIcon} strokeWidth={2} size={18} />
+        <RotateCcw size={18} />
       </Button>
       <Button variant="ghost" size="icon-sm" onClick={onTogglePlay}>
-        <HugeiconsIcon
-          icon={isPlaying ? PauseIcon : PlayIcon}
-          strokeWidth={2}
-          size={18}
-        />
+        {isPlaying ? <Pause size={18} /> : <Play size={18} />}
       </Button>
       <Button variant="ghost" size="icon-sm" onClick={onSkipForward} title="Skip forward 10s (→)">
-        <HugeiconsIcon icon={GoForward10SecIcon} strokeWidth={2} size={18} />
+        <RotateCw size={18} />
       </Button>
 
       <div className="hidden items-center gap-1 md:flex">
         <Button variant="ghost" size="icon-sm" onClick={onToggleMute}>
-          <HugeiconsIcon icon={VolumeIcon} strokeWidth={2} size={18} />
+          <VolumeIcon size={18} />
         </Button>
         <input
           type="range"
@@ -135,19 +118,11 @@ export function VideoControls({
           onClick={onToggleLoop}
           className={`hidden md:inline-flex ${isLooping ? "text-primary" : "text-muted-foreground"}`}
         >
-          <HugeiconsIcon
-            icon={isLooping ? RepeatIcon : RepeatOffIcon}
-            strokeWidth={2}
-            size={18}
-          />
+          <Repeat size={18} />
         </Button>
 
         <Button variant="ghost" size="icon-sm" onClick={onToggleFullscreen}>
-          <HugeiconsIcon
-            icon={isFullscreen ? MinimizeScreenIcon : FullScreenIcon}
-            strokeWidth={2}
-            size={18}
-          />
+          {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
         </Button>
       </div>
     </div>

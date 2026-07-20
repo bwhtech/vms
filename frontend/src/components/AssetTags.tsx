@@ -4,9 +4,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Cancel01Icon, PlusSignIcon, Tag01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
 import { toast } from "sonner"
+import { Plus, Tag, X } from "lucide-react"
 
 interface AssetTagsProps {
   assetName: string
@@ -93,7 +92,7 @@ export function AssetTags({ assetName, tags, onChanged, compact = false }: Asset
           variant="outline"
           className="group/tag gap-0.5 pr-1 text-[10px] font-normal"
         >
-          <HugeiconsIcon icon={Tag01Icon} className="size-2.5 text-muted-foreground" strokeWidth={2} />
+          <Tag className="size-2.5 text-muted-foreground" />
           <span className="max-w-[120px] truncate">{tag}</span>
           <button
             type="button"
@@ -104,7 +103,7 @@ export function AssetTags({ assetName, tags, onChanged, compact = false }: Asset
             className="ml-0.5 rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
             aria-label={`Remove tag ${tag}`}
           >
-            <HugeiconsIcon icon={Cancel01Icon} className="size-2.5" strokeWidth={2.5} />
+            <X className="size-2.5" strokeWidth={2.5} />
           </button>
         </Badge>
       ))}
@@ -119,7 +118,7 @@ export function AssetTags({ assetName, tags, onChanged, compact = false }: Asset
             />
           }
         >
-          <HugeiconsIcon icon={PlusSignIcon} className="size-2.5" strokeWidth={2} />
+          <Plus className="size-2.5" />
           {compact || current.length > 0 ? null : <span>Add tag</span>}
         </PopoverTrigger>
         <PopoverContent className="w-56 gap-2 p-3" onClick={stopPropagation} onKeyDown={stopPropagation}>

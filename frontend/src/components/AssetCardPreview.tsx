@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react"
 import { useFrappePostCall } from "frappe-react-sdk"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Film01Icon, PlayIcon } from "@hugeicons/core-free-icons"
 import { Spinner } from "@/components/ui/spinner"
 import { formatDuration } from "@/lib/utils"
 import type { VMSAsset } from "@/types"
+import { Film, Play } from "lucide-react"
 
 /** Video containers browsers can actually decode. .mkv/.avi/.wmv etc. must be converted first. */
 const PLAYABLE_EXTENSIONS = new Set([".mp4", ".webm", ".m4v", ".ogv", ".mov"])
@@ -116,7 +115,7 @@ export function AssetCardPreview({ asset }: AssetPreviewProps) {
         <img src={asset.thumbnail_url} alt="" draggable={false} className="h-full w-full object-contain" />
       ) : (
         <div className="flex h-full w-full items-center justify-center text-muted-foreground/40">
-          <HugeiconsIcon icon={Film01Icon} size={32} strokeWidth={1.5} />
+          <Film size={32} strokeWidth={1.5} />
         </div>
       )}
       {playable && (
@@ -127,7 +126,7 @@ export function AssetCardPreview({ asset }: AssetPreviewProps) {
           className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition group-hover/preview:bg-black/20 group-hover/preview:opacity-100 focus-visible:bg-black/20 focus-visible:opacity-100 focus-visible:outline-none"
         >
           <span className="flex size-11 items-center justify-center rounded-full bg-black/70 text-white">
-            {loading ? <Spinner className="size-5" /> : <HugeiconsIcon icon={PlayIcon} size={22} />}
+            {loading ? <Spinner className="size-5" /> : <Play size={22} />}
           </span>
         </button>
       )}
@@ -172,7 +171,7 @@ export function AssetRowPreview({ asset }: AssetPreviewProps) {
         <img src={asset.thumbnail_url} alt="" draggable={false} className="h-full w-full object-cover" />
       ) : (
         <div className="flex h-full w-full items-center justify-center text-muted-foreground/40">
-          <HugeiconsIcon icon={Film01Icon} size={18} strokeWidth={1.5} />
+          <Film size={18} strokeWidth={1.5} />
         </div>
       )}
       {playable && (
@@ -183,7 +182,7 @@ export function AssetRowPreview({ asset }: AssetPreviewProps) {
           className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition group-hover/preview:bg-black/30 group-hover/preview:opacity-100 focus-visible:bg-black/30 focus-visible:opacity-100 focus-visible:outline-none"
         >
           <span className="flex size-6 items-center justify-center rounded-full bg-black/70 text-white">
-            {loading ? <Spinner className="size-3" /> : <HugeiconsIcon icon={PlayIcon} size={14} />}
+            {loading ? <Spinner className="size-3" /> : <Play size={14} />}
           </span>
         </button>
       )}

@@ -1,12 +1,11 @@
 import { useFrappePostCall, useFrappeGetCall } from "frappe-react-sdk"
 import { useState } from "react"
 import { toast } from "sonner"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Cancel01Icon, SentIcon } from "@hugeicons/core-free-icons"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Send, X } from "lucide-react"
 
 interface VMSUser {
   name: string
@@ -112,7 +111,7 @@ export function UsersSection() {
               className="flex-1"
             />
             <Button onClick={handleInvite} disabled={inviting || !email.trim()}>
-              <HugeiconsIcon icon={SentIcon} strokeWidth={2} className="size-4 mr-1.5" />
+              <Send className="size-4 mr-1.5" />
               {inviting ? "Sending..." : "Invite"}
             </Button>
           </div>
@@ -162,7 +161,7 @@ export function UsersSection() {
                       size="sm"
                       onClick={() => handleCancel(invite.name, invite.email)}
                     >
-                      <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
+                      <X className="size-4" />
                     </Button>
                   </div>
                 ))}

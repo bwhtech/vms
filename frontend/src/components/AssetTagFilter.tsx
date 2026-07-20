@@ -2,8 +2,7 @@ import { useFrappeGetCall } from "frappe-react-sdk"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Cancel01Icon, FilterIcon, Tag01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { Filter, Tag, X } from "lucide-react"
 
 interface ProjectTag {
   tag: string
@@ -31,16 +30,20 @@ export function AssetTagFilter({ project, value, onChange, folder }: AssetTagFil
     <Popover>
       <PopoverTrigger
         render={
-          <Button variant="outline" size="sm" />
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label={value ? `Filter by tag: ${value}` : "Filter by tag"}
+            title={value ? `Filter by tag: ${value}` : "Filter by tag"}
+          />
         }
       >
-        <HugeiconsIcon icon={FilterIcon} strokeWidth={2} data-icon="inline-start" />
-        <span className="hidden sm:inline">
-          {value ? "Tag:" : "Filter"}
-        </span>
+        <Filter data-icon={value ? "inline-start" : undefined} />
+        {/* The label is redundant when idle — but once a tag is active the
+            badge below carries state the user needs to see, so it stays. */}
         {value && (
           <Badge variant="secondary" className="gap-1 pr-1 text-[10px] font-normal">
-            <HugeiconsIcon icon={Tag01Icon} className="size-2.5" strokeWidth={2} />
+            <Tag className="size-2.5" />
             <span className="max-w-[100px] truncate">{value}</span>
             <button
               type="button"
@@ -52,7 +55,7 @@ export function AssetTagFilter({ project, value, onChange, folder }: AssetTagFil
               className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20"
               aria-label="Clear tag filter"
             >
-              <HugeiconsIcon icon={Cancel01Icon} className="size-2.5" strokeWidth={2.5} />
+              <X className="size-2.5" strokeWidth={2.5} />
             </button>
           </Badge>
         )}
@@ -82,7 +85,7 @@ export function AssetTagFilter({ project, value, onChange, folder }: AssetTagFil
                 className={`flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-accent ${value === t.tag ? "bg-accent" : ""}`}
               >
                 <span className="flex min-w-0 items-center gap-1.5">
-                  <HugeiconsIcon icon={Tag01Icon} className="size-3 text-muted-foreground" strokeWidth={2} />
+                  <Tag className="size-3 text-muted-foreground" />
                   <span className="truncate">{t.tag}</span>
                 </span>
                 <span className="shrink-0 text-xs text-muted-foreground">{t.count}</span>

@@ -1,8 +1,6 @@
 import { useState } from "react"
 import { useParams, useSearchParams } from "react-router"
 import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Download04Icon, Film01Icon, ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { formatBytes } from "@/lib/utils"
 import { toast } from "sonner"
+import { ArrowLeft, ArrowRight, Download, Film } from "lucide-react"
 
 interface SharedProject {
   name: string
@@ -154,7 +153,7 @@ export function SharedProjectPage() {
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
             >
-              <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} data-icon="inline-start" />
+              <ArrowLeft data-icon="inline-start" />
               Previous
             </Button>
             <span className="text-sm text-muted-foreground">
@@ -167,7 +166,7 @@ export function SharedProjectPage() {
               disabled={page >= totalPages}
             >
               Next
-              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} data-icon="inline-end" />
+              <ArrowRight data-icon="inline-end" />
             </Button>
           </div>
         )}
@@ -222,7 +221,7 @@ function SharedAssetCard({
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <HugeiconsIcon icon={Film01Icon} strokeWidth={1.5} size={32} className="text-muted-foreground" />
+            <Film strokeWidth={1.5} size={32} className="text-muted-foreground" />
           </div>
         )}
         {isVideo && (
@@ -248,7 +247,7 @@ function SharedAssetCard({
           disabled={downloading}
           title="Download"
         >
-          <HugeiconsIcon icon={Download04Icon} strokeWidth={2} size={14} />
+          <Download size={14} />
         </Button>
       </CardContent>
     </Card>

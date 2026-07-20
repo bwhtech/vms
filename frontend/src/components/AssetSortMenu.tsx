@@ -5,8 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ArrowUpDownIcon, Tick02Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowUpDown, Check } from "lucide-react"
 
 export type AssetSortField = "creation" | "file_size" | "file_name"
 export type AssetSortOrder = "asc" | "desc"
@@ -40,7 +39,7 @@ export function AssetSortMenu({ value, onChange }: AssetSortMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
-        <HugeiconsIcon icon={ArrowUpDownIcon} strokeWidth={2} data-icon="inline-start" />
+        <ArrowUpDown data-icon="inline-start" />
         <span className="hidden sm:inline">{active ? active.label : "Sort"}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
@@ -51,7 +50,7 @@ export function AssetSortMenu({ value, onChange }: AssetSortMenuProps) {
           >
             <span className="flex-1">{option.label}</span>
             {option === active && (
-              <HugeiconsIcon icon={Tick02Icon} className="size-3.5" strokeWidth={2} />
+              <Check className="size-3.5" />
             )}
           </DropdownMenuItem>
         ))}

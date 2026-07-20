@@ -6,8 +6,6 @@ import { AssetTags } from "@/components/AssetTags"
 import { AssetCardColor, CARD_COLOR_BORDER_CLASS } from "@/components/AssetCardColor"
 import { useNavigate } from "react-router"
 import { useFrappeGetCall } from "frappe-react-sdk"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { CloudUploadIcon, Delete02Icon, Download04Icon, GridViewIcon, Album01Icon, ListViewIcon, Move01Icon, PencilEdit01Icon } from "@hugeicons/core-free-icons"
 import { Badge } from "@/components/ui/badge"
 import { cn, formatBytes, formatDuration } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -39,6 +37,7 @@ import { useDownload } from "@/hooks/useDownload"
 import { UserAvatar } from "@/components/UserAvatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { VMSAsset } from "@/types"
+import { CloudUpload, Download, FolderInput, Images, LayoutGrid, List, Pencil, Trash2 } from "lucide-react"
 
 const PAGE_SIZE = 20
 
@@ -181,11 +180,7 @@ export function UncategorisedPage() {
                 onClick={handleBulkDownload}
                 disabled={isDownloading}
               >
-                <HugeiconsIcon
-                  icon={Download04Icon}
-                  strokeWidth={2}
-                  data-icon="inline-start"
-                />
+                <Download data-icon="inline-start" />
                 <span className="hidden sm:inline">
                   {isDownloading ? "Downloading..." : "Download"}
                 </span>
@@ -196,38 +191,23 @@ export function UncategorisedPage() {
               </Button>
               {selected.size === 1 && (
                 <Button variant="outline" size="sm" onClick={() => setRenameOpen(true)}>
-                  <HugeiconsIcon
-                    icon={PencilEdit01Icon}
-                    strokeWidth={2}
-                    data-icon="inline-start"
-                  />
+                  <Pencil data-icon="inline-start" />
                   <span className="hidden sm:inline">Rename</span>
                 </Button>
               )}
               <Button variant="outline" size="sm" onClick={() => setMoveOpen(true)}>
-                <HugeiconsIcon
-                  icon={Move01Icon}
-                  strokeWidth={2}
-                  data-icon="inline-start"
-                />
+                <FolderInput data-icon="inline-start" />
                 <span className="hidden sm:inline">Move ({selected.size})</span>
               </Button>
               <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>
-                <HugeiconsIcon
-                  icon={Delete02Icon}
-                  strokeWidth={2}
-                  data-icon="inline-start"
-                />
+                <Trash2 data-icon="inline-start" />
                 <span className="hidden sm:inline">Delete ({selected.size})</span>
               </Button>
             </>
           )}
           <Button size="sm" onClick={() => openInboxUpload()}>
-            <HugeiconsIcon
-              icon={CloudUploadIcon}
-              strokeWidth={1.5}
-              data-icon="inline-start"
-            />
+            <CloudUpload strokeWidth={1.5}
+              data-icon="inline-start" />
             Upload
           </Button>
         </div>
@@ -259,7 +239,7 @@ export function UncategorisedPage() {
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <HugeiconsIcon icon={Album01Icon} strokeWidth={1.5} />
+              <Images strokeWidth={1.5} />
             </EmptyMedia>
             <EmptyTitle>No uncategorised assets</EmptyTitle>
             <EmptyDescription>
@@ -267,7 +247,7 @@ export function UncategorisedPage() {
             </EmptyDescription>
           </EmptyHeader>
           <Button size="sm" onClick={() => openInboxUpload()}>
-            <HugeiconsIcon icon={CloudUploadIcon} strokeWidth={1.5} data-icon="inline-start" />
+            <CloudUpload strokeWidth={1.5} data-icon="inline-start" />
             Upload
           </Button>
         </Empty>
@@ -293,10 +273,10 @@ export function UncategorisedPage() {
               size="sm"
             >
               <ToggleGroupItem value="list" aria-label="List view">
-                <HugeiconsIcon icon={ListViewIcon} strokeWidth={2} />
+                <List />
               </ToggleGroupItem>
               <ToggleGroupItem value="grid" aria-label="Grid view">
-                <HugeiconsIcon icon={GridViewIcon} strokeWidth={2} />
+                <LayoutGrid />
               </ToggleGroupItem>
             </ToggleGroup>
           </div>

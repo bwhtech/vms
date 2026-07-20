@@ -3,14 +3,7 @@ import type { Editor } from "@tiptap/react"
 import type { FormatAction } from "../../types"
 import type { toggleVariants } from "@/components/ui/toggle"
 import type { VariantProps } from "class-variance-authority"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  ArrowDown01Icon,
-  SourceCodeIcon,
-  MinusSignIcon,
-  Add01Icon,
-  QuoteDownIcon,
-} from "@hugeicons/core-free-icons"
+import { ChevronDown, Minus, Plus, Quote, SquareCode } from "lucide-react"
 import { LinkEditPopover } from "../link/link-edit-popover"
 import { ImageEditDialog } from "../image/image-edit-dialog"
 import { ToolbarSection } from "../toolbar-section"
@@ -24,7 +17,7 @@ const formatActions: InsertElement[] = [
   {
     value: "codeBlock",
     label: "Code block",
-    icon: <HugeiconsIcon icon={SourceCodeIcon} className="size-5" />,
+    icon: <SquareCode className="size-5" />,
     action: (editor) => editor.chain().focus().toggleCodeBlock().run(),
     isActive: (editor) => editor.isActive("codeBlock"),
     canExecute: (editor) =>
@@ -34,7 +27,7 @@ const formatActions: InsertElement[] = [
   {
     value: "blockquote",
     label: "Blockquote",
-    icon: <HugeiconsIcon icon={QuoteDownIcon} className="size-5" />,
+    icon: <Quote className="size-5" />,
     action: (editor) => editor.chain().focus().toggleBlockquote().run(),
     isActive: (editor) => editor.isActive("blockquote"),
     canExecute: (editor) =>
@@ -44,7 +37,7 @@ const formatActions: InsertElement[] = [
   {
     value: "horizontalRule",
     label: "Divider",
-    icon: <HugeiconsIcon icon={MinusSignIcon} className="size-5" />,
+    icon: <Minus className="size-5" />,
     action: (editor) => editor.chain().focus().setHorizontalRule().run(),
     isActive: () => false,
     canExecute: (editor) =>
@@ -77,8 +70,8 @@ export const SectionFive: React.FC<SectionFiveProps> = ({
         mainActionCount={mainActionCount}
         dropdownIcon={
           <>
-            <HugeiconsIcon icon={Add01Icon} className="size-5" />
-            <HugeiconsIcon icon={ArrowDown01Icon} className="size-5" />
+            <Plus className="size-5" />
+            <ChevronDown className="size-5" />
           </>
         }
         dropdownTooltip="Insert elements"

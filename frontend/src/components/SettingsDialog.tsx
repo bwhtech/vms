@@ -1,5 +1,5 @@
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Settings01Icon, UserGroupIcon, UserCircleIcon, SubtitleIcon, YoutubeIcon } from "@hugeicons/core-free-icons"
+import { CircleUser, Captions, Settings, Users } from "lucide-react"
+import { YoutubeIcon } from "@/components/icons/YoutubeIcon"
 import {
   Dialog,
   DialogContent,
@@ -23,11 +23,11 @@ import { TranscriptionSection } from "@/components/settings/TranscriptionSection
 import { YouTubeSection } from "@/components/settings/YouTubeSection"
 
 const sections = [
-  { id: "profile", label: "Profile", icon: UserCircleIcon },
-  { id: "general", label: "General", icon: Settings01Icon },
-  { id: "transcription", label: "Transcription", icon: SubtitleIcon },
+  { id: "profile", label: "Profile", icon: CircleUser },
+  { id: "general", label: "General", icon: Settings },
+  { id: "transcription", label: "Transcription", icon: Captions },
   { id: "youtube", label: "YouTube", icon: YoutubeIcon },
-  { id: "users", label: "Users", icon: UserGroupIcon },
+  { id: "users", label: "Users", icon: Users },
 ] as const
 
 function SettingsContent({
@@ -69,11 +69,7 @@ function SettingsContent({
                 value={section.id}
                 className="gap-2 justify-start"
               >
-                <HugeiconsIcon
-                  icon={section.icon}
-                  strokeWidth={2}
-                  className="size-4"
-                />
+                <section.icon className="size-4" />
                 {section.label}
               </TabsTrigger>
             ))}
@@ -90,11 +86,7 @@ function SettingsContent({
                 value={section.id}
                 className="gap-2 justify-center shrink-0"
               >
-                <HugeiconsIcon
-                  icon={section.icon}
-                  strokeWidth={2}
-                  className="size-4"
-                />
+                <section.icon className="size-4" />
                 {section.label}
               </TabsTrigger>
             ))}

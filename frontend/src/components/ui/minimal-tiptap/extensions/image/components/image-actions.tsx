@@ -12,14 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  ClipboardIcon,
-  MoreHorizontalIcon,
-  Download01Icon,
-  Link01Icon,
-  Maximize01Icon,
-} from "@hugeicons/core-free-icons"
+import { Clipboard, Ellipsis, Download, Link, Maximize } from "lucide-react"
 
 interface ImageActionsProps {
   shouldMerge?: boolean
@@ -82,22 +75,22 @@ const ActionItems: Array<{
 }> = [
   {
     key: "onView",
-    icon: <HugeiconsIcon icon={Maximize01Icon} />,
+    icon: <Maximize />,
     tooltip: "View image",
   },
   {
     key: "onDownload",
-    icon: <HugeiconsIcon icon={Download01Icon} />,
+    icon: <Download />,
     tooltip: "Download image",
   },
   {
     key: "onCopy",
-    icon: <HugeiconsIcon icon={ClipboardIcon} />,
+    icon: <Clipboard />,
     tooltip: "Copy image to clipboard",
   },
   {
     key: "onCopyLink",
-    icon: <HugeiconsIcon icon={Link01Icon} />,
+    icon: <Link />,
     tooltip: "Copy image link",
     isLink: true,
   },
@@ -128,7 +121,7 @@ export const ImageActions: React.FC<ImageActionsProps> = ({
     <ActionWrapper className={cn({ "opacity-100": isOpen })}>
       {shouldMerge ? (
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-          <DropdownMenuTrigger render={<ActionButton icon={<HugeiconsIcon icon={MoreHorizontalIcon} />} tooltip="Open menu" onClick={(e) => e.preventDefault()} />}></DropdownMenuTrigger>
+          <DropdownMenuTrigger render={<ActionButton icon={<Ellipsis />} tooltip="Open menu" onClick={(e) => e.preventDefault()} />}></DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end">
             {filteredActions.map(({ key, icon, tooltip }) => (
               <DropdownMenuItem

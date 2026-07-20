@@ -3,8 +3,7 @@ import type { Editor } from "@tiptap/react"
 import type { FormatAction } from "../../types"
 import type { toggleVariants } from "@/components/ui/toggle"
 import type { VariantProps } from "class-variance-authority"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowDown01Icon, LeftToRightListBulletIcon } from "@hugeicons/core-free-icons"
+import { ChevronDown, List } from "lucide-react"
 import { ToolbarSection } from "../toolbar-section"
 
 type ListItemAction = "orderedList" | "bulletList"
@@ -36,7 +35,7 @@ const formatActions: ListItem[] = [
   {
     value: "bulletList",
     label: "Bullet list",
-    icon: <HugeiconsIcon icon={LeftToRightListBulletIcon} className="size-5" />,
+    icon: <List className="size-5" />,
     isActive: (editor) => editor.isActive("bulletList"),
     action: (editor) => editor.chain().focus().toggleBulletList().run(),
     canExecute: (editor) =>
@@ -66,8 +65,8 @@ export const SectionFour: React.FC<SectionFourProps> = ({
       mainActionCount={mainActionCount}
       dropdownIcon={
         <>
-          <HugeiconsIcon icon={LeftToRightListBulletIcon} className="size-5" />
-          <HugeiconsIcon icon={ArrowDown01Icon} className="size-5" />
+          <List className="size-5" />
+          <ChevronDown className="size-5" />
         </>
       }
       dropdownTooltip="Lists"

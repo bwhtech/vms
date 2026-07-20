@@ -1,8 +1,6 @@
 import { useNavigate } from "react-router"
 import { useFrappeGetDocList, useFrappeGetDocCount, useFrappePostCall } from "frappe-react-sdk"
 import { useEffect, useState } from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Folder01Icon, CloudUploadIcon } from "@hugeicons/core-free-icons"
 import {
   Card,
   CardContent,
@@ -21,6 +19,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import type { VMSProject, VMSAsset } from "@/types"
+import { CloudUpload, Folder } from "lucide-react"
 
 export function DashboardPage() {
   const navigate = useNavigate()
@@ -159,7 +158,7 @@ export function DashboardPage() {
               <Empty className="py-8 border-0">
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
-                    <HugeiconsIcon icon={Folder01Icon} strokeWidth={1.5} />
+                    <Folder strokeWidth={1.5} />
                   </EmptyMedia>
                   <EmptyTitle className="text-base">No projects yet</EmptyTitle>
                   <EmptyDescription>
@@ -212,7 +211,7 @@ export function DashboardPage() {
               <Empty className="py-8 border-0">
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
-                    <HugeiconsIcon icon={CloudUploadIcon} strokeWidth={1.5} />
+                    <CloudUpload strokeWidth={1.5} />
                   </EmptyMedia>
                   <EmptyTitle className="text-base">No uploads yet</EmptyTitle>
                   <EmptyDescription>

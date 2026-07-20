@@ -1,8 +1,7 @@
-import { HugeiconsIcon } from "@hugeicons/react"
-import { CloudUploadIcon, SearchIcon } from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useUploadContext } from "@/contexts/UploadContext"
+import { CloudUpload, Search } from "lucide-react"
 
 interface HeaderProps {
   onOpenCommandPalette: () => void
@@ -23,7 +22,7 @@ export function Header({ onOpenCommandPalette }: HeaderProps) {
           onClick={onOpenCommandPalette}
           className="hidden text-muted-foreground sm:flex"
         >
-          <HugeiconsIcon icon={SearchIcon} strokeWidth={2} data-icon="inline-start" />
+          <Search data-icon="inline-start" />
           <span>Search...</span>
           <kbd className="pointer-events-none ml-2 inline-flex h-5 select-none items-center gap-0.5 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
             <span className="text-xs">&#x2318;</span>K
@@ -35,10 +34,10 @@ export function Header({ onOpenCommandPalette }: HeaderProps) {
           onClick={onOpenCommandPalette}
           className="sm:hidden"
         >
-          <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />
+          <Search />
         </Button>
         <Button variant="outline" size="sm" onClick={() => openUpload()}>
-          <HugeiconsIcon icon={CloudUploadIcon} strokeWidth={1.5} data-icon="inline-start" />
+          <CloudUpload strokeWidth={1.5} data-icon="inline-start" />
           <span className="hidden sm:inline">Upload</span>
         </Button>
       </div>

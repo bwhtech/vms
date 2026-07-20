@@ -1,20 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  ArrowLeft01Icon,
-  Download04Icon,
-  Link01Icon,
-  Copy01Icon,
-  SubtitleIcon,
-  Scissor01Icon,
-  GitForkIcon,
-  Video01Icon,
-  YoutubeIcon,
-  Layers01Icon,
-  Settings05Icon,
-  Share08Icon,
-} from "@hugeicons/core-free-icons"
+import { YoutubeIcon } from "@/components/icons/YoutubeIcon"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
@@ -39,6 +25,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { useDownload } from "@/hooks/useDownload"
 import { useReviewContext } from "@/hooks/useReviewContext"
 import { toast } from "sonner"
+import { ArrowLeft, Captions, Copy, Download, GitFork, Layers, Link, Scissors, Settings2, Share2, Video } from "lucide-react"
 
 interface ReviewHeaderProps {
   assetName: string
@@ -145,7 +132,7 @@ export function ReviewHeader({
     <div className="flex items-center gap-2 border-b px-3 py-2 md:gap-3 md:px-4 md:py-2.5">
       {!isGuest && (
         <Button variant="ghost" size="icon-sm" onClick={handleBack}>
-          <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} size={18} />
+          <ArrowLeft size={18} />
         </Button>
       )}
 
@@ -181,7 +168,7 @@ export function ReviewHeader({
               className="hidden shrink-0 cursor-pointer text-[10px] gap-1 md:inline-flex"
               onClick={() => navigate(`/review/${splitFrom.name}`)}
             >
-              <HugeiconsIcon icon={GitForkIcon} size={10} />
+              <GitFork size={10} />
               Split from {splitFrom.file_name}
             </Badge>
           )}
@@ -189,7 +176,7 @@ export function ReviewHeader({
             <Popover>
               <PopoverTrigger>
                 <Badge variant="secondary" className="hidden shrink-0 cursor-pointer text-[10px] gap-1 md:inline-flex">
-                  <HugeiconsIcon icon={GitForkIcon} size={10} />
+                  <GitFork size={10} />
                   {splitParts.length} {splitParts.length === 1 ? "part" : "parts"}
                 </Badge>
               </PopoverTrigger>
@@ -225,7 +212,7 @@ export function ReviewHeader({
             onClick={onOpenVersions}
             title="Version history"
           >
-            <HugeiconsIcon icon={Layers01Icon} strokeWidth={2} size={16} />
+            <Layers size={16} />
           </Button>
           <Button
             variant="outline"
@@ -233,7 +220,7 @@ export function ReviewHeader({
             className="hidden md:inline-flex"
             onClick={onOpenVersions}
           >
-            <HugeiconsIcon icon={Layers01Icon} strokeWidth={2} data-icon="inline-start" size={16} />
+            <Layers data-icon="inline-start" size={16} />
             {version && version > 1 ? `v${version}` : "Versions"}
           </Button>
         </>
@@ -243,7 +230,7 @@ export function ReviewHeader({
       {!isGuest && isVideo && (
         <DropdownMenu>
           <DropdownMenuTrigger className={buttonVariants({ variant: "outline", size: "sm" })}>
-            <HugeiconsIcon icon={Settings05Icon} strokeWidth={2} data-icon="inline-start" size={16} />
+            <Settings2 data-icon="inline-start" size={16} />
             <span className="hidden md:inline">Tools</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -255,7 +242,7 @@ export function ReviewHeader({
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem onClick={onOpenTranscription}>
-                <HugeiconsIcon icon={SubtitleIcon} strokeWidth={2} size={16} />
+                <Captions size={16} />
                 {transcriptionStatus === "Complete" ? "Transcript" : "Transcribe"}
               </DropdownMenuItem>
             )}
@@ -274,7 +261,7 @@ export function ReviewHeader({
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem onClick={onOpenSplit}>
-                <HugeiconsIcon icon={Scissor01Icon} strokeWidth={2} size={16} />
+                <Scissors size={16} />
                 Split
               </DropdownMenuItem>
             )}
@@ -285,7 +272,7 @@ export function ReviewHeader({
                 onClick={onGenerateProxy}
                 disabled={isGeneratingProxy}
               >
-                <HugeiconsIcon icon={Video01Icon} strokeWidth={2} size={16} />
+                <Video size={16} />
                 Generate Proxy
               </DropdownMenuItem>
             )}
@@ -297,7 +284,7 @@ export function ReviewHeader({
             )}
             {proxyStatus === "Ready" && (
               <DropdownMenuItem disabled>
-                <HugeiconsIcon icon={Video01Icon} strokeWidth={2} size={16} />
+                <Video size={16} />
                 Proxy ready
               </DropdownMenuItem>
             )}
@@ -306,7 +293,7 @@ export function ReviewHeader({
                 onClick={onGenerateProxy}
                 disabled={isGeneratingProxy}
               >
-                <HugeiconsIcon icon={Video01Icon} strokeWidth={2} size={16} />
+                <Video size={16} />
                 Retry Proxy Generation
               </DropdownMenuItem>
             )}
@@ -318,7 +305,7 @@ export function ReviewHeader({
       {!isGuest && (
         <DropdownMenu>
           <DropdownMenuTrigger className={buttonVariants({ variant: "outline", size: "sm" })}>
-            <HugeiconsIcon icon={Share08Icon} strokeWidth={2} data-icon="inline-start" size={16} />
+            <Share2 data-icon="inline-start" size={16} />
             <span className="hidden md:inline">Share</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -327,13 +314,13 @@ export function ReviewHeader({
               onClick={() => downloadOne(assetName, fileName)}
               disabled={isDownloading}
             >
-              <HugeiconsIcon icon={Download04Icon} strokeWidth={2} size={16} />
+              <Download size={16} />
               Download
             </DropdownMenuItem>
 
             {/* Public Link */}
             <DropdownMenuItem onClick={() => setPublicLinkOpen(true)}>
-              <HugeiconsIcon icon={Link01Icon} strokeWidth={2} size={16} />
+              <Link size={16} />
               Public Link
             </DropdownMenuItem>
 
@@ -353,7 +340,7 @@ export function ReviewHeader({
                 return (
                   <>
                     <DropdownMenuItem onClick={() => window.open(youtubeVideoUrl, "_blank")}>
-                      <HugeiconsIcon icon={YoutubeIcon} strokeWidth={2} size={16} />
+                      <YoutubeIcon size={16} />
                       <span className="flex flex-col items-start">
                         View on YouTube
                         {youtubeChannelName && (
@@ -364,7 +351,7 @@ export function ReviewHeader({
                       </span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={onResetYouTubeUpload}>
-                      <HugeiconsIcon icon={YoutubeIcon} strokeWidth={2} size={16} />
+                      <YoutubeIcon size={16} />
                       Re-upload to YouTube
                     </DropdownMenuItem>
                   </>
@@ -373,14 +360,14 @@ export function ReviewHeader({
               if (youtubeUploadStatus === "Error") {
                 return (
                   <DropdownMenuItem onClick={onOpenYouTubeUpload}>
-                    <HugeiconsIcon icon={YoutubeIcon} strokeWidth={2} size={16} />
+                    <YoutubeIcon size={16} />
                     Retry YouTube Upload
                   </DropdownMenuItem>
                 )
               }
               return (
                 <DropdownMenuItem onClick={onOpenYouTubeUpload}>
-                  <HugeiconsIcon icon={YoutubeIcon} strokeWidth={2} size={16} />
+                  <YoutubeIcon size={16} />
                   YouTube
                 </DropdownMenuItem>
               )
@@ -397,7 +384,7 @@ export function ReviewHeader({
           onClick={() => downloadOne(assetName, fileName)}
           disabled={isDownloading}
         >
-          <HugeiconsIcon icon={Download04Icon} strokeWidth={2} data-icon="inline-start" size={16} />
+          <Download data-icon="inline-start" size={16} />
           Download
         </Button>
       )}
@@ -432,7 +419,7 @@ export function ReviewHeader({
                   onClick={(e) => (e.target as HTMLInputElement).select()}
                 />
                 <Button variant="outline" size="icon-sm" onClick={handleCopy}>
-                  <HugeiconsIcon icon={Copy01Icon} strokeWidth={2} size={14} />
+                  <Copy size={14} />
                 </Button>
               </div>
             )}

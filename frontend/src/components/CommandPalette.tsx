@@ -1,18 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { useNavigate, useLocation } from "react-router"
 import { useFrappeGetCall } from "frappe-react-sdk"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  DashboardSquare02Icon,
-  Album01Icon,
-  FolderVideoIcon,
-  Audit01Icon,
-  Settings01Icon,
-  UserAdd01Icon,
-  CloudUploadIcon,
-  UserCircleIcon,
-  FileVideoIcon,
-} from "@hugeicons/core-free-icons"
 import {
   CommandDialog,
   Command,
@@ -24,6 +12,7 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/components/ui/command"
+import { CircleUser, ClipboardList, CloudUpload, FileVideo, FolderClosed, Images, LayoutDashboard, Settings, UserPlus } from "lucide-react"
 
 interface CommandPaletteProps {
   open: boolean
@@ -148,11 +137,7 @@ export function CommandPalette({
                       )
                     }
                   >
-                    <HugeiconsIcon
-                      icon={FileVideoIcon}
-                      strokeWidth={2}
-                      className="size-4"
-                    />
+                    <FileVideo className="size-4" />
                     <span className="flex-1 truncate">{result.file_name}</span>
                     {!currentProjectId && result.project_name && (
                       <span className="text-xs text-muted-foreground">
@@ -186,11 +171,7 @@ export function CommandPalette({
                       )
                     }
                   >
-                    <HugeiconsIcon
-                      icon={FolderVideoIcon}
-                      strokeWidth={2}
-                      className="size-4"
-                    />
+                    <FolderClosed className="size-4" />
                     <span className="flex-1 truncate">
                       {project.project_name}
                     </span>
@@ -213,11 +194,7 @@ export function CommandPalette({
               keywords={["home", "overview"]}
               onSelect={() => runCommand(() => navigate("/"))}
             >
-              <HugeiconsIcon
-                icon={DashboardSquare02Icon}
-                strokeWidth={2}
-                className="size-4"
-              />
+              <LayoutDashboard className="size-4" />
               <span>Go to Dashboard</span>
             </CommandItem>
             <CommandItem
@@ -225,11 +202,7 @@ export function CommandPalette({
               keywords={["uploads", "unassigned", "media", "inbox"]}
               onSelect={() => runCommand(() => navigate("/uncategorised"))}
             >
-              <HugeiconsIcon
-                icon={Album01Icon}
-                strokeWidth={2}
-                className="size-4"
-              />
+              <Images className="size-4" />
               <span>Go to Uncategorised</span>
             </CommandItem>
             <CommandItem
@@ -237,11 +210,7 @@ export function CommandPalette({
               keywords={["folders", "videos"]}
               onSelect={() => runCommand(() => navigate("/projects"))}
             >
-              <HugeiconsIcon
-                icon={FolderVideoIcon}
-                strokeWidth={2}
-                className="size-4"
-              />
+              <FolderClosed className="size-4" />
               <span>Go to Projects</span>
             </CommandItem>
             <CommandItem
@@ -249,11 +218,7 @@ export function CommandPalette({
               keywords={["history", "activity"]}
               onSelect={() => runCommand(() => navigate("/audit-logs"))}
             >
-              <HugeiconsIcon
-                icon={Audit01Icon}
-                strokeWidth={2}
-                className="size-4"
-              />
+              <ClipboardList className="size-4" />
               <span>Go to Audit Logs</span>
             </CommandItem>
           </CommandGroup>
@@ -269,11 +234,7 @@ export function CommandPalette({
                 runCommand(() => onOpenUpload())
               }
             >
-              <HugeiconsIcon
-                icon={CloudUploadIcon}
-                strokeWidth={2}
-                className="size-4"
-              />
+              <CloudUpload className="size-4" />
               <span>Upload Files</span>
               <CommandShortcut>U</CommandShortcut>
             </CommandItem>
@@ -284,11 +245,7 @@ export function CommandPalette({
                 runCommand(() => onOpenSettings("general"))
               }
             >
-              <HugeiconsIcon
-                icon={Settings01Icon}
-                strokeWidth={2}
-                className="size-4"
-              />
+              <Settings className="size-4" />
               <span>Open Settings</span>
             </CommandItem>
             <CommandItem
@@ -298,11 +255,7 @@ export function CommandPalette({
                 runCommand(() => onOpenSettings("users"))
               }
             >
-              <HugeiconsIcon
-                icon={UserAdd01Icon}
-                strokeWidth={2}
-                className="size-4"
-              />
+              <UserPlus className="size-4" />
               <span>Invite User</span>
             </CommandItem>
             <CommandItem
@@ -312,11 +265,7 @@ export function CommandPalette({
                 runCommand(() => onOpenSettings("profile"))
               }
             >
-              <HugeiconsIcon
-                icon={UserCircleIcon}
-                strokeWidth={2}
-                className="size-4"
-              />
+              <CircleUser className="size-4" />
               <span>Profile</span>
             </CommandItem>
           </CommandGroup>

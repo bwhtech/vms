@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Spinner } from "@/components/ui/spinner"
 import { toast } from "sonner"
+import { serverMessage } from "@/lib/utils"
 
 interface SplitVideoDialogProps {
   open: boolean
@@ -50,9 +51,13 @@ export function SplitVideoDialog({
       toast.success(`Splitting "${fileName}" into ${numSlices} parts. You'll be notified when done.`)
       onOpenChange(false)
       onSplitStarted?.()
-    } catch (err: any) {
-      const msg = err?.message || err?._server_messages || "Failed to start split"
-      toast.error(typeof msg === "string" ? msg : "Failed to start split")
+    } catch (err) {
+      // `err.message` is always the generic "There was an error." — the reason
+      // start_video_split threw ("Asset must be in Ready status to split",
+      // "Asset has no uploaded file", ...) only lives in `_server_messages`.
+      toast.error("Failed to start split", {
+        description: serverMessage(err) || "Try again in a moment.",
+      })
     }
   }
 

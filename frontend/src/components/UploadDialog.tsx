@@ -1,14 +1,4 @@
 import { useRef, useState, useCallback, useEffect } from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  CloudUploadIcon,
-  Tick02Icon,
-  Cancel01Icon,
-  AlertCircleIcon,
-  RefreshIcon,
-  MinusSignIcon,
-  ArrowUp01Icon,
-} from "@hugeicons/core-free-icons"
 import {
   Dialog,
   DialogContent,
@@ -29,6 +19,7 @@ import { Label } from "@/components/ui/label"
 import { useUploadContext } from "@/contexts/UploadContext"
 import type { FileUploadItem } from "@/hooks/useUpload"
 import { cn } from "@/lib/utils"
+import { Check, ChevronUp, CircleAlert, CloudUpload, Minus, RefreshCw, X } from "lucide-react"
 
 interface DuplicateFile {
   file: File
@@ -265,7 +256,7 @@ export function UploadDialog() {
                   title="Minimize to corner"
                   className="shrink-0"
                 >
-                  <HugeiconsIcon icon={MinusSignIcon} strokeWidth={2} className="size-4" />
+                  <Minus className="size-4" />
                 </Button>
               )}
             </div>
@@ -317,11 +308,7 @@ export function UploadDialog() {
             {!isVersionMode && duplicates.length > 0 && (
               <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
                 <div className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-200">
-                  <HugeiconsIcon
-                    icon={AlertCircleIcon}
-                    strokeWidth={2}
-                    className="size-4"
-                  />
+                  <CircleAlert className="size-4" />
                   {duplicates.length === 1
                     ? "1 file already exists"
                     : `${duplicates.length} files already exist`}
@@ -420,11 +407,8 @@ export function UploadDialog() {
                   : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30",
               )}
             >
-              <HugeiconsIcon
-                icon={CloudUploadIcon}
-                strokeWidth={1.5}
-                className="size-10 text-muted-foreground"
-              />
+              <CloudUpload strokeWidth={1.5}
+                className="size-10 text-muted-foreground" />
               <div className="text-sm font-medium">
                 {isVersionMode ? "Drop a file here or click to browse" : "Drop files here or click to browse"}
               </div>
@@ -501,7 +485,7 @@ function UploadWidget() {
           <div className="flex items-center gap-2 min-w-0">
             {allDone ? (
               <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
-                <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} className="size-3" />
+                <Check className="size-3" />
               </div>
             ) : (
               <div className="size-4 shrink-0 animate-spin rounded-full border-2 border-muted border-t-primary" />
@@ -519,7 +503,7 @@ function UploadWidget() {
               className="flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               title="Expand"
             >
-              <HugeiconsIcon icon={ArrowUp01Icon} strokeWidth={2} className="size-4" />
+              <ChevronUp className="size-4" />
             </button>
             {allDone && (
               <button
@@ -528,7 +512,7 @@ function UploadWidget() {
                 className="flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 title="Dismiss"
               >
-                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
+                <X className="size-4" />
               </button>
             )}
           </div>
@@ -586,7 +570,7 @@ function FileRow({
               className="flex size-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               title="Retry upload"
             >
-              <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} className="size-4" />
+              <RefreshCw className="size-4" />
             </button>
           )}
           {canCancel ? (
@@ -596,7 +580,7 @@ function FileRow({
               className="flex size-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               title="Cancel upload"
             >
-              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
+              <X className="size-4" />
             </button>
           ) : (
             <StatusIcon status={item.status} />
@@ -624,13 +608,13 @@ function StatusIcon({ status }: { status: FileUploadItem["status"] }) {
     case "done":
       return (
         <div className="flex size-6 items-center justify-center rounded-full bg-green-100 text-green-600">
-          <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} className="size-4" />
+          <Check className="size-4" />
         </div>
       )
     case "error":
       return (
         <div className="flex size-6 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-          <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
+          <X className="size-4" />
         </div>
       )
     case "uploading":

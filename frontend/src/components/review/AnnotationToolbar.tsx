@@ -1,20 +1,11 @@
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  ArrowUpRight01Icon,
-  PenTool01Icon,
-  SolidLine01Icon,
-  SquareIcon,
-  TriangleIcon,
-  UndoIcon,
-  RedoIcon,
-  Cancel01Icon,
-} from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   type DrawingTool,
   ANNOTATION_COLORS,
 } from "@/hooks/useFabricCanvas"
+import { ArrowUpRight, Check, PenTool, Redo2, Slash, Square, Triangle, Undo2 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 
 interface AnnotationToolbarProps {
   activeTool: DrawingTool
@@ -31,12 +22,12 @@ interface AnnotationToolbarProps {
   isSaving?: boolean
 }
 
-const TOOLS: { value: DrawingTool; icon: typeof ArrowUpRight01Icon; label: string }[] = [
-  { value: "arrow", icon: ArrowUpRight01Icon, label: "Arrow" },
-  { value: "freehand", icon: PenTool01Icon, label: "Pen" },
-  { value: "line", icon: SolidLine01Icon, label: "Line" },
-  { value: "rectangle", icon: SquareIcon, label: "Rectangle" },
-  { value: "triangle", icon: TriangleIcon, label: "Triangle" },
+const TOOLS: { value: DrawingTool; icon: LucideIcon; label: string }[] = [
+  { value: "arrow", icon: ArrowUpRight, label: "Arrow" },
+  { value: "freehand", icon: PenTool, label: "Pen" },
+  { value: "line", icon: Slash, label: "Line" },
+  { value: "rectangle", icon: Square, label: "Rectangle" },
+  { value: "triangle", icon: Triangle, label: "Triangle" },
 ]
 
 export function AnnotationToolbar({
@@ -69,7 +60,7 @@ export function AnnotationToolbar({
           </>
         ) : (
           <Button variant="ghost" size="icon-sm" onClick={onBack} title="Done drawing">
-            <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={2} />
+            <Check size={16} />
           </Button>
         )}
 
@@ -84,7 +75,7 @@ export function AnnotationToolbar({
         >
           {TOOLS.map((tool) => (
             <ToggleGroupItem key={tool.value} value={tool.value} aria-label={tool.label}>
-              <HugeiconsIcon icon={tool.icon} size={16} strokeWidth={2} />
+              <tool.icon size={16} />
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
@@ -109,10 +100,10 @@ export function AnnotationToolbar({
 
         <div className="ml-auto flex items-center gap-0.5">
           <Button variant="ghost" size="icon-sm" onClick={onUndo} disabled={!canUndo} title="Undo">
-            <HugeiconsIcon icon={UndoIcon} size={16} strokeWidth={2} />
+            <Undo2 size={16} />
           </Button>
           <Button variant="ghost" size="icon-sm" onClick={onRedo} disabled={!canRedo} title="Redo">
-            <HugeiconsIcon icon={RedoIcon} size={16} strokeWidth={2} />
+            <Redo2 size={16} />
           </Button>
         </div>
       </div>

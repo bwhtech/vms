@@ -1,6 +1,4 @@
 import { useState, useMemo, useCallback } from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Sorting01Icon } from "@hugeicons/core-free-icons"
 import { useFrappeAuth } from "frappe-react-sdk"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -17,6 +15,7 @@ import { CommentInput } from "./CommentInput"
 import { AnnotationToolbar } from "./AnnotationToolbar"
 import { useReviewComments } from "@/hooks/useReviewComments"
 import { useReviewContext } from "@/hooks/useReviewContext"
+import { ArrowUpDown } from "lucide-react"
 
 export function CommentPanel() {
   const {
@@ -167,7 +166,7 @@ export function CommentPanel() {
             className="text-xs"
             onClick={() => setSortBy(sortBy === "timestamp" ? "recent" : "timestamp")}
           >
-            <HugeiconsIcon icon={Sorting01Icon} size={14} strokeWidth={2} />
+            <ArrowUpDown size={14} />
             {sortBy === "timestamp" ? "By time" : "Recent"}
           </Button>
         </div>

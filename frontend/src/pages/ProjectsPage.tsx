@@ -3,8 +3,6 @@ import { useNavigate } from "react-router"
 import { useFrappeGetDocList, useFrappeCreateDoc, useFrappeAuth } from "frappe-react-sdk"
 import { toast } from "sonner"
 import { format } from "date-fns"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { PlusSignIcon, Calendar03Icon } from "@hugeicons/core-free-icons"
 import {
   Card,
   CardContent,
@@ -41,8 +39,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import { Folder01Icon } from "@hugeicons/core-free-icons"
 import type { VMSProject } from "@/types"
+import { Calendar as CalendarIcon, Folder, Plus } from "lucide-react"
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   Open: "outline",
@@ -118,11 +116,7 @@ export function ProjectsPage() {
           <DialogTrigger
             render={
               <Button>
-                <HugeiconsIcon
-                  icon={PlusSignIcon}
-                  strokeWidth={2}
-                  data-icon="inline-start"
-                />
+                <Plus data-icon="inline-start" />
                 New Project
               </Button>
             }
@@ -168,7 +162,7 @@ export function ProjectsPage() {
                           !dueDate && "text-muted-foreground"
                         )}
                       >
-                        <HugeiconsIcon icon={Calendar03Icon} strokeWidth={2} data-icon="inline-start" />
+                        <CalendarIcon data-icon="inline-start" />
                         {dueDate ? format(dueDate, "PPP") : "Pick a date"}
                       </Button>
                     }
@@ -217,7 +211,7 @@ export function ProjectsPage() {
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <HugeiconsIcon icon={Folder01Icon} strokeWidth={1.5} />
+              <Folder strokeWidth={1.5} />
             </EmptyMedia>
             <EmptyTitle>No projects yet</EmptyTitle>
             <EmptyDescription>
@@ -225,7 +219,7 @@ export function ProjectsPage() {
             </EmptyDescription>
           </EmptyHeader>
           <Button onClick={() => setDialogOpen(true)}>
-            <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} data-icon="inline-start" />
+            <Plus data-icon="inline-start" />
             New Project
           </Button>
         </Empty>

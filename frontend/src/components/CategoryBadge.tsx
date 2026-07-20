@@ -8,9 +8,8 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu"
-import { ArrowDown01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
 import { toast } from "sonner"
+import { ChevronDown } from "lucide-react"
 
 const CATEGORIES = ["Footage", "For Review", "Deliverable"] as const
 type Category = (typeof CATEGORIES)[number]
@@ -54,7 +53,7 @@ export function CategoryBadge({
       >
         <Badge variant={categoryVariant[current] ?? "outline"} className="gap-1">
           {current}
-          <HugeiconsIcon icon={ArrowDown01Icon} size={12} strokeWidth={2} />
+          <ChevronDown size={12} />
         </Badge>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-36" onClick={(e: React.MouseEvent) => e.stopPropagation()}>

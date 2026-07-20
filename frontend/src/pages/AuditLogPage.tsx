@@ -1,17 +1,6 @@
 import { useState } from "react"
 import { useFrappeGetCall } from "frappe-react-sdk"
 import { format } from "date-fns"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  Search01Icon,
-  Audit01Icon,
-  ArrowUpDownIcon,
-  ArrowUp01Icon,
-  ArrowDown01Icon,
-  Calendar01Icon,
-  Cancel01Icon,
-  Tick02Icon,
-} from "@hugeicons/core-free-icons"
 import {
   flexRender,
   getCoreRowModel,
@@ -64,6 +53,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { formatBytes } from "@/lib/utils"
 import type { VMSAuditLog } from "@/types"
 import type { DateRange } from "react-day-picker"
+import { ArrowUpDown, Calendar as CalendarIcon, Check, ChevronDown, ChevronUp, ClipboardList, Search, X } from "lucide-react"
 
 const columns: ColumnDef<VMSAuditLog>[] = [
   {
@@ -167,16 +157,13 @@ function SortableHeader({
       onClick={() => column.toggleSorting(sorted === "asc")}
     >
       {label}
-      <HugeiconsIcon
-        icon={
-          sorted === "asc"
-            ? ArrowUp01Icon
-            : sorted === "desc"
-              ? ArrowDown01Icon
-              : ArrowUpDownIcon
-        }
-        className="ml-1 size-3.5"
-      />
+      {sorted === "asc" ? (
+        <ChevronUp className="ml-1 size-3.5" />
+      ) : sorted === "desc" ? (
+        <ChevronDown className="ml-1 size-3.5" />
+      ) : (
+        <ArrowUpDown className="ml-1 size-3.5" />
+      )}
     </Button>
   )
 }
@@ -276,10 +263,7 @@ export function AuditLogPage() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative">
-          <HugeiconsIcon
-            icon={Search01Icon}
-            className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-          />
+          <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search file name..."
             value={search}
@@ -336,11 +320,7 @@ export function AuditLogPage() {
                 ? projects.find((p) => p.value === project)?.label ?? project
                 : "All projects"}
             </span>
-            <HugeiconsIcon
-              icon={ArrowDown01Icon}
-              strokeWidth={2}
-              className="ml-auto size-4 shrink-0 opacity-50"
-            />
+            <ChevronDown className="ml-auto size-4 shrink-0 opacity-50" />
           </PopoverTrigger>
           <PopoverContent className="w-44 p-0" align="start">
             <Command>
@@ -359,11 +339,7 @@ export function AuditLogPage() {
                       }}
                       data-checked={project === p.value}
                     >
-                      <HugeiconsIcon
-                        icon={Tick02Icon}
-                        strokeWidth={2}
-                        className={`size-4 ${project === p.value ? "opacity-100" : "opacity-0"}`}
-                      />
+                      <Check className={`size-4 ${project === p.value ? "opacity-100" : "opacity-0"}`} />
                       {p.label}
                     </CommandItem>
                   ))}
@@ -375,7 +351,7 @@ export function AuditLogPage() {
         <DateRangePicker value={dateRange} onChange={(range) => { setDateRange(range); setPage(1) }} />
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
-            <HugeiconsIcon icon={Cancel01Icon} className="mr-1 size-3.5" />
+            <X className="mr-1 size-3.5" />
             Clear
           </Button>
         )}
@@ -436,10 +412,7 @@ export function AuditLogPage() {
                   <Empty className="border-0">
                     <EmptyHeader>
                       <EmptyMedia variant="icon">
-                        <HugeiconsIcon
-                          icon={Audit01Icon}
-                          strokeWidth={1.5}
-                        />
+                        <ClipboardList strokeWidth={1.5} />
                       </EmptyMedia>
                       <EmptyTitle>No audit logs found</EmptyTitle>
                       <EmptyDescription>
@@ -517,7 +490,7 @@ function DateRangePicker({
       <PopoverTrigger
         className="inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
       >
-        <HugeiconsIcon icon={Calendar01Icon} className="size-4" />
+        <CalendarIcon className="size-4" />
         <span>{label}</span>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">

@@ -2,9 +2,8 @@ import { useState, useEffect } from "react"
 import { useFrappePostCall } from "frappe-react-sdk"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { PaintBrush02Icon, Tick02Icon, Cancel01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
 import { toast } from "sonner"
+import { Check, Paintbrush, X } from "lucide-react"
 
 export type CardColor = "" | "red" | "amber" | "green" | "blue" | "purple" | "pink"
 
@@ -72,11 +71,7 @@ export function AssetCardColor({ assetName, color, onChanged }: AssetCardColorPr
         {current ? (
           <span className={`size-3.5 rounded-full ring-1 ring-border ${currentSwatch}`} />
         ) : (
-          <HugeiconsIcon
-            icon={PaintBrush02Icon}
-            className="size-3.5 text-muted-foreground"
-            strokeWidth={2}
-          />
+          <Paintbrush className="size-3.5 text-muted-foreground" />
         )}
       </PopoverTrigger>
       <PopoverContent
@@ -92,9 +87,9 @@ export function AssetCardColor({ assetName, color, onChanged }: AssetCardColorPr
             aria-label="No colour"
           >
             {current === "" ? (
-              <HugeiconsIcon icon={Tick02Icon} className="size-3.5" strokeWidth={2.5} />
+              <Check className="size-3.5" strokeWidth={2.5} />
             ) : (
-              <HugeiconsIcon icon={Cancel01Icon} className="size-3" strokeWidth={2} />
+              <X className="size-3" />
             )}
           </button>
           {CARD_COLORS.map((c) => (
@@ -107,7 +102,7 @@ export function AssetCardColor({ assetName, color, onChanged }: AssetCardColorPr
               title={c.label}
             >
               {current === c.value && (
-                <HugeiconsIcon icon={Tick02Icon} className="size-3.5" strokeWidth={3} />
+                <Check className="size-3.5" strokeWidth={3} />
               )}
             </button>
           ))}

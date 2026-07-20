@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef } from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { CloudUploadIcon } from "@hugeicons/core-free-icons"
+import { CloudUpload } from "lucide-react"
 
 interface DropZoneOverlayProps {
   children: React.ReactNode
@@ -76,7 +75,7 @@ export function DropZoneOverlay({ children, onDrop, disabled }: DropZoneOverlayP
       {isDragging && (
         <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-xl border-2 border-dashed border-primary bg-primary/5 backdrop-blur-[2px]">
           <div className="flex flex-col items-center gap-2 text-primary">
-            <HugeiconsIcon icon={CloudUploadIcon} strokeWidth={1.5} className="size-12" />
+            <CloudUpload strokeWidth={1.5} className="size-12" />
             <span className="text-sm font-medium">Drop files to upload</span>
           </div>
         </div>

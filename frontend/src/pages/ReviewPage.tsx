@@ -19,25 +19,9 @@ import { VersionSheet } from "@/components/review/VersionSheet"
 import { SplitVideoDialog } from "@/components/review/SplitVideoDialog"
 import { YouTubeUploadDialog } from "@/components/review/YouTubeUploadDialog"
 import { toast } from "sonner"
+import { serverMessage } from "@/lib/utils"
 
 const noop = () => {}
-
-/** Pull the thrown `frappe.throw` text out of a Frappe API error.
- *
- * The error's own `message` is always the generic "There was an error." —
- * the text the backend actually threw only lives in `_server_messages`, a
- * JSON string holding an array of JSON strings.
- */
-function serverMessage(e: unknown): string {
-  const raw = (e as { _server_messages?: string })?._server_messages
-  if (!raw) return ""
-  try {
-    const first = JSON.parse(raw)[0]
-    return (typeof first === "string" ? JSON.parse(first).message : first?.message) || ""
-  } catch {
-    return ""
-  }
-}
 
 interface ReviewData {
   name: string

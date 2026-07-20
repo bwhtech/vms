@@ -2,23 +2,6 @@ import { Fragment, useState, useMemo, useCallback } from "react"
 import { useSelection } from "@/hooks/useSelection"
 import { useParams, useNavigate } from "react-router"
 import { useFrappeGetDoc, useFrappeGetDocList, useFrappeGetCall, useFrappePostCall, useFrappeEventListener } from "frappe-react-sdk"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  ArrowLeft01Icon,
-  CloudUploadIcon,
-  Delete02Icon,
-  Download04Icon,
-  Folder02Icon,
-  FolderAddIcon,
-  FolderTransferIcon,
-  GridViewIcon,
-  ListViewIcon,
-  Copy01Icon,
-  MoreVerticalIcon,
-  PencilEdit01Icon,
-  Search01Icon,
-  Share01Icon,
-} from "@hugeicons/core-free-icons"
 import { Badge } from "@/components/ui/badge"
 import { cn, formatBytes, formatDuration } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -82,9 +65,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import { Files01Icon, FilmRoll01Icon, DeliveryBox01Icon, FolderOpenIcon } from "@hugeicons/core-free-icons"
 import { buildFolderPathMap } from "@/lib/folderPaths"
 import type { VMSProject, VMSAsset, VMSFolder } from "@/types"
+import { ArrowLeft, Clapperboard, CloudUpload, Copy, Download, Ellipsis, EllipsisVertical, Files, Folder, FolderInput, FolderOpen, FolderPlus, LayoutGrid, List, Package, Pencil, Search, Share2, Trash2 } from "lucide-react"
 
 const PAGE_SIZE = 20
 
@@ -560,7 +543,7 @@ export function ProjectDetailPage() {
           size="icon-sm"
           onClick={() => navigate("/projects")}
         >
-          <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+          <ArrowLeft />
         </Button>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
@@ -573,7 +556,6 @@ export function ProjectDetailPage() {
               onMutate={mutateProject}
             />
           </div>
-          <p className="truncate text-sm text-muted-foreground">{project.name}</p>
         </div>
       </div>
 
@@ -613,7 +595,7 @@ export function ProjectDetailPage() {
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <HugeiconsIcon icon={Folder02Icon} strokeWidth={1.5} />
+                <Folder strokeWidth={1.5} />
               </EmptyMedia>
               <EmptyTitle>Folder not found</EmptyTitle>
               <EmptyDescription>This folder may have been deleted or moved.</EmptyDescription>
@@ -647,11 +629,7 @@ export function ProjectDetailPage() {
                   onClick={handleBulkDownload}
                   disabled={isDownloading}
                 >
-                  <HugeiconsIcon
-                    icon={Download04Icon}
-                    strokeWidth={2}
-                    data-icon="inline-start"
-                  />
+                  <Download data-icon="inline-start" />
                   <span className="hidden sm:inline">
                     {isDownloading ? "Downloading..." : "Download"}
                   </span>
@@ -662,28 +640,16 @@ export function ProjectDetailPage() {
                 </Button>
                 {selected.size === 1 && (
                   <Button variant="outline" size="sm" onClick={() => setRenameOpen(true)}>
-                    <HugeiconsIcon
-                      icon={PencilEdit01Icon}
-                      strokeWidth={2}
-                      data-icon="inline-start"
-                    />
+                    <Pencil data-icon="inline-start" />
                     <span className="hidden sm:inline">Rename</span>
                   </Button>
                 )}
                 <Button variant="outline" size="sm" onClick={() => setMoveToFolderOpen(true)}>
-                  <HugeiconsIcon
-                    icon={FolderTransferIcon}
-                    strokeWidth={2}
-                    data-icon="inline-start"
-                  />
+                  <FolderInput data-icon="inline-start" />
                   <span className="hidden sm:inline">Move ({selected.size})</span>
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>
-                  <HugeiconsIcon
-                    icon={Delete02Icon}
-                    strokeWidth={2}
-                    data-icon="inline-start"
-                  />
+                  <Trash2 data-icon="inline-start" />
                   <span className="hidden sm:inline">Delete ({selected.size})</span>
                 </Button>
               </>
@@ -713,60 +679,61 @@ export function ProjectDetailPage() {
               size="sm"
             >
               <ToggleGroupItem value="list" aria-label="List view">
-                <HugeiconsIcon icon={ListViewIcon} strokeWidth={2} />
+                <List />
               </ToggleGroupItem>
               <ToggleGroupItem value="grid" aria-label="Grid view">
-                <HugeiconsIcon icon={GridViewIcon} strokeWidth={2} />
+                <LayoutGrid />
               </ToggleGroupItem>
             </ToggleGroup>
-            <Button variant="outline" size="sm" onClick={() => setCreateFolderOpen(true)}>
-              <HugeiconsIcon
-                icon={FolderAddIcon}
-                strokeWidth={1.5}
-                data-icon="inline-start"
-              />
-              <span className="hidden sm:inline">New Folder</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCreateFolderOpen(true)}
+              aria-label="New folder"
+              title="New folder"
+            >
+              <FolderPlus strokeWidth={1.5} />
             </Button>
+            {/* Actions on the folder itself are secondary to browsing it, and
+                only apply once you're inside one — so they collapse into a
+                single overflow rather than crowding the toolbar. */}
             {currentFolder && (
-              <>
-                <Button variant="outline" size="sm" onClick={() => setRenameFolderOpen(true)}>
-                  <HugeiconsIcon
-                    icon={PencilEdit01Icon}
-                    strokeWidth={2}
-                    data-icon="inline-start"
-                  />
-                  <span className="hidden sm:inline">Rename</span>
-                </Button>
-                {currentFolderDoc && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCardFolderMove(currentFolderDoc)}
-                  >
-                    <HugeiconsIcon
-                      icon={FolderTransferIcon}
-                      strokeWidth={2}
-                      data-icon="inline-start"
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-label="Folder actions"
                     />
-                    <span className="hidden sm:inline">Move</span>
-                  </Button>
-                )}
-                <Button variant="outline" size="sm" onClick={handleDeleteFolder}>
-                  <HugeiconsIcon
-                    icon={Delete02Icon}
-                    strokeWidth={2}
-                    data-icon="inline-start"
-                  />
-                  <span className="hidden sm:inline">Delete Folder</span>
-                </Button>
-              </>
+                  }
+                >
+                  <Ellipsis />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setRenameFolderOpen(true)}>
+                    <Pencil />
+                    Rename folder
+                  </DropdownMenuItem>
+                  {currentFolderDoc && (
+                    <DropdownMenuItem
+                      onClick={() => handleCardFolderMove(currentFolderDoc)}
+                    >
+                      <FolderInput />
+                      Move folder
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem variant="destructive" onClick={handleDeleteFolder}>
+                    <Trash2 />
+                    Delete folder
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <Button size="sm" onClick={() => openProjectUpload()}>
-              <HugeiconsIcon
-                icon={CloudUploadIcon}
-                strokeWidth={1.5}
-                data-icon="inline-start"
-              />
+              <CloudUpload strokeWidth={1.5}
+                data-icon="inline-start" />
               Upload
             </Button>
           </div>
@@ -805,7 +772,7 @@ export function ProjectDetailPage() {
                 <Empty>
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
-                      <HugeiconsIcon icon={Search01Icon} strokeWidth={1.5} />
+                      <Search strokeWidth={1.5} />
                     </EmptyMedia>
                     <EmptyTitle>No files found</EmptyTitle>
                     <EmptyDescription>
@@ -821,13 +788,13 @@ export function ProjectDetailPage() {
                 <Empty>
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
-                      <HugeiconsIcon icon={FolderOpenIcon} strokeWidth={1.5} />
+                      <FolderOpen strokeWidth={1.5} />
                     </EmptyMedia>
                     <EmptyTitle>Folder is empty</EmptyTitle>
                     <EmptyDescription>Upload files or move assets into this folder.</EmptyDescription>
                   </EmptyHeader>
                   <Button size="sm" onClick={() => openProjectUpload()}>
-                    <HugeiconsIcon icon={CloudUploadIcon} strokeWidth={1.5} data-icon="inline-start" />
+                    <CloudUpload strokeWidth={1.5} data-icon="inline-start" />
                     Upload
                   </Button>
                 </Empty>
@@ -835,13 +802,13 @@ export function ProjectDetailPage() {
                 <Empty>
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
-                      <HugeiconsIcon icon={Files01Icon} strokeWidth={1.5} />
+                      <Files strokeWidth={1.5} />
                     </EmptyMedia>
                     <EmptyTitle>No assets yet</EmptyTitle>
                     <EmptyDescription>Upload some files to get started.</EmptyDescription>
                   </EmptyHeader>
                   <Button size="sm" onClick={() => openProjectUpload()}>
-                    <HugeiconsIcon icon={CloudUploadIcon} strokeWidth={1.5} data-icon="inline-start" />
+                    <CloudUpload strokeWidth={1.5} data-icon="inline-start" />
                     Upload
                   </Button>
                 </Empty>
@@ -876,7 +843,7 @@ export function ProjectDetailPage() {
               <Empty>
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
-                    <HugeiconsIcon icon={FilmRoll01Icon} strokeWidth={1.5} />
+                    <Clapperboard strokeWidth={1.5} />
                   </EmptyMedia>
                   <EmptyTitle>No assets for review</EmptyTitle>
                   <EmptyDescription>Mark assets as "For Review" to see them here.</EmptyDescription>
@@ -912,7 +879,7 @@ export function ProjectDetailPage() {
               <Empty>
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
-                    <HugeiconsIcon icon={DeliveryBox01Icon} strokeWidth={1.5} />
+                    <Package strokeWidth={1.5} />
                   </EmptyMedia>
                   <EmptyTitle>No deliverables yet</EmptyTitle>
                   <EmptyDescription>Mark assets as "Deliverable" to see them here.</EmptyDescription>
@@ -1071,7 +1038,7 @@ function ProjectSharePopover({
         className={buttonVariants({ variant: "ghost", size: "icon-sm", className: isShared ? "text-primary" : "" })}
         title="Share project"
       >
-        <HugeiconsIcon icon={Share01Icon} strokeWidth={2} size={16} />
+        <Share2 size={16} />
       </PopoverTrigger>
       <PopoverContent className="w-80" align="start">
         <div className="space-y-3">
@@ -1098,7 +1065,7 @@ function ProjectSharePopover({
                 onClick={(e) => (e.target as HTMLInputElement).select()}
               />
               <Button variant="outline" size="icon-sm" onClick={handleCopy}>
-                <HugeiconsIcon icon={Copy01Icon} strokeWidth={2} size={14} />
+                <Copy size={14} />
               </Button>
             </div>
           )}
@@ -1202,20 +1169,20 @@ function FolderCard({
     <>
       {onRename && (
         <ContextMenuItem onClick={(e) => { e.stopPropagation(); onRename() }}>
-          <HugeiconsIcon icon={PencilEdit01Icon} strokeWidth={2} />
+          <Pencil />
           Rename
         </ContextMenuItem>
       )}
       {onMove && (
         <ContextMenuItem onClick={(e) => { e.stopPropagation(); onMove() }}>
-          <HugeiconsIcon icon={FolderTransferIcon} strokeWidth={2} />
+          <FolderInput />
           Move to...
         </ContextMenuItem>
       )}
       {(onRename || onMove) && onDelete && <ContextMenuSeparator />}
       {onDelete && (
         <ContextMenuItem variant="destructive" onClick={(e) => { e.stopPropagation(); onDelete() }}>
-          <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+          <Trash2 />
           Delete
         </ContextMenuItem>
       )}
@@ -1226,25 +1193,25 @@ function FolderCard({
     <div onClick={(e) => e.stopPropagation()}>
       <DropdownMenu>
         <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
-          <HugeiconsIcon icon={MoreVerticalIcon} size={16} strokeWidth={2} />
+          <EllipsisVertical size={16} />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
           {onRename && (
             <DropdownMenuItem onClick={onRename}>
-              <HugeiconsIcon icon={PencilEdit01Icon} strokeWidth={2} />
+              <Pencil />
               Rename
             </DropdownMenuItem>
           )}
           {onMove && (
             <DropdownMenuItem onClick={onMove}>
-              <HugeiconsIcon icon={FolderTransferIcon} strokeWidth={2} />
+              <FolderInput />
               Move to...
             </DropdownMenuItem>
           )}
           {(onRename || onMove) && onDelete && <DropdownMenuSeparator />}
           {onDelete && (
             <DropdownMenuItem variant="destructive" onClick={onDelete}>
-              <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+              <Trash2 />
               Delete
             </DropdownMenuItem>
           )}
@@ -1265,7 +1232,7 @@ function FolderCard({
         <CardHeader>
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded bg-muted">
-              <HugeiconsIcon icon={Folder02Icon} size={20} strokeWidth={1.5} className="text-muted-foreground" />
+              <Folder size={20} strokeWidth={1.5} className="text-muted-foreground" />
             </div>
             <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
               <CardTitle className="truncate text-sm">
@@ -1300,7 +1267,7 @@ function FolderCard({
       {...dropProps}
     >
       <div className="flex aspect-video w-full items-center justify-center bg-muted">
-        <HugeiconsIcon icon={Folder02Icon} size={48} strokeWidth={1.5} className="text-muted-foreground/40" />
+        <Folder size={48} strokeWidth={1.5} className="text-muted-foreground/40" />
       </div>
       <CardHeader>
         <div className="flex min-w-0 items-center justify-between gap-2">
@@ -1452,7 +1419,7 @@ function AssetFolderPath({ path, onClick }: { path: string; onClick?: () => void
         onClick?.()
       }}
     >
-      <HugeiconsIcon icon={Folder02Icon} strokeWidth={1.5} className="size-3.5 shrink-0" />
+      <Folder strokeWidth={1.5} className="size-3.5 shrink-0" />
       <span className="truncate">{path}</span>
     </button>
   )

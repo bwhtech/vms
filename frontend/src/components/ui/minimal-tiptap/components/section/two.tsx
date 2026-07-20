@@ -3,16 +3,15 @@ import type { Editor } from "@tiptap/react"
 import type { FormatAction } from "../../types"
 import type { toggleVariants } from "@/components/ui/toggle"
 import type { VariantProps } from "class-variance-authority"
-import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  SourceCodeIcon,
-  MoreHorizontalIcon,
-  TextBoldIcon,
-  TextItalicIcon,
-  TextStrikethroughIcon,
-  TextClearIcon,
-  TextUnderlineIcon,
-} from "@hugeicons/core-free-icons"
+  Bold,
+  Code,
+  Ellipsis,
+  Italic,
+  RemoveFormatting,
+  Strikethrough,
+  Underline,
+} from "lucide-react"
 import { ToolbarSection } from "../toolbar-section"
 
 type TextStyleAction =
@@ -31,7 +30,7 @@ const formatActions: TextStyle[] = [
   {
     value: "bold",
     label: "Bold",
-    icon: <HugeiconsIcon icon={TextBoldIcon} className="size-5" />,
+    icon: <Bold className="size-5" />,
     action: (editor) => editor.chain().focus().toggleBold().run(),
     isActive: (editor) => editor.isActive("bold"),
     canExecute: (editor) =>
@@ -42,7 +41,7 @@ const formatActions: TextStyle[] = [
   {
     value: "italic",
     label: "Italic",
-    icon: <HugeiconsIcon icon={TextItalicIcon} className="size-5" />,
+    icon: <Italic className="size-5" />,
     action: (editor) => editor.chain().focus().toggleItalic().run(),
     isActive: (editor) => editor.isActive("italic"),
     canExecute: (editor) =>
@@ -53,7 +52,7 @@ const formatActions: TextStyle[] = [
   {
     value: "underline",
     label: "Underline",
-    icon: <HugeiconsIcon icon={TextUnderlineIcon} className="size-5" />,
+    icon: <Underline className="size-5" />,
     action: (editor) => editor.chain().focus().toggleUnderline().run(),
     isActive: (editor) => editor.isActive("underline"),
     canExecute: (editor) =>
@@ -64,7 +63,7 @@ const formatActions: TextStyle[] = [
   {
     value: "strikethrough",
     label: "Strikethrough",
-    icon: <HugeiconsIcon icon={TextStrikethroughIcon} className="size-5" />,
+    icon: <Strikethrough className="size-5" />,
     action: (editor) => editor.chain().focus().toggleStrike().run(),
     isActive: (editor) => editor.isActive("strike"),
     canExecute: (editor) =>
@@ -75,7 +74,7 @@ const formatActions: TextStyle[] = [
   {
     value: "code",
     label: "Code",
-    icon: <HugeiconsIcon icon={SourceCodeIcon} className="size-5" />,
+    icon: <Code className="size-5" />,
     action: (editor) => editor.chain().focus().toggleCode().run(),
     isActive: (editor) => editor.isActive("code"),
     canExecute: (editor) =>
@@ -86,7 +85,7 @@ const formatActions: TextStyle[] = [
   {
     value: "clearFormatting",
     label: "Clear formatting",
-    icon: <HugeiconsIcon icon={TextClearIcon} className="size-5" />,
+    icon: <RemoveFormatting className="size-5" />,
     action: (editor) => editor.chain().focus().unsetAllMarks().run(),
     isActive: () => false,
     canExecute: (editor) =>
@@ -115,7 +114,7 @@ export const SectionTwo: React.FC<SectionTwoProps> = ({
       actions={formatActions}
       activeActions={activeActions}
       mainActionCount={mainActionCount}
-      dropdownIcon={<HugeiconsIcon icon={MoreHorizontalIcon} className="size-5" />}
+      dropdownIcon={<Ellipsis className="size-5" />}
       dropdownTooltip="More formatting"
       dropdownClassName="w-8"
       size={size}

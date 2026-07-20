@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react"
 import { useFrappeGetDoc, useFrappeUpdateDoc, useFrappePostCall, useFrappeGetCall } from "frappe-react-sdk"
 import { toast } from "sonner"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { SentIcon, Cancel01Icon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,6 +9,7 @@ import { Slider } from "@/components/ui/slider"
 import { Spinner } from "@/components/ui/spinner"
 import { Tag, TagInput } from "emblor"
 import { cn } from "@/lib/utils"
+import { CircleCheck, Send, X } from "lucide-react"
 
 interface VMSSettings {
   name: string
@@ -238,7 +237,7 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
               )}
             >
               {i < step && (
-                <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-3.5" />
+                <CircleCheck className="size-3.5" />
               )}
               {s.label}
             </button>
@@ -334,7 +333,7 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
                   className="flex-1"
                 />
                 <Button onClick={handleInvite} disabled={inviting || !email.trim()} size="sm">
-                  <HugeiconsIcon icon={SentIcon} strokeWidth={2} className="size-4 mr-1.5" />
+                  <Send className="size-4 mr-1.5" />
                   {inviting ? "Sending..." : "Invite"}
                 </Button>
               </div>
@@ -360,7 +359,7 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
                           className="size-7 p-0"
                           onClick={() => handleCancelInvite(invite.name, invite.email)}
                         >
-                          <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3.5" />
+                          <X className="size-3.5" />
                         </Button>
                       </div>
                     ))}

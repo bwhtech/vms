@@ -1,15 +1,4 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  SubtitleIcon,
-  Refresh01Icon,
-  Search01Icon,
-  Cancel01Icon,
-  ArrowUp01Icon,
-  ArrowDown01Icon,
-  PencilEdit01Icon,
-  Tick01Icon,
-} from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
@@ -25,6 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { Captions, Check, ChevronDown, ChevronUp, Pencil, RefreshCw, Search, X } from "lucide-react"
 
 interface TranscriptionSheetProps {
   open: boolean
@@ -147,7 +137,7 @@ export function TranscriptionSheet({
       <SheetContent side="right" className="sm:max-w-md">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
-            <HugeiconsIcon icon={SubtitleIcon} strokeWidth={2} size={18} />
+            <Captions size={18} />
             Transcription
           </SheetTitle>
           <SheetDescription>
@@ -175,10 +165,10 @@ export function TranscriptionSheet({
                   }}
                   title="Search transcription"
                 >
-                  <HugeiconsIcon icon={Search01Icon} strokeWidth={2} size={14} />
+                  <Search size={14} />
                 </Button>
                 <Button variant="ghost" size="icon-sm" onClick={onRefresh} title="Refresh">
-                  <HugeiconsIcon icon={Refresh01Icon} strokeWidth={2} size={14} />
+                  <RefreshCw size={14} />
                 </Button>
               </div>
 
@@ -198,7 +188,7 @@ export function TranscriptionSheet({
                         onClick={() => { setSearchQuery(""); setCurrentMatch(0) }}
                         className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       >
-                        <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} size={12} />
+                        <X size={12} />
                       </button>
                     )}
                   </div>
@@ -208,10 +198,10 @@ export function TranscriptionSheet({
                         {matchCount > 0 ? `${currentMatch + 1}/${matchCount}` : "0/0"}
                       </span>
                       <Button variant="ghost" size="icon-sm" onClick={handlePrevMatch} disabled={matchCount === 0}>
-                        <HugeiconsIcon icon={ArrowUp01Icon} strokeWidth={2} size={14} />
+                        <ChevronUp size={14} />
                       </Button>
                       <Button variant="ghost" size="icon-sm" onClick={handleNextMatch} disabled={matchCount === 0}>
-                        <HugeiconsIcon icon={ArrowDown01Icon} strokeWidth={2} size={14} />
+                        <ChevronDown size={14} />
                       </Button>
                     </div>
                   )}
@@ -254,12 +244,9 @@ export function TranscriptionSheet({
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3 py-12">
-              <HugeiconsIcon
-                icon={SubtitleIcon}
-                strokeWidth={1.5}
+              <Captions strokeWidth={1.5}
                 size={40}
-                className="text-muted-foreground/50"
-              />
+                className="text-muted-foreground/50" />
               <p className="text-sm text-muted-foreground text-center">
                 No transcription yet. Click below to generate one using AI.
               </p>
@@ -340,7 +327,7 @@ function SpeakerChip({
           className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium transition-colors hover:opacity-80 ${bgClass} ${colorClass}`}
         >
           {displayName || `Speaker ${speakerNum}`}
-          <HugeiconsIcon icon={PencilEdit01Icon} size={10} strokeWidth={2} />
+          <Pencil size={10} />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-56 p-2" align="start">
@@ -357,7 +344,7 @@ function SpeakerChip({
             className="h-7 text-xs"
           />
           <Button variant="ghost" size="icon-sm" onClick={handleSave}>
-            <HugeiconsIcon icon={Tick01Icon} size={14} strokeWidth={2} />
+            <Check size={14} />
           </Button>
         </div>
         <p className="mt-1 text-[10px] text-muted-foreground">

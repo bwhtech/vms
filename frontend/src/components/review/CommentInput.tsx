@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { MailSend01Icon, Clock01Icon, Cancel01Icon, PenTool01Icon, Image02Icon } from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatTimestamp } from "@/hooks/useVideoPlayer"
 import { useReviewContext } from "@/hooks/useReviewContext"
 import { useFrappePostCall } from "frappe-react-sdk"
 import { CommentEditor, type CommentEditorHandle, type ImageUploadFn } from "./CommentEditor"
+import { Clock, Image, PenTool, Send, X } from "lucide-react"
 
 interface CommentInputProps {
   replyTo?: { name: string; commenterName: string; timestamp?: number | null } | null
@@ -112,7 +111,7 @@ export function CommentInput({
         <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
           <span>Replying to <strong>{replyTo.commenterName}</strong></span>
           <Button variant="ghost" size="icon-sm" onClick={onCancelReply}>
-            <HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={2} />
+            <X size={12} />
           </Button>
         </div>
       )}
@@ -145,7 +144,7 @@ export function CommentInput({
               className="cursor-pointer font-mono text-[10px] select-none"
               onClick={() => setAttachTimestamp(!attachTimestamp)}
             >
-              <HugeiconsIcon icon={Clock01Icon} size={10} strokeWidth={2} />
+              <Clock size={10} />
               {formatTimestamp(currentTime)}
             </Badge>
             <Button
@@ -155,7 +154,7 @@ export function CommentInput({
               title={annotationMode ? "Cancel annotation" : "Draw annotation"}
               className={hasAnnotation || annotationMode ? "text-primary" : ""}
             >
-              <HugeiconsIcon icon={PenTool01Icon} size={14} strokeWidth={2} />
+              <PenTool size={14} />
             </Button>
             <Button
               variant="ghost"
@@ -163,7 +162,7 @@ export function CommentInput({
               onClick={() => imageInputRef.current?.click()}
               title="Attach image"
             >
-              <HugeiconsIcon icon={Image02Icon} size={14} strokeWidth={2} />
+              <Image size={14} />
             </Button>
             <input
               ref={imageInputRef}
@@ -195,7 +194,7 @@ export function CommentInput({
           disabled={isSubmitting}
           className="mt-6"
         >
-          <HugeiconsIcon icon={MailSend01Icon} size={16} strokeWidth={2} />
+          <Send size={16} />
         </Button>
       </div>
 

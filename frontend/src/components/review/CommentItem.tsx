@@ -3,17 +3,6 @@ import Lightbox from "yet-another-react-lightbox"
 import Zoom from "yet-another-react-lightbox/plugins/zoom"
 import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen"
 import "yet-another-react-lightbox/styles.css"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  CheckmarkCircle02Icon,
-  Copy01Icon,
-  Delete02Icon,
-  MailReply01Icon,
-  Clock01Icon,
-  PenTool01Icon,
-  PencilEdit01Icon,
-  Tick02Icon,
-} from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -41,6 +30,7 @@ import { Badge } from "@/components/ui/badge"
 import { formatTimestamp } from "@/hooks/useVideoPlayer"
 import { CommentEditor, type CommentEditorHandle } from "./CommentEditor"
 import type { VMSReviewComment } from "@/types"
+import { Check, CircleCheck, Clock, Copy, PenTool, Pencil, Reply, Trash2 } from "lucide-react"
 
 interface CommentItemProps {
   comment: VMSReviewComment
@@ -155,7 +145,7 @@ export function CommentItem({
                       : onSeek(comment.video_timestamp!)
                   }
                 >
-                  <HugeiconsIcon icon={Clock01Icon} size={10} strokeWidth={2} />
+                  <Clock size={10} />
                   {formatTimestamp(comment.video_timestamp!)}
                 </Badge>
               )}
@@ -166,7 +156,7 @@ export function CommentItem({
                   onClick={() => onViewAnnotation?.(comment.name, comment.video_timestamp)}
                   title="View annotation"
                 >
-                  <HugeiconsIcon icon={PenTool01Icon} size={10} strokeWidth={2} />
+                  <PenTool size={10} />
                   Drawing
                 </Badge>
               )}
@@ -204,12 +194,11 @@ export function CommentItem({
                   onClick={handleCopy}
                   title={copied ? "Copied!" : "Copy comment"}
                 >
-                  <HugeiconsIcon
-                    icon={copied ? Tick02Icon : Copy01Icon}
-                    size={14}
-                    strokeWidth={2}
-                    className={copied ? "text-green-500" : ""}
-                  />
+                  {copied ? (
+                    <Check size={14} className="text-green-500" />
+                  ) : (
+                    <Copy size={14} />
+                  )}
                 </Button>
                 {!isNested && (
                   <Button
@@ -218,7 +207,7 @@ export function CommentItem({
                     onClick={() => onReply(comment.name, comment.video_timestamp)}
                     title="Reply"
                   >
-                    <HugeiconsIcon icon={MailReply01Icon} size={14} strokeWidth={2} />
+                    <Reply size={14} />
                   </Button>
                 )}
                 {isOwnComment && comment.has_annotation === 1 && (
@@ -228,7 +217,7 @@ export function CommentItem({
                     onClick={() => onEditAnnotation?.(comment.name, comment.video_timestamp)}
                     title="Edit drawing"
                   >
-                    <HugeiconsIcon icon={PenTool01Icon} size={14} strokeWidth={2} />
+                    <PenTool size={14} />
                   </Button>
                 )}
                 {isOwnComment && (
@@ -238,7 +227,7 @@ export function CommentItem({
                     onClick={() => setShowEditDialog(true)}
                     title="Edit"
                   >
-                    <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={2} />
+                    <Pencil size={14} />
                   </Button>
                 )}
                 {!isGuest && (
@@ -249,12 +238,8 @@ export function CommentItem({
                       onClick={() => onResolve(comment.name, comment.is_resolved === 0)}
                       title={comment.is_resolved ? "Unresolve" : "Resolve"}
                     >
-                      <HugeiconsIcon
-                        icon={CheckmarkCircle02Icon}
-                        size={14}
-                        strokeWidth={2}
-                        className={comment.is_resolved ? "text-green-500" : ""}
-                      />
+                      <CircleCheck size={14}
+                        className={comment.is_resolved ? "text-green-500" : ""} />
                     </Button>
                     <Button
                       variant="ghost"
@@ -262,7 +247,7 @@ export function CommentItem({
                       onClick={() => setShowDeleteConfirm(true)}
                       title="Delete"
                     >
-                      <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={2} />
+                      <Trash2 size={14} />
                     </Button>
                   </>
                 )}

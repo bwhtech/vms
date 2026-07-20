@@ -1,13 +1,12 @@
 import { useFrappeGetDoc, useFrappePostCall, useFrappeAuth, useFrappeFileUpload } from "frappe-react-sdk"
 import { useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Camera01Icon } from "@hugeicons/core-free-icons"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { Camera } from "lucide-react"
 
 
 export function ProfileSection() {
@@ -174,7 +173,7 @@ export function ProfileSection() {
                   onClick={() => fileInputRef.current?.click()}
                   className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <HugeiconsIcon icon={Camera01Icon} strokeWidth={2} className="size-4 text-white" />
+                  <Camera className="size-4 text-white" />
                 </button>
               </div>
               <div className="flex gap-2">

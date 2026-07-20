@@ -1,17 +1,4 @@
 import React from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  MoreVerticalIcon,
-  EyeIcon,
-  Download04Icon,
-  Link01Icon,
-  Unlink04Icon,
-  Exchange01Icon,
-  PencilEdit01Icon,
-  FolderTransferIcon,
-  Delete02Icon,
-  Upload04Icon,
-} from "@hugeicons/core-free-icons"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +15,7 @@ import {
 } from "@/components/ui/context-menu"
 import { Button } from "@/components/ui/button"
 import type { VMSAsset } from "@/types"
+import { ArrowLeftRight, Download, EllipsisVertical, Eye, FolderInput, Link, Pencil, Trash2, Unlink, Upload } from "lucide-react"
 
 export interface AssetMenuActions {
   onOpen?: (asset: VMSAsset) => void
@@ -70,13 +58,13 @@ function MenuItems({ asset, actions, isConvertible, Separator, Item }: MenuItems
     <>
       {actions.onOpen && isReady && (
         <Item onClick={() => actions.onOpen!(asset)}>
-          <HugeiconsIcon icon={EyeIcon} strokeWidth={2} />
+          <Eye />
           Open
         </Item>
       )}
       {actions.onDownload && isReady && (
         <Item onClick={() => actions.onDownload!(asset)}>
-          <HugeiconsIcon icon={Download04Icon} strokeWidth={2} />
+          <Download />
           Download
         </Item>
       )}
@@ -85,25 +73,25 @@ function MenuItems({ asset, actions, isConvertible, Separator, Item }: MenuItems
       )}
       {actions.onCopyShareLink && isShared && isReady && (
         <Item onClick={() => actions.onCopyShareLink!(asset)}>
-          <HugeiconsIcon icon={Link01Icon} strokeWidth={2} />
+          <Link />
           Copy review link
         </Item>
       )}
       {actions.onToggleSharing && isReady && (
         <Item onClick={() => actions.onToggleSharing!(asset)}>
-          <HugeiconsIcon icon={isShared ? Unlink04Icon : Link01Icon} strokeWidth={2} />
+          {isShared ? <Unlink /> : <Link />}
           {isShared ? "Disable public link" : "Enable public link"}
         </Item>
       )}
       {isConvertible && actions.onConvert && isReady && (
         <Item onClick={() => actions.onConvert!(asset)}>
-          <HugeiconsIcon icon={Exchange01Icon} strokeWidth={2} />
+          <ArrowLeftRight />
           Convert to MP4
         </Item>
       )}
       {actions.onUploadNewVersion && isReady && (
         <Item onClick={() => actions.onUploadNewVersion!(asset)}>
-          <HugeiconsIcon icon={Upload04Icon} strokeWidth={2} />
+          <Upload />
           Upload new version
         </Item>
       )}
@@ -112,13 +100,13 @@ function MenuItems({ asset, actions, isConvertible, Separator, Item }: MenuItems
       )}
       {actions.onRename && (
         <Item onClick={() => actions.onRename!(asset)}>
-          <HugeiconsIcon icon={PencilEdit01Icon} strokeWidth={2} />
+          <Pencil />
           Rename
         </Item>
       )}
       {actions.onMoveToFolder && (
         <Item onClick={() => actions.onMoveToFolder!(asset)}>
-          <HugeiconsIcon icon={FolderTransferIcon} strokeWidth={2} />
+          <FolderInput />
           Move to folder
         </Item>
       )}
@@ -126,7 +114,7 @@ function MenuItems({ asset, actions, isConvertible, Separator, Item }: MenuItems
         <>
           {hasEditActions && <Separator />}
           <Item variant="destructive" onClick={() => actions.onDelete!(asset)}>
-            <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+            <Trash2 />
             Delete
           </Item>
         </>
@@ -151,7 +139,7 @@ export function AssetDropdownMenu({
         render={<Button variant="ghost" size="icon-sm" />}
         onClick={(e) => e.stopPropagation()}
       >
-        <HugeiconsIcon icon={MoreVerticalIcon} strokeWidth={2} />
+        <EllipsisVertical />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
         <MenuItems

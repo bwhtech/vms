@@ -1,7 +1,5 @@
 import { useState, useCallback } from "react"
 import { useFrappeGetCall, useFrappePostCall } from "frappe-react-sdk"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Upload04Icon, CheckmarkCircle02Icon, Download04Icon, ArrowTurnBackwardIcon } from "@hugeicons/core-free-icons"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -26,6 +24,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { formatBytes } from "@/lib/utils"
 import { useUploadContext } from "@/contexts/UploadContext"
 import type { VMSAsset } from "@/types"
+import { CircleCheck, Download, RotateCcw, Upload } from "lucide-react"
 
 interface VersionInfo {
   version_number: number
@@ -143,7 +142,7 @@ export function VersionSheet({ open, onOpenChange, asset, onVersionUploaded }: V
                 onComplete: () => { mutate(); onVersionUploaded?.() },
               })}
             >
-              <HugeiconsIcon icon={Upload04Icon} strokeWidth={2} data-icon="inline-start" size={16} />
+              <Upload data-icon="inline-start" size={16} />
               Upload new version
             </Button>
 
@@ -174,7 +173,7 @@ export function VersionSheet({ open, onOpenChange, asset, onVersionUploaded }: V
                         <span className="text-sm font-medium">v{v.version_number}</span>
                         {v.is_current && (
                           <Badge variant="default" className="text-[10px] gap-0.5 px-1.5 py-0">
-                            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={10} />
+                            <CircleCheck size={10} />
                             Current
                           </Badge>
                         )}
@@ -206,7 +205,7 @@ export function VersionSheet({ open, onOpenChange, asset, onVersionUploaded }: V
                         onClick={() => downloadVersion(v.version_number, v.file_name)}
                         title={`Download v${v.version_number}`}
                       >
-                        <HugeiconsIcon icon={Download04Icon} size={14} />
+                        <Download size={14} />
                       </Button>
                       {!v.is_current && (
                         <Button
@@ -217,7 +216,7 @@ export function VersionSheet({ open, onOpenChange, asset, onVersionUploaded }: V
                           onClick={() => setRestoreConfirm(v)}
                           title={`Restore v${v.version_number}`}
                         >
-                          <HugeiconsIcon icon={ArrowTurnBackwardIcon} size={14} />
+                          <RotateCcw size={14} />
                         </Button>
                       )}
                     </div>
