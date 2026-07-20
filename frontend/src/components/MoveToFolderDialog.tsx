@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { serverMessage } from "@/lib/utils"
 import type { VMSFolder } from "@/types"
 import { buildFolderOptions } from "@/lib/folderPaths"
 
@@ -72,8 +73,9 @@ export function MoveToFolderDialog({
       onOpenChange(false)
       onComplete?.()
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Failed to move assets"
-      toast.error(message)
+      toast.error("Failed to move assets", {
+        description: serverMessage(e) || "Try again in a moment.",
+      })
     } finally {
       setMoving(false)
     }

@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { serverMessage } from "@/lib/utils"
 import type { VMSProject } from "@/types"
 
 interface MoveAssetDialogProps {
@@ -63,8 +64,9 @@ export function MoveAssetDialog({
       onOpenChange(false)
       onComplete?.(movedTo)
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Failed to move assets"
-      toast.error(message)
+      toast.error("Failed to move assets", {
+        description: serverMessage(e) || "Try again in a moment.",
+      })
     } finally {
       setMoving(false)
     }

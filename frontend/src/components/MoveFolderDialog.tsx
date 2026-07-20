@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { serverMessage } from "@/lib/utils"
 import type { VMSFolder, VMSProject } from "@/types"
 import { buildFolderOptions, collectDescendants } from "@/lib/folderPaths"
 
@@ -103,8 +104,9 @@ export function MoveFolderDialog({
       handleOpenChange(false)
       onComplete?.()
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Failed to move folder"
-      toast.error(message)
+      toast.error("Failed to move folder", {
+        description: serverMessage(e) || "Try again in a moment.",
+      })
     }
   }
 
