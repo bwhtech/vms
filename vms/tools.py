@@ -6,7 +6,9 @@ import uuid
 from urllib.request import urlretrieve
 
 import frappe
+from frappe import _
 
+from vms.api import is_convertible_video
 from vms.r2 import (
 	delete_r2_object,
 	generate_presigned_download_url,
@@ -225,6 +227,12 @@ def run_asset_conversion(asset_name: str):
 	new_r2_key = None
 
 	try:
+		# The API checks this too, but the conversion deletes the original R2
+		# object, so anything that enqueues the job directly (console, a future
+		# bulk action) must not be able to destroy a non-video asset.
+		if not is_convertible_video(asset):
+			frappe.throw(_("Only video files can be converted to MP4"))
+
 		_publish_conversion_progress(asset, "Processing")
 
 		with tempfile.TemporaryDirectory() as tmpdir:
