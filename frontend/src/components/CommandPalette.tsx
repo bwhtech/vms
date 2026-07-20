@@ -13,6 +13,7 @@ import {
   CommandShortcut,
 } from "@/components/ui/command"
 import { CircleUser, ClipboardList, CloudUpload, FileVideo, FolderClosed, Images, LayoutDashboard, Settings, UserPlus } from "lucide-react"
+import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 
 interface CommandPaletteProps {
   open: boolean
@@ -50,21 +51,25 @@ export function CommandPalette({
   const projectMatch = location.pathname.match(/\/projects\/([^/]+)/)
   const currentProjectId = projectMatch ? projectMatch[1] : null
 
-  // Search assets when query has 2+ chars
-  const shouldSearch = query.trim().length >= 2
+  // Requests follow the settled query, so typing does not fire one per keystroke
+  const debouncedQuery = useDebouncedValue(query.trim(), 300)
+
+  // Search assets when query has 2+ chars. Gated on the raw query too, so
+  // clearing the input hides results immediately rather than after the delay.
+  const shouldSearch = query.trim().length >= 2 && debouncedQuery.length >= 2
   const { data: searchData } = useFrappeGetCall<{
     message: { results: SearchResult[] }
   }>(
     "vms.api.search_assets",
     {
-      query: query.trim(),
+      query: debouncedQuery,
       project: currentProjectId || undefined,
       limit: 8,
     },
     // null, not undefined: the hook falls back to a key built from the method
     // name when the key is undefined, so the request fires anyway. Passing null
     // for the method instead made it fire at /api/method/null, a 417.
-    shouldSearch ? `search-assets-${currentProjectId ?? ""}-${query.trim()}` : null,
+    shouldSearch ? `search-assets-${currentProjectId ?? ""}-${debouncedQuery}` : null,
     {
       revalidateOnFocus: false,
     }
@@ -78,8 +83,8 @@ export function CommandPalette({
     message: { results: ProjectResult[] }
   }>(
     "vms.api.search_projects",
-    { query: query.trim(), limit: 5 },
-    shouldSearchProjects ? `search-projects-${query.trim()}` : null,
+    { query: debouncedQuery, limit: 5 },
+    shouldSearchProjects ? `search-projects-${debouncedQuery}` : null,
     { revalidateOnFocus: false }
   )
 
