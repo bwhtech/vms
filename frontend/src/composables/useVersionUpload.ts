@@ -7,12 +7,19 @@
  * one asset, awaited by the caller.
  */
 import { ref, type Ref } from 'vue'
+import { useOverlays } from '@/composables/useOverlays'
 import { uploadFile } from '@/composables/useUpload'
 
 const ACCEPT = 'video/*,audio/*,image/*,.mkv,.avi,.m4v'
 
 const uploading: Ref<boolean> = ref(false)
 const progress: Ref<number> = ref(0)
+
+/** Open the full queue-backed upload dialog in single-file version mode. */
+function openVersionUpload(assetName: string, onDone?: () => void): void {
+	const { openUpload } = useOverlays()
+	openUpload({ versionOf: assetName, onDone })
+}
 
 function pickFile(): Promise<File | null> {
 	return new Promise((resolve) => {
@@ -57,9 +64,10 @@ async function uploadNewVersion(assetName: string): Promise<void> {
 }
 
 export function useVersionUpload(): {
+	openVersionUpload(assetName: string, onDone?: () => void): void
 	uploadNewVersion(assetName: string): Promise<void>
 	uploading: Ref<boolean>
 	progress: Ref<number>
 } {
-	return { uploadNewVersion, uploading, progress }
+	return { openVersionUpload, uploadNewVersion, uploading, progress }
 }
