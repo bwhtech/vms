@@ -76,6 +76,7 @@ import {
 } from 'frappe-ui'
 import StorageMeter from '@/components/common/StorageMeter.vue'
 import SidebarProjects from '@/components/shell/SidebarProjects.vue'
+import { useNotifications } from '@/composables/useNotifications'
 import { useOverlays } from '@/composables/useOverlays'
 import { useSession } from '@/composables/useSession'
 
@@ -86,7 +87,6 @@ const LOGO_URL = `${import.meta.env.BASE_URL}vms-logo.png`
 
 interface SidebarCounts {
 	uncategorised: number
-	unread_notifications: number
 }
 
 /** The `SidebarHeader` dropdown takes a narrower shape than `Dropdown` does. */
@@ -99,6 +99,7 @@ interface MenuItem {
 const route = useRoute()
 const { logout } = useSession()
 const { commandPaletteOpen, notificationsOpen, openSettings, shortcutsOpen } = useOverlays()
+const { unreadCount } = useNotifications()
 
 // "More" starts collapsed and remembers the choice per browser.
 const moreCollapsed = ref(localStorage.getItem(MORE_KEY) !== 'open')
@@ -113,7 +114,9 @@ const counts = useCall<SidebarCounts>({
 })
 
 const uncategorisedCount = computed(() => counts.data?.uncategorised ?? 0)
-const hasUnread = computed(() => (counts.data?.unread_notifications ?? 0) > 0)
+// Unread comes from the shared notification list, so marking read in the
+// panel clears the dot without a second round trip.
+const hasUnread = computed(() => unreadCount.value > 0)
 
 // Workspace-level actions belong to the workspace, so they hang off its header.
 const workspaceMenu: MenuItem[] = [
