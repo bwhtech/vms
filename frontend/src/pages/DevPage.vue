@@ -4,7 +4,7 @@
 
 		<section class="space-y-3">
 			<h2 class="text-base font-medium">Session and setup</h2>
-			<pre class="overflow-x-auto rounded bg-surface-gray-1 p-3 text-xs text-ink-gray-7">{{
+			<pre class="overflow-x-auto rounded-4 bg-surface-gray-1 p-3 text-xs text-ink-gray-7">{{
 				stateJson
 			}}</pre>
 		</section>
@@ -40,7 +40,7 @@
 
 		<section class="space-y-3">
 			<h2 class="text-base font-medium">EmptyState</h2>
-			<div class="rounded border border-outline-gray-1">
+			<div class="rounded-4 border border-outline-gray-1">
 				<EmptyState
 					icon="lucide-folder-open"
 					title="No assets yet"
@@ -66,7 +66,7 @@
 
 		<section class="space-y-3">
 			<h2 class="text-base font-medium">StorageMeter</h2>
-			<div class="w-60 rounded border border-outline-gray-1">
+			<div class="w-60 rounded-4 border border-outline-gray-1">
 				<StorageMeter />
 			</div>
 		</section>
@@ -86,7 +86,7 @@
 		<section class="space-y-3">
 			<h2 class="text-base font-medium">AssetActions (fake asset)</h2>
 			<div
-				class="flex items-center gap-3 rounded border border-outline-gray-1 px-3 py-2 text-sm"
+				class="flex items-center gap-3 rounded-4 border border-outline-gray-1 px-3 py-2 text-sm"
 			>
 				<span class="lucide-file-video size-4 text-ink-gray-5" aria-hidden="true" />
 				<span class="flex-1 truncate">{{ fakeAsset.file_name }}</span>

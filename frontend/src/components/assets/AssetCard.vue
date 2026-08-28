@@ -1,6 +1,6 @@
 <template>
 	<article
-		class="group relative overflow-hidden rounded-md border border-outline-gray-1 bg-surface-base transition hover:border-outline-gray-2 hover:shadow-sm"
+		class="group relative overflow-hidden rounded-5 border border-outline-gray-1 bg-surface-base transition hover:border-outline-gray-2 hover:shadow-sm"
 		:class="accentClass"
 		:draggable="draggable"
 		@click="emit('open', asset)"
@@ -34,7 +34,7 @@
 			</div>
 			<span
 				v-if="asset.duration_seconds"
-				class="absolute bottom-2 right-2 rounded-sm bg-surface-gray-9 px-1.5 py-0.5 text-2xs text-ink-base tabular-nums"
+				class="absolute bottom-2 right-2 rounded-1 bg-surface-gray-9 px-1.5 py-0.5 text-2xs text-ink-base tabular-nums"
 			>
 				{{ formatDuration(asset.duration_seconds) }}
 			</span>

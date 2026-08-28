@@ -7,9 +7,9 @@
 		@update:open="handleOpenChange"
 	>
 		<div v-if="channels.loading && !channels.data" class="space-y-4" aria-busy="true">
-			<Skeleton class="h-8 w-full rounded" />
-			<Skeleton class="h-8 w-full rounded" />
-			<Skeleton class="h-20 w-full rounded" />
+			<Skeleton class="h-8 w-full rounded-4" />
+			<Skeleton class="h-8 w-full rounded-4" />
+			<Skeleton class="h-20 w-full rounded-4" />
 		</div>
 		<EmptyState
 			v-else-if="!connected && !hasUpload"
@@ -22,7 +22,7 @@
 			</template>
 		</EmptyState>
 		<div v-else-if="isActive" class="space-y-5 py-3">
-			<div class="flex items-start gap-3 rounded bg-surface-blue-1 p-3">
+			<div class="flex items-start gap-3 rounded-4 bg-surface-blue-1 p-3">
 				<span class="lucide-loader-circle mt-0.5 size-4 animate-spin text-ink-blue-6" />
 				<div>
 					<p class="text-base-medium text-ink-gray-8">{{ stageLabel }}</p>
@@ -41,14 +41,14 @@
 			</p>
 		</div>
 		<div v-else-if="uploadStatus === 'Complete'" class="space-y-4 py-2">
-			<div class="flex items-center gap-3 rounded bg-surface-green-1 p-3">
+			<div class="flex items-center gap-3 rounded-4 bg-surface-green-1 p-3">
 				<span class="lucide-circle-check size-5 text-ink-green-6" />
 				<div>
 					<p class="text-base-medium text-ink-gray-8">Upload complete</p>
 					<p class="mt-1 text-p-sm text-ink-gray-5">Published to {{ channelName }}</p>
 				</div>
 			</div>
-			<dl class="space-y-2 rounded border border-outline-gray-2 p-3 text-p-sm">
+			<dl class="space-y-2 rounded-4 border border-outline-gray-2 p-3 text-p-sm">
 				<div
 					v-for="row in metadataRows(
 						publishedTitle,
@@ -66,7 +66,7 @@
 			</dl>
 		</div>
 		<div v-else-if="uploadStatus === 'Error'" class="space-y-4 py-2">
-			<div class="flex items-start gap-3 rounded bg-surface-red-1 p-3">
+			<div class="flex items-start gap-3 rounded-4 bg-surface-red-1 p-3">
 				<span class="lucide-circle-alert mt-0.5 size-5 text-ink-red-6" />
 				<div class="min-w-0">
 					<p class="text-base-medium text-ink-gray-8">Upload failed</p>
@@ -75,7 +75,7 @@
 					</p>
 				</div>
 			</div>
-			<dl class="space-y-2 rounded border border-outline-gray-2 p-3 text-p-sm">
+			<dl class="space-y-2 rounded-4 border border-outline-gray-2 p-3 text-p-sm">
 				<div
 					v-for="row in metadataRows(targetTitle, targetDescription, targetPrivacy)"
 					:key="row.label"

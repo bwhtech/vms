@@ -1,7 +1,7 @@
 <template>
 	<div
 		ref="container"
-		class="flex w-full flex-col overflow-hidden rounded-lg bg-black md:h-full"
+		class="flex w-full flex-col overflow-hidden rounded-6 bg-black md:h-full"
 		data-testid="review-video-player"
 	>
 		<div

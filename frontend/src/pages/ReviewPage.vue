@@ -51,12 +51,12 @@
 		</div>
 		<div v-else class="flex min-h-0 flex-1 flex-col" aria-busy="true">
 			<div class="flex h-12 items-center gap-3 border-b border-outline-gray-1 px-4">
-				<Skeleton class="size-6 rounded" />
-				<Skeleton class="h-4 w-48 rounded" />
+				<Skeleton class="size-6 rounded-4" />
+				<Skeleton class="h-4 w-48 rounded-4" />
 			</div>
 			<div class="flex min-h-0 flex-1 flex-col md:flex-row">
 				<div class="flex-1 p-4">
-					<Skeleton class="h-full w-full rounded-lg bg-surface-gray-7" />
+					<Skeleton class="h-full w-full rounded-6 bg-surface-gray-7" />
 				</div>
 				<div class="hidden md:block md:w-[22rem] md:border-l md:border-outline-gray-1" />
 			</div>

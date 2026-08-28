@@ -23,9 +23,9 @@
 		<div class="space-y-4">
 			<div
 				v-if="isVersionMode"
-				class="flex items-center gap-3 rounded border border-outline-gray-2 bg-surface-gray-1 p-3"
+				class="flex items-center gap-3 rounded-4 border border-outline-gray-2 bg-surface-gray-1 p-3"
 			>
-				<div class="grid size-10 shrink-0 place-items-center rounded bg-surface-gray-2">
+				<div class="grid size-10 shrink-0 place-items-center rounded-4 bg-surface-gray-2">
 					<span class="lucide-file-video size-5 text-ink-gray-5" aria-hidden="true" />
 				</div>
 				<div class="min-w-0 flex-1">
@@ -68,7 +68,7 @@
 
 			<div
 				v-if="reportMessage"
-				class="flex items-center gap-2 rounded bg-surface-gray-1 px-3 py-2 text-p-sm text-ink-gray-6"
+				class="flex items-center gap-2 rounded-4 bg-surface-gray-1 px-3 py-2 text-p-sm text-ink-gray-6"
 			>
 				<span class="size-4" :class="reportIcon" aria-hidden="true" />
 				<span>{{ reportMessage }}</span>

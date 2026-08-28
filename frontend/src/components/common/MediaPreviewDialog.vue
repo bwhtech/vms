@@ -18,13 +18,13 @@
 					:src="url"
 					controls
 					autoplay
-					class="max-h-[76vh] max-w-full rounded"
+					class="max-h-[76vh] max-w-full rounded-4"
 				/>
 				<img
 					v-else
 					:src="url"
 					:alt="name"
-					class="max-h-[76vh] max-w-full rounded object-contain"
+					class="max-h-[76vh] max-w-full rounded-4 object-contain"
 				/>
 			</div>
 		</template>

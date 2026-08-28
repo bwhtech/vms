@@ -70,7 +70,7 @@
 						<article
 							v-for="asset in assets"
 							:key="asset.name"
-							class="group cursor-pointer overflow-hidden rounded-md border border-outline-gray-1 bg-surface-base transition hover:border-outline-gray-2 hover:shadow-sm"
+							class="group cursor-pointer overflow-hidden rounded-5 border border-outline-gray-1 bg-surface-base transition hover:border-outline-gray-2 hover:shadow-sm"
 							data-testid="shared-asset-card"
 							@click="open(asset)"
 						>

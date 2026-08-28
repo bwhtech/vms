@@ -13,8 +13,8 @@
 
 		<div v-if="transcription.loading && !loaded" class="space-y-3 p-4" aria-busy="true">
 			<div v-for="n in 5" :key="n" class="flex gap-3">
-				<Skeleton class="h-3 w-10 shrink-0 rounded" />
-				<Skeleton class="h-3 flex-1 rounded" />
+				<Skeleton class="h-3 w-10 shrink-0 rounded-4" />
+				<Skeleton class="h-3 flex-1 rounded-4" />
 			</div>
 		</div>
 		<EmptyState
@@ -54,7 +54,7 @@
 				<template #prefix><span class="lucide-search size-4 text-ink-gray-5" /></template>
 			</FormControl>
 
-			<div v-if="speakers.length" class="rounded border border-outline-gray-2 p-3">
+			<div v-if="speakers.length" class="rounded-4 border border-outline-gray-2 p-3">
 				<p class="text-sm-medium text-ink-gray-7">Speakers</p>
 				<div class="mt-2 flex flex-wrap gap-2">
 					<Button

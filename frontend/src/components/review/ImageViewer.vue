@@ -1,7 +1,7 @@
 <template>
 	<div
 		ref="container"
-		class="relative flex min-h-[300px] flex-1 items-center justify-center overflow-hidden rounded-lg bg-black md:min-h-0"
+		class="relative flex min-h-[300px] flex-1 items-center justify-center overflow-hidden rounded-6 bg-black md:min-h-0"
 		data-testid="review-image-viewer"
 		@dblclick="toggle"
 	>
@@ -13,7 +13,7 @@
 			draggable="false"
 		/>
 		<ErrorMessage v-else-if="view.error" message="This image could not be loaded." />
-		<Skeleton v-else class="aspect-video w-full max-w-3xl rounded-md bg-surface-gray-7" />
+		<Skeleton v-else class="aspect-video w-full max-w-3xl rounded-5 bg-surface-gray-7" />
 
 		<AnnotationCanvas
 			:target="container"

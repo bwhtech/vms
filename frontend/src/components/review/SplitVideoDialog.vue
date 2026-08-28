@@ -7,7 +7,7 @@
 		@update:open="handleOpenChange"
 	>
 		<div v-if="isProcessing" class="space-y-5 py-2">
-			<div class="flex items-start gap-3 rounded bg-surface-blue-1 p-3">
+			<div class="flex items-start gap-3 rounded-4 bg-surface-blue-1 p-3">
 				<span class="lucide-loader-circle mt-0.5 size-4 animate-spin text-ink-blue-6" />
 				<div>
 					<p class="text-base-medium text-ink-gray-8">{{ progressLabel }}</p>
@@ -38,7 +38,7 @@
 					<span>2</span><span>10</span>
 				</div>
 			</div>
-			<div v-if="asset.file_size" class="space-y-2 rounded bg-surface-gray-1 p-3 text-p-sm">
+			<div v-if="asset.file_size" class="space-y-2 rounded-4 bg-surface-gray-1 p-3 text-p-sm">
 				<div class="flex justify-between gap-4">
 					<span class="text-ink-gray-5">Original size</span>
 					<span class="text-ink-gray-8">{{ formatBytes(asset.file_size) }}</span>

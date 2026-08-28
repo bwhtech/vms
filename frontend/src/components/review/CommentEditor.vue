@@ -9,7 +9,7 @@
 	>
 		<template #default="{ editor, isEmpty: editorEmpty }">
 			<div
-				class="overflow-hidden rounded border border-outline-gray-2 bg-surface-base focus-within:border-outline-gray-3"
+				class="overflow-hidden rounded-4 border border-outline-gray-2 bg-surface-base focus-within:border-outline-gray-3"
 				@keydown.capture="handleKeydown"
 			>
 				<EditorContent

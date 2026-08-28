@@ -1,7 +1,7 @@
 <template>
 	<div
 		:class="[
-			'shrink-0 overflow-hidden rounded',
+			'shrink-0 overflow-hidden rounded-4',
 			sizeClass,
 			thumbnailUrl ? 'bg-surface-gray-2' : style.tile,
 			'grid place-items-center',

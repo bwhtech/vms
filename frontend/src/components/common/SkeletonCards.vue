@@ -3,12 +3,12 @@
 		<div
 			v-for="n in count"
 			:key="n"
-			class="space-y-3 rounded-md border border-outline-gray-1 bg-surface-base p-4"
+			class="space-y-3 rounded-5 border border-outline-gray-1 bg-surface-base p-4"
 		>
-			<Skeleton v-if="media" class="aspect-video w-full rounded" />
-			<Skeleton v-else class="size-8 rounded" />
-			<Skeleton class="h-3 w-2/3 rounded" />
-			<Skeleton class="h-3 w-1/3 rounded" />
+			<Skeleton v-if="media" class="aspect-video w-full rounded-4" />
+			<Skeleton v-else class="size-8 rounded-4" />
+			<Skeleton class="h-3 w-2/3 rounded-4" />
+			<Skeleton class="h-3 w-1/3 rounded-4" />
 		</div>
 	</div>
 </template>

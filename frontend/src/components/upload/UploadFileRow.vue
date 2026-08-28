@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="space-y-2 rounded border border-outline-gray-2 p-3"
+		class="space-y-2 rounded-4 border border-outline-gray-2 p-3"
 		:class="{ 'opacity-60': item.status === 'cancelled' }"
 		data-testid="upload-file-row"
 	>

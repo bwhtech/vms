@@ -4,7 +4,7 @@
 			<span class="lucide-hard-drive size-3.5" aria-hidden="true" />
 			<span>Storage</span>
 		</div>
-		<Skeleton v-if="counts.loading && !counts.data" class="h-4 w-24 rounded" />
+		<Skeleton v-if="counts.loading && !counts.data" class="h-4 w-24 rounded-4" />
 		<template v-else>
 			<p class="text-sm text-ink-gray-8">{{ usageText }}</p>
 		</template>

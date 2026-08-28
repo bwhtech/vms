@@ -1,7 +1,7 @@
 <template>
 	<div
 		v-if="items.length > 0 && !uploadOpen"
-		class="fixed bottom-20 left-3 right-3 z-40 rounded-lg border border-outline-gray-2 bg-surface-elevation-1 px-3 py-2.5 shadow-lg sm:bottom-4 sm:left-auto sm:w-80"
+		class="fixed bottom-20 left-3 right-3 z-40 rounded-6 border border-outline-gray-2 bg-surface-elevation-1 px-3 py-2.5 shadow-lg sm:bottom-4 sm:left-auto sm:w-80"
 		role="status"
 		aria-live="polite"
 		data-testid="upload-queue-panel"

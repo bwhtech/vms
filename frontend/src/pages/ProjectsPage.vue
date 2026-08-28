@@ -20,7 +20,7 @@
 			<div
 				v-for="index in 6"
 				:key="index"
-				class="space-y-3 rounded-md border border-outline-gray-1 p-4"
+				class="space-y-3 rounded-5 border border-outline-gray-1 p-4"
 			>
 				<SkeletonCards :count="6" />
 			</div>

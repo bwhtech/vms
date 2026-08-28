@@ -9,7 +9,7 @@
 		<slot />
 		<div
 			v-if="isDragging"
-			class="pointer-events-none absolute inset-0 z-40 grid place-items-center rounded-lg border-2 border-dashed border-outline-gray-5 bg-surface-elevation-2/90 backdrop-blur-[2px]"
+			class="pointer-events-none absolute inset-0 z-40 grid place-items-center rounded-6 border-2 border-dashed border-outline-gray-5 bg-surface-elevation-2/90 backdrop-blur-[2px]"
 			data-testid="page-drop-zone"
 		>
 			<div class="flex flex-col items-center gap-2 text-ink-gray-7">

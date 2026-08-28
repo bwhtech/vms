@@ -1,6 +1,6 @@
 <template>
 	<label
-		class="flex min-h-40 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 text-center"
+		class="flex min-h-40 flex-col items-center justify-center gap-2 rounded-6 border-2 border-dashed p-6 text-center"
 		:class="dropAreaClasses"
 		data-testid="upload-drop-area"
 		@dragenter.prevent="dragging = true"

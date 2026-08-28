@@ -3,7 +3,7 @@
 		<Skeleton
 			v-for="n in lines"
 			:key="n"
-			:class="['h-3 rounded', n === lines && lines > 1 ? 'w-2/3' : 'w-full']"
+			:class="['h-3 rounded-4', n === lines && lines > 1 ? 'w-2/3' : 'w-full']"
 		/>
 	</div>
 </template>

@@ -38,9 +38,9 @@
 					<div v-for="n in 3" :key="n" class="flex gap-3">
 						<Skeleton class="size-7 shrink-0 rounded-full" />
 						<div class="flex-1 space-y-2 py-1">
-							<Skeleton class="h-3 w-1/3 rounded" />
-							<Skeleton class="h-3 w-5/6 rounded" />
-							<Skeleton class="h-3 w-1/2 rounded" />
+							<Skeleton class="h-3 w-1/3 rounded-4" />
+							<Skeleton class="h-3 w-5/6 rounded-4" />
+							<Skeleton class="h-3 w-1/2 rounded-4" />
 						</div>
 					</div>
 				</div>

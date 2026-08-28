@@ -29,7 +29,7 @@
 				:key="kpi.label"
 				:to="kpi.to"
 				:class="[
-					'flex flex-col gap-1 rounded-md border border-outline-gray-1 bg-surface-base p-4',
+					'flex flex-col gap-1 rounded-5 border border-outline-gray-1 bg-surface-base p-4',
 					kpi.to && 'transition hover:border-outline-gray-2 hover:bg-surface-gray-1',
 				]"
 			>
@@ -38,7 +38,7 @@
 					{{ kpi.label }}
 				</dt>
 				<dd class="text-2xl-semibold text-ink-gray-9">
-					<Skeleton v-if="kpi.value === null" class="mt-1 h-6 w-12 rounded" />
+					<Skeleton v-if="kpi.value === null" class="mt-1 h-6 w-12 rounded-4" />
 					<template v-else>{{ kpi.value }}</template>
 				</dd>
 				<p v-if="kpi.hint" class="text-xs text-ink-gray-5">{{ kpi.hint }}</p>
@@ -88,7 +88,7 @@
 						v-for="project in recentProjects"
 						:key="project.name"
 						:to="`/projects/${project.name}`"
-						class="flex flex-col gap-2 rounded-md border border-outline-gray-1 bg-surface-base p-3 transition hover:border-outline-gray-2 hover:bg-surface-gray-1"
+						class="flex flex-col gap-2 rounded-5 border border-outline-gray-1 bg-surface-base p-3 transition hover:border-outline-gray-2 hover:bg-surface-gray-1"
 						data-testid="dashboard-project-card"
 					>
 						<div class="flex items-start justify-between gap-2">

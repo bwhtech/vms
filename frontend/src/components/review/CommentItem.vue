@@ -1,7 +1,7 @@
 <template>
 	<div :class="nested ? 'ml-8 border-l border-outline-gray-1 pl-2' : ''">
 		<div
-			class="group rounded-lg px-3 py-2"
+			class="group rounded-6 px-3 py-2"
 			:class="[
 				interactive ? 'cursor-pointer hover:bg-surface-gray-1' : '',
 				comment.is_resolved ? 'opacity-60' : '',

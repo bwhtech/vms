@@ -132,7 +132,7 @@
 	>
 		<div class="space-y-4">
 			<UploadDropArea v-if="!file" singular @files="chooseFile($event[0])" />
-			<div v-else class="flex items-center gap-3 rounded-lg border border-outline-gray-1 p-3">
+			<div v-else class="flex items-center gap-3 rounded-6 border border-outline-gray-1 p-3">
 				<span
 					class="lucide-file-video size-5 shrink-0 text-ink-gray-5"
 					aria-hidden="true"

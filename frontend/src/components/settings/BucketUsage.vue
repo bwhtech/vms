@@ -1,6 +1,6 @@
 <template>
 	<div class="flex items-center gap-3" data-testid="bucket-usage">
-		<Skeleton v-if="usage.loading && !usage.data" class="h-4 w-32 rounded" />
+		<Skeleton v-if="usage.loading && !usage.data" class="h-4 w-32 rounded-4" />
 		<p v-else-if="usage.error" class="max-w-xs text-right text-sm text-ink-gray-5">
 			{{ serverMessage(usage.error) || 'Usage unavailable' }}
 		</p>

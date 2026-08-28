@@ -16,18 +16,18 @@
 				<div
 					v-for="n in 3"
 					:key="n"
-					class="flex gap-3 rounded-md border border-outline-gray-1 p-3"
+					class="flex gap-3 rounded-5 border border-outline-gray-1 p-3"
 				>
-					<Skeleton class="h-10 w-10 shrink-0 rounded" />
+					<Skeleton class="h-10 w-10 shrink-0 rounded-4" />
 					<div class="flex-1 space-y-2 py-0.5">
-						<Skeleton class="h-3 w-1/3 rounded" />
-						<Skeleton class="h-3 w-2/3 rounded" />
+						<Skeleton class="h-3 w-1/3 rounded-4" />
+						<Skeleton class="h-3 w-2/3 rounded-4" />
 					</div>
 				</div>
 			</div>
 			<div
 				v-else-if="versions.error"
-				class="rounded bg-surface-red-1 p-3 text-p-sm text-ink-red-6"
+				class="rounded-4 bg-surface-red-1 p-3 text-p-sm text-ink-red-6"
 			>
 				<p>Version history could not be loaded.</p>
 				<Button class="mt-2" label="Try again" @click="versions.reload" />
@@ -47,7 +47,7 @@
 						v-for="version in allVersions"
 						:key="`${version.version_number}-${version.is_current ? 'current' : 'history'}`"
 						:value="String(version.version_number)"
-						class="rounded border border-outline-gray-2"
+						class="rounded-4 border border-outline-gray-2"
 					>
 						<ListCell class="p-3">
 							<div class="flex min-w-0 flex-1 items-start gap-3">
@@ -55,11 +55,11 @@
 									v-if="version.thumbnail_url"
 									:src="version.thumbnail_url"
 									alt=""
-									class="size-10 shrink-0 rounded object-cover"
+									class="size-10 shrink-0 rounded-4 object-cover"
 								/>
 								<div
 									v-else
-									class="grid size-10 shrink-0 place-items-center rounded bg-surface-gray-2"
+									class="grid size-10 shrink-0 place-items-center rounded-4 bg-surface-gray-2"
 								>
 									<span
 										class="lucide-file size-4 text-ink-gray-5"

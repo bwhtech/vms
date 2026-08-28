@@ -1,7 +1,7 @@
 <template>
 	<div
 		v-if="assets.length"
-		class="fixed bottom-6 left-1/2 z-30 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-lg border border-outline-gray-1 bg-surface-elevation-1 p-2 shadow-lg"
+		class="fixed bottom-6 left-1/2 z-30 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-6 border border-outline-gray-1 bg-surface-elevation-1 p-2 shadow-lg"
 		role="toolbar"
 		aria-label="Bulk asset actions"
 	>

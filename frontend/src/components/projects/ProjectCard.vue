@@ -1,10 +1,10 @@
 <template>
 	<RouterLink
 		:to="`/projects/${project.name}`"
-		class="group flex min-h-32 flex-col rounded-md border border-outline-gray-1 bg-surface-base p-4 transition hover:border-outline-gray-2 hover:bg-surface-gray-1"
+		class="group flex min-h-32 flex-col rounded-5 border border-outline-gray-1 bg-surface-base p-4 transition hover:border-outline-gray-2 hover:bg-surface-gray-1"
 	>
 		<div class="flex min-w-0 items-start gap-3">
-			<div class="rounded bg-surface-gray-2 p-2 text-ink-gray-5">
+			<div class="rounded-4 bg-surface-gray-2 p-2 text-ink-gray-5">
 				<span class="lucide-folder size-5" aria-hidden="true" />
 			</div>
 			<div class="min-w-0 flex-1">
