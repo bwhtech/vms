@@ -14,7 +14,7 @@
 		</SettingsHeader>
 		<SettingsBody>
 			<div v-if="!profile.doc" class="space-y-3 pt-6">
-				<LoadingText />
+				<SkeletonLines :lines="4" />
 			</div>
 			<div v-else class="space-y-11 pt-6">
 				<section class="flex items-center gap-4">
@@ -103,20 +103,20 @@ import {
 	Button,
 	FileUploader,
 	FormControl,
-	LoadingText,
 	Select,
 	SettingsBody,
 	SettingsHeader,
 	SettingsPanel,
 	SettingsRow,
 	toast,
-	useColorScheme,
-	useDoc,
 	type ColorScheme,
 	type UploadedFile,
+	useColorScheme,
+	useDoc,
 } from 'frappe-ui'
 import { serverMessage } from '@/lib/format'
 import { useSession } from '@/composables/useSession'
+import SkeletonLines from '@/components/common/SkeletonLines.vue'
 
 interface UserProfile {
 	name: string

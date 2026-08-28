@@ -38,7 +38,7 @@
 					{{ kpi.label }}
 				</dt>
 				<dd class="text-2xl-semibold text-ink-gray-9">
-					<LoadingText v-if="kpi.value === null" class="w-12" />
+					<Skeleton v-if="kpi.value === null" class="mt-1 h-6 w-12 rounded" />
 					<template v-else>{{ kpi.value }}</template>
 				</dd>
 				<p v-if="kpi.hint" class="text-xs text-ink-gray-5">{{ kpi.hint }}</p>
@@ -74,7 +74,11 @@
 						route="/projects"
 					/>
 				</div>
-				<LoadingText v-if="projects.loading && !recentProjects.length" :lines="2" />
+				<SkeletonCards
+					v-if="projects.loading && !recentProjects.length"
+					:count="4"
+					grid-class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+				/>
 				<ErrorMessage v-else-if="projects.error" :message="projects.error" />
 				<p v-else-if="!recentProjects.length" class="text-sm text-ink-gray-5">
 					No projects yet.
@@ -117,7 +121,7 @@
 						route="/uncategorised"
 					/>
 				</div>
-				<LoadingText v-if="assets.loading && !recentAssets.length" :lines="3" />
+				<SkeletonRows v-if="assets.loading && !recentAssets.length" :rows="3" />
 				<ErrorMessage v-else-if="assets.error" :message="assets.error" />
 				<p v-else-if="!recentAssets.length" class="text-sm text-ink-gray-5">
 					No uploads yet.
@@ -169,9 +173,9 @@ import {
 	Badge,
 	Button,
 	ErrorMessage,
-	LoadingText,
 	PageHeader,
 	PageHeaderTitle,
+	Skeleton,
 	useCall,
 	useList,
 	usePageMeta,
@@ -184,6 +188,8 @@ import { useOverlays } from '@/composables/useOverlays'
 import EmptyState from '@/components/common/EmptyState.vue'
 import RelativeTime from '@/components/common/RelativeTime.vue'
 import FileTypeIcon from '@/components/common/FileTypeIcon.vue'
+import SkeletonRows from '@/components/common/SkeletonRows.vue'
+import SkeletonCards from '@/components/common/SkeletonCards.vue'
 
 usePageMeta(() => ({ title: 'Home · VMS' }))
 

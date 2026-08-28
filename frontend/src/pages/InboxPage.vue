@@ -41,7 +41,7 @@
 			<Button variant="ghost" label="Clear" :disabled="bulkBusy" @click="selection = []" />
 		</div>
 
-		<LoadingText v-if="inbox.loading && !assets.length" :lines="4" />
+		<SkeletonRows v-if="inbox.loading && !assets.length" :rows="4" />
 		<div v-else-if="inbox.error && !assets.length" class="space-y-3 py-6">
 			<ErrorMessage :message="inbox.error" />
 			<Button label="Try again" icon-left="lucide-refresh-cw" @click="reload" />
@@ -182,7 +182,6 @@ import {
 	Badge,
 	Button,
 	ErrorMessage,
-	LoadingText,
 	PageHeader,
 	PageHeaderTitle,
 	Select,
@@ -209,6 +208,7 @@ import AssetActions from '@/components/assets/AssetActions.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import RelativeTime from '@/components/common/RelativeTime.vue'
 import FileTypeIcon from '@/components/common/FileTypeIcon.vue'
+import SkeletonRows from '@/components/common/SkeletonRows.vue'
 
 usePageMeta(() => ({ title: 'Inbox · VMS' }))
 

@@ -17,8 +17,7 @@
 				You don't have permission to view these settings.
 			</p>
 			<div v-else-if="!doc.doc" class="space-y-3 pt-6">
-				<LoadingText />
-				<LoadingText />
+				<SkeletonLines :lines="6" />
 			</div>
 			<div v-else class="space-y-11 pt-6">
 				<section class="space-y-4">
@@ -99,14 +98,13 @@
 import { computed, ref, watch } from 'vue'
 import {
 	Button,
-	dialog,
 	FormControl,
-	LoadingText,
 	Select,
 	SettingsBody,
 	SettingsHeader,
 	SettingsPanel,
 	SettingsRow,
+	dialog,
 	toast,
 	useCall,
 } from 'frappe-ui'
@@ -125,6 +123,7 @@ import {
 	useVmsSettings,
 	type VmsSettingsDoc,
 } from './useVmsSettings'
+import SkeletonLines from '@/components/common/SkeletonLines.vue'
 
 const { doc, save: saveSettings } = useVmsSettings()
 const { isSystemManager } = useSession()

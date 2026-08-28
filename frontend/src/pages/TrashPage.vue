@@ -38,7 +38,7 @@
 	</PageHeader>
 
 	<div class="px-3 py-5 pb-10 sm:px-5" data-testid="trash-page">
-		<LoadingText v-if="loading && !rows.length" :lines="5" />
+		<SkeletonRows v-if="loading && !rows.length" />
 		<ErrorMessage v-else-if="loadError && !rows.length" :message="loadError" />
 		<EmptyState
 			v-else-if="!rows.length"
@@ -159,11 +159,10 @@
 import { computed, ref } from 'vue'
 import {
 	Button,
-	dialog,
 	ErrorMessage,
-	LoadingText,
 	PageHeader,
 	PageHeaderTitle,
+	dialog,
 	toast,
 	useCall,
 	usePageMeta,
@@ -181,6 +180,7 @@ import type { Asset, Folder } from '@/types'
 import { formatBytes, serverMessage } from '@/lib/format'
 import EmptyState from '@/components/common/EmptyState.vue'
 import RelativeTime from '@/components/common/RelativeTime.vue'
+import SkeletonRows from '@/components/common/SkeletonRows.vue'
 
 usePageMeta(() => ({ title: 'Trash · VMS' }))
 

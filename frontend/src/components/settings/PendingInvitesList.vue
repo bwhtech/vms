@@ -1,6 +1,6 @@
 <template>
 	<div v-if="loading" class="space-y-2">
-		<LoadingText />
+		<SkeletonLines :lines="2" />
 	</div>
 	<List
 		v-else-if="invitations.length"
@@ -29,9 +29,10 @@
 </template>
 
 <script setup lang="ts">
-import { Avatar, Badge, Button, LoadingText } from 'frappe-ui'
+import { Avatar, Badge, Button } from 'frappe-ui'
 import { List, ListRow } from 'frappe-ui/list'
 import type { PendingInvitation } from './useVmsUsers'
+import SkeletonLines from '@/components/common/SkeletonLines.vue'
 
 defineProps<{ invitations: PendingInvitation[]; loading: boolean }>()
 const emit = defineEmits<{ cancel: [invitation: PendingInvitation] }>()

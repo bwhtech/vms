@@ -17,7 +17,7 @@
 				You don't have permission to view these settings.
 			</p>
 			<div v-else-if="!doc.doc" class="space-y-3 pt-6">
-				<LoadingText />
+				<SkeletonLines :lines="3" />
 			</div>
 			<div v-else class="space-y-11 pt-6">
 				<section>
@@ -66,7 +66,6 @@ import { computed, ref, watch } from 'vue'
 import {
 	Button,
 	FormControl,
-	LoadingText,
 	Select,
 	SettingsBody,
 	SettingsHeader,
@@ -76,6 +75,7 @@ import {
 } from 'frappe-ui'
 import { serverMessage } from '@/lib/format'
 import { changedFields, useVmsSettings, type VmsSettingsDoc } from './useVmsSettings'
+import SkeletonLines from '@/components/common/SkeletonLines.vue'
 
 const PROVIDERS = [
 	{ label: 'OpenAI Whisper', value: 'OpenAI Whisper' },

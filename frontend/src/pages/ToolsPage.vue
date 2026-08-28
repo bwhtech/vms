@@ -18,7 +18,7 @@
 	</PageHeader>
 
 	<div class="px-3 py-5 pb-10 sm:px-5" data-testid="tools-page">
-		<LoadingText v-if="jobsCall.loading && !jobs.length" :lines="4" />
+		<SkeletonRows v-if="jobsCall.loading && !jobs.length" :rows="4" :thumbnail="false" />
 		<ErrorMessage v-else-if="jobsCall.error && !jobs.length" :message="jobsCall.error" />
 		<EmptyState
 			v-else-if="!jobs.length"
@@ -165,7 +165,6 @@ import {
 	Button,
 	Dialog,
 	ErrorMessage,
-	LoadingText,
 	PageHeader,
 	PageHeaderTitle,
 	Progress,
@@ -182,6 +181,7 @@ import { onRealtime } from '@/composables/useRealtime'
 import EmptyState from '@/components/common/EmptyState.vue'
 import RelativeTime from '@/components/common/RelativeTime.vue'
 import UploadDropArea from '@/components/upload/UploadDropArea.vue'
+import SkeletonRows from '@/components/common/SkeletonRows.vue'
 
 usePageMeta(() => ({ title: 'Tools · VMS' }))
 

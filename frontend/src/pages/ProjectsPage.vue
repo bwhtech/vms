@@ -22,7 +22,7 @@
 				:key="index"
 				class="space-y-3 rounded-md border border-outline-gray-1 p-4"
 			>
-				<LoadingText :lines="2" />
+				<SkeletonCards :count="6" />
 			</div>
 		</div>
 		<ErrorMessage v-else-if="projects.error" :message="projects.error.message" />
@@ -47,19 +47,12 @@
 </template>
 
 <script setup lang="ts">
-import {
-	Button,
-	ErrorMessage,
-	LoadingText,
-	PageHeader,
-	PageHeaderTitle,
-	useList,
-	usePageMeta,
-} from 'frappe-ui'
+import { Button, ErrorMessage, PageHeader, PageHeaderTitle, useList, usePageMeta } from 'frappe-ui'
 import type { Project } from '@/types'
 import EmptyState from '@/components/common/EmptyState.vue'
 import ProjectCard from '@/components/projects/ProjectCard.vue'
 import { useOverlays } from '@/composables/useOverlays'
+import SkeletonCards from '@/components/common/SkeletonCards.vue'
 
 usePageMeta(() => ({ title: 'Projects · VMS' }))
 

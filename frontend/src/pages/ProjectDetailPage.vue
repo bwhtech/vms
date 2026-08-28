@@ -53,10 +53,8 @@
 
 	<div class="px-3 py-5 pb-24 sm:px-5">
 		<div v-if="project.loading && !project.doc" class="space-y-4">
-			<LoadingText :lines="2" />
-			<div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
-				<LoadingText v-for="index in 6" :key="index" :lines="3" />
-			</div>
+			<SkeletonLines :lines="2" />
+			<SkeletonCards :count="6" media />
 		</div>
 		<ErrorMessage v-else-if="project.error" :message="project.error.message" />
 		<EmptyState
@@ -76,7 +74,7 @@
 			>
 				{{ plainDescription }}
 			</p>
-			<LoadingText v-if="assetsCall.loading && !assetsCall.data" :lines="5" />
+			<SkeletonCards v-if="assetsCall.loading && !assetsCall.data" :count="6" media />
 			<ErrorMessage
 				v-else-if="assetsCall.error && !assetsCall.data"
 				:message="assetsCall.error.message"
@@ -225,15 +223,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-	Button,
-	Dropdown,
-	ErrorMessage,
-	LoadingText,
-	PageHeader,
-	PageHeaderTitle,
-	usePageMeta,
-} from 'frappe-ui'
+import { Button, Dropdown, ErrorMessage, PageHeader, PageHeaderTitle, usePageMeta } from 'frappe-ui'
 import { List, ListGroup } from 'frappe-ui/list'
 import AssetGrid from '@/components/assets/AssetGrid.vue'
 import AssetList from '@/components/assets/AssetList.vue'
@@ -251,6 +241,8 @@ import ProjectSettingsDialog from '@/components/projects/ProjectSettingsDialog.v
 import ShareProjectPanel from '@/components/projects/ShareProjectPanel.vue'
 import { useProjectBrowser } from '@/components/projects/useProjectBrowser'
 import { useProjectPageActions } from '@/components/projects/useProjectPageActions'
+import SkeletonLines from '@/components/common/SkeletonLines.vue'
+import SkeletonCards from '@/components/common/SkeletonCards.vue'
 
 const props = defineProps<{
 	projectId: string

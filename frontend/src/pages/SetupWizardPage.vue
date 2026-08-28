@@ -31,8 +31,7 @@
 			</nav>
 
 			<div v-if="!doc.doc" class="space-y-3 pt-8">
-				<LoadingText />
-				<LoadingText />
+				<SkeletonLines :lines="6" />
 			</div>
 
 			<form v-else class="space-y-4 pt-8" @submit.prevent="saveAndNext">
@@ -118,7 +117,6 @@ import { computed, ref, watch } from 'vue'
 import {
 	Button,
 	FormControl,
-	LoadingText,
 	PageHeaderBase,
 	PageHeaderTitle,
 	toast,
@@ -139,6 +137,7 @@ import {
 	type VmsSettingsDoc,
 } from '@/components/settings/useVmsSettings'
 import { useVmsUsers } from '@/components/settings/useVmsUsers'
+import SkeletonLines from '@/components/common/SkeletonLines.vue'
 
 usePageMeta(() => ({ title: 'Setup · VMS' }))
 

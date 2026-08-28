@@ -13,7 +13,7 @@
 		</SettingsHeader>
 		<SettingsBody>
 			<div v-if="loading || finalizing" class="space-y-3 pt-6">
-				<LoadingText />
+				<SkeletonLines :lines="3" />
 				<p v-if="finalizing" class="text-base text-ink-gray-5">Finishing the connection…</p>
 			</div>
 			<div v-else class="space-y-11 pt-6">
@@ -156,7 +156,6 @@ import {
 	Badge,
 	Button,
 	FormControl,
-	LoadingText,
 	SettingsBody,
 	SettingsHeader,
 	SettingsPanel,
@@ -164,6 +163,7 @@ import {
 	toast,
 } from 'frappe-ui'
 import { useYoutube, type YoutubeChannel } from './useYoutube'
+import SkeletonLines from '@/components/common/SkeletonLines.vue'
 
 const route = useRoute()
 const router = useRouter()

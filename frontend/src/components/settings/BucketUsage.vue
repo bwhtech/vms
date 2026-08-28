@@ -1,6 +1,6 @@
 <template>
 	<div class="flex items-center gap-3" data-testid="bucket-usage">
-		<LoadingText v-if="usage.loading && !usage.data" class="w-32" />
+		<Skeleton v-if="usage.loading && !usage.data" class="h-4 w-32 rounded" />
 		<p v-else-if="usage.error" class="max-w-xs text-right text-sm text-ink-gray-5">
 			{{ serverMessage(usage.error) || 'Usage unavailable' }}
 		</p>
@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { Button, LoadingText, useCall } from 'frappe-ui'
+import { Button, Skeleton, useCall } from 'frappe-ui'
 import { formatBytes, serverMessage } from '@/lib/format'
 
 interface BucketUsageResponse {

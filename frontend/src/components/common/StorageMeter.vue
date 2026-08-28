@@ -4,7 +4,7 @@
 			<span class="lucide-hard-drive size-3.5" aria-hidden="true" />
 			<span>Storage</span>
 		</div>
-		<LoadingText v-if="counts.loading && !counts.data" class="w-full" />
+		<Skeleton v-if="counts.loading && !counts.data" class="h-4 w-24 rounded" />
 		<template v-else>
 			<p class="text-sm text-ink-gray-8">{{ usageText }}</p>
 		</template>
@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { LoadingText, useCall } from 'frappe-ui'
+import { Skeleton, useCall } from 'frappe-ui'
 import { formatBytes } from '@/lib/format'
 
 interface SidebarCounts {

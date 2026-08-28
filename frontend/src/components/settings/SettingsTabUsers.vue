@@ -17,8 +17,7 @@
 			<div class="space-y-11 pt-6">
 				<section class="space-y-3">
 					<div v-if="usersLoading" class="space-y-2">
-						<LoadingText />
-						<LoadingText />
+						<SkeletonRows :rows="2" :thumbnail="false" />
 					</div>
 					<List
 						v-else-if="users.length"
@@ -63,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { Button, LoadingText, SettingsBody, SettingsHeader, SettingsPanel } from 'frappe-ui'
+import { Button, SettingsBody, SettingsHeader, SettingsPanel } from 'frappe-ui'
 import { List, ListRow } from 'frappe-ui/list'
 import { useSession } from '@/composables/useSession'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -71,6 +70,7 @@ import RelativeTime from '@/components/common/RelativeTime.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import PendingInvitesList from './PendingInvitesList.vue'
 import { useVmsUsers } from './useVmsUsers'
+import SkeletonRows from '@/components/common/SkeletonRows.vue'
 
 const { isSystemManager } = useSession()
 const { users, usersLoading, pending, pendingLoading, inviting, promptInvite, cancelInvitation } =

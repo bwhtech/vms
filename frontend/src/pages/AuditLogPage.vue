@@ -49,7 +49,7 @@
 			/>
 		</div>
 
-		<LoadingText v-if="logs.loading && !rows.length" :lines="5" />
+		<SkeletonRows v-if="logs.loading && !rows.length" :thumbnail="false" />
 		<ErrorMessage v-else-if="logs.error && !rows.length" :message="logs.error" />
 		<EmptyState
 			v-else-if="!rows.length"
@@ -153,7 +153,6 @@ import {
 	Badge,
 	Button,
 	ErrorMessage,
-	LoadingText,
 	PageHeader,
 	PageHeaderTitle,
 	Select,
@@ -175,6 +174,7 @@ import { formatDate, groupByDay } from '@/lib/dates'
 import { formatBytes } from '@/lib/format'
 import EmptyState from '@/components/common/EmptyState.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import SkeletonRows from '@/components/common/SkeletonRows.vue'
 
 usePageMeta(() => ({ title: 'Audit log · VMS' }))
 
