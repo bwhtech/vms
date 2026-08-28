@@ -1,7 +1,7 @@
 <template>
 	<PageHeader>
 		<PageHeaderTitle>
-			<h1 class="truncate">Home</h1>
+			<h1 class="truncate">Inbox</h1>
 		</PageHeaderTitle>
 	</PageHeader>
 	<div class="px-3 py-5 pb-10 sm:px-5">
@@ -12,5 +12,5 @@
 <script setup lang="ts">
 import { PageHeader, PageHeaderTitle, usePageMeta } from 'frappe-ui'
 
-usePageMeta(() => ({ title: 'Home · VMS' }))
+usePageMeta(() => ({ title: 'Inbox · VMS' }))
 </script>

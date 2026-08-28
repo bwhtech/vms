@@ -9,6 +9,7 @@ declare global {
 		system_timezone?: string
 		frappe_version?: string
 		read_only_mode?: boolean
+		socketio_port?: number | string
 	}
 }
 

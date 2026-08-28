@@ -11,7 +11,29 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AppShell: typeof import('./src/components/shell/AppShell.vue')['default']
+    AppSidebar: typeof import('./src/components/shell/AppSidebar.vue')['default']
+    AssetActions: typeof import('./src/components/assets/AssetActions.vue')['default']
+    AssetTags: typeof import('./src/components/assets/AssetTags.vue')['default']
+    CommandPalette: typeof import('./src/components/shell/CommandPalette.vue')['default']
+    CreateProjectDialog: typeof import('./src/components/projects/CreateProjectDialog.vue')['default']
+    EmptyState: typeof import('./src/components/common/EmptyState.vue')['default']
+    KeyboardShortcutsDialog: typeof import('./src/components/shell/KeyboardShortcutsDialog.vue')['default']
+    MediaPreviewDialog: typeof import('./src/components/common/MediaPreviewDialog.vue')['default']
+    MobileShellNav: typeof import('./src/components/shell/MobileShellNav.vue')['default']
+    MoveAssetDialog: typeof import('./src/components/assets/MoveAssetDialog.vue')['default']
+    NotificationsPanel: typeof import('./src/components/shell/NotificationsPanel.vue')['default']
+    RelativeTime: typeof import('./src/components/common/RelativeTime.vue')['default']
+    RenameAssetDialog: typeof import('./src/components/assets/RenameAssetDialog.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SidebarProjects: typeof import('./src/components/shell/SidebarProjects.vue')['default']
+    SidePanel: typeof import('./src/components/common/SidePanel.vue')['default']
+    StorageMeter: typeof import('./src/components/common/StorageMeter.vue')['default']
+    UploadDialog: typeof import('./src/components/upload/UploadDialog.vue')['default']
+    UploadQueuePanel: typeof import('./src/components/upload/UploadQueuePanel.vue')['default']
+    UserAvatar: typeof import('./src/components/common/UserAvatar.vue')['default']
+    VmsSettingsDialog: typeof import('./src/components/settings/VmsSettingsDialog.vue')['default']
+    YoutubeIcon: typeof import('./src/components/common/YoutubeIcon.vue')['default']
   }
 }
