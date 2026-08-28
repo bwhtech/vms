@@ -11,15 +11,20 @@
 			/>
 		</template>
 
-		<div v-if="transcription.loading && !loaded" class="grid place-items-center py-16">
-			<LoadingIndicator class="text-ink-gray-5" />
+		<div v-if="transcription.loading && !loaded" class="space-y-3 p-4" aria-busy="true">
+			<div v-for="n in 5" :key="n" class="flex gap-3">
+				<Skeleton class="h-3 w-10 shrink-0 rounded" />
+				<Skeleton class="h-3 flex-1 rounded" />
+			</div>
 		</div>
 		<EmptyState
 			v-else-if="status === 'Processing'"
 			title="Generating transcription"
 			description="This can take a few minutes. The transcript refreshes automatically."
 		>
-			<template #icon><LoadingIndicator class="text-ink-gray-5" /></template>
+			<template #icon>
+				<span class="lucide-audio-lines size-6 text-ink-gray-5" aria-hidden="true" />
+			</template>
 		</EmptyState>
 		<EmptyState
 			v-else-if="status === 'Error'"
@@ -121,7 +126,7 @@
 
 <script setup lang="ts">
 import { computed, onScopeDispose, ref, watch } from 'vue'
-import { Button, FormControl, LoadingIndicator, dialog, toast, useCall } from 'frappe-ui'
+import { Button, FormControl, Skeleton, dialog, toast, useCall } from 'frappe-ui'
 import { List, ListCell, ListRow } from 'frappe-ui/list'
 import EmptyState from '@/components/common/EmptyState.vue'
 import SidePanel from '@/components/common/SidePanel.vue'

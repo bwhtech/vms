@@ -19,12 +19,10 @@
 			<div v-if="view.error" class="absolute inset-0 grid place-items-center p-6 text-center">
 				<ErrorMessage message="This video could not be loaded." />
 			</div>
-			<div
-				v-else-if="!view.data?.url || player.isBuffering.value"
-				class="pointer-events-none absolute inset-0 grid place-items-center"
-			>
-				<LoadingIndicator class="text-ink-gray-3" />
-			</div>
+			<Skeleton
+				v-else-if="!view.data?.url"
+				class="pointer-events-none absolute inset-0 rounded-none bg-surface-gray-7"
+			/>
 
 			<AnnotationCanvas
 				:target="videoWrapper"
@@ -67,7 +65,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onScopeDispose, ref, watch } from 'vue'
-import { ErrorMessage, LoadingIndicator, useCall } from 'frappe-ui'
+import { ErrorMessage, Skeleton, useCall } from 'frappe-ui'
 import type { AnnotationJson, ReviewComment, ViewUrlResponse } from '@/types'
 import AnnotationCanvas from '@/components/review/AnnotationCanvas.vue'
 import VideoControls from '@/components/review/VideoControls.vue'

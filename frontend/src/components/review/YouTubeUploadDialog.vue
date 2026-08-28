@@ -6,8 +6,10 @@
 		:dismissible="!isActive"
 		@update:open="handleOpenChange"
 	>
-		<div v-if="channels.loading && !channels.data" class="grid place-items-center py-10">
-			<LoadingIndicator class="text-ink-gray-5" />
+		<div v-if="channels.loading && !channels.data" class="space-y-4" aria-busy="true">
+			<Skeleton class="h-8 w-full rounded" />
+			<Skeleton class="h-8 w-full rounded" />
+			<Skeleton class="h-20 w-full rounded" />
 		</div>
 		<EmptyState
 			v-else-if="!connected && !hasUpload"
@@ -148,16 +150,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onScopeDispose, ref, watch } from 'vue'
-import {
-	Button,
-	Dialog,
-	FormControl,
-	LoadingIndicator,
-	Progress,
-	Select,
-	toast,
-	useCall,
-} from 'frappe-ui'
+import { Button, Dialog, FormControl, Skeleton, Progress, Select, toast, useCall } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { getSocket, onRealtime } from '@/composables/useRealtime'

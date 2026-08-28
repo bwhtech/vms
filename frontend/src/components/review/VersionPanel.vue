@@ -12,8 +12,18 @@
 			/>
 			<Progress v-if="uploading" :value="progress" size="md" hint />
 
-			<div v-if="versions.loading" class="grid place-items-center py-12">
-				<LoadingIndicator class="text-ink-gray-5" />
+			<div v-if="versions.loading" class="space-y-3" aria-busy="true">
+				<div
+					v-for="n in 3"
+					:key="n"
+					class="flex gap-3 rounded-md border border-outline-gray-1 p-3"
+				>
+					<Skeleton class="h-10 w-10 shrink-0 rounded" />
+					<div class="flex-1 space-y-2 py-0.5">
+						<Skeleton class="h-3 w-1/3 rounded" />
+						<Skeleton class="h-3 w-2/3 rounded" />
+					</div>
+				</div>
 			</div>
 			<div
 				v-else-if="versions.error"
@@ -111,7 +121,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Badge, Button, LoadingIndicator, Progress, dialog, toast, useCall } from 'frappe-ui'
+import { Badge, Button, Progress, Skeleton, dialog, toast, useCall } from 'frappe-ui'
 import { List, ListCell, ListRow } from 'frappe-ui/list'
 import SidePanel from '@/components/common/SidePanel.vue'
 import { useReview } from '@/composables/useReview'

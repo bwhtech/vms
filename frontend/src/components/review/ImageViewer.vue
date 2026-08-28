@@ -13,7 +13,7 @@
 			draggable="false"
 		/>
 		<ErrorMessage v-else-if="view.error" message="This image could not be loaded." />
-		<LoadingIndicator v-else class="text-ink-gray-4" />
+		<Skeleton v-else class="aspect-video w-full max-w-3xl rounded-md bg-surface-gray-7" />
 
 		<AnnotationCanvas
 			:target="container"
@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ErrorMessage, LoadingIndicator, useCall } from 'frappe-ui'
+import { ErrorMessage, Skeleton, useCall } from 'frappe-ui'
 import type { ViewUrlResponse } from '@/types'
 import AnnotationCanvas from '@/components/review/AnnotationCanvas.vue'
 import { useFullscreen } from '@/composables/useFullscreen'

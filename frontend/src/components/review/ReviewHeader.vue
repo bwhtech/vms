@@ -80,6 +80,7 @@ import type { ReviewAsset } from '@/types'
 import { assetStatusTheme } from '@/lib/status'
 import { useDownload } from '@/composables/useDownload'
 import { useReview } from '@/composables/useReview'
+import YoutubeIcon from '@/components/common/YoutubeIcon.vue'
 
 const props = defineProps<{
 	asset: ReviewAsset
@@ -132,7 +133,7 @@ const menuOptions = computed<DropdownOption[]>(() => {
 			},
 			{
 				label: 'Upload to YouTube',
-				icon: 'lucide-youtube',
+				icon: YoutubeIcon,
 				onClick: () => (review.panels.youtube.value = true),
 			},
 			{

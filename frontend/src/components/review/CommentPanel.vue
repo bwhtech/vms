@@ -17,10 +17,14 @@
 					size="sm"
 					:options="versionOptions"
 				/>
-				<Button variant="ghost" size="sm" @click="toggleSort">
-					<span class="lucide-arrow-up-down size-3.5" aria-hidden="true" />
-					{{ comments.sortBy.value === 'timestamp' ? 'By time' : 'Recent' }}
-				</Button>
+				<Select
+					v-model="comments.sortBy.value"
+					variant="ghost"
+					size="sm"
+					class="w-24"
+					aria-label="Sort comments"
+					:options="sortOptions"
+				/>
 			</div>
 		</div>
 
@@ -28,9 +32,17 @@
 			<div class="py-2">
 				<div
 					v-if="comments.loading.value && !comments.list.value.length"
-					class="grid place-items-center py-10"
+					class="space-y-4 px-4 py-3"
+					aria-busy="true"
 				>
-					<LoadingIndicator class="text-ink-gray-5" />
+					<div v-for="n in 3" :key="n" class="flex gap-3">
+						<Skeleton class="size-7 shrink-0 rounded-full" />
+						<div class="flex-1 space-y-2 py-1">
+							<Skeleton class="h-3 w-1/3 rounded" />
+							<Skeleton class="h-3 w-5/6 rounded" />
+							<Skeleton class="h-3 w-1/2 rounded" />
+						</div>
+					</div>
 				</div>
 				<p
 					v-else-if="!threads.length"
@@ -61,9 +73,13 @@
 					Replying to
 					<strong class="text-ink-gray-8">{{ replyTo.commenter_name }}</strong>
 				</span>
-				<Button variant="ghost" size="sm" aria-label="Cancel reply" @click="replyTo = null">
-					<span class="lucide-x size-3" aria-hidden="true" />
-				</Button>
+				<Button
+					variant="ghost"
+					size="sm"
+					icon="lucide-x"
+					aria-label="Cancel reply"
+					@click="replyTo = null"
+				/>
 			</div>
 
 			<FormControl
@@ -80,25 +96,22 @@
 				<Button
 					:variant="attachTimestamp ? 'subtle' : 'ghost'"
 					size="sm"
-					class="font-mono"
+					icon-left="lucide-clock-3"
+					:label="formatTimestamp(review.currentTime.value)"
 					:aria-pressed="attachTimestamp"
 					:title="attachTimestamp ? 'Timestamp attached' : 'Attach timestamp'"
 					@click="attachTimestamp = !attachTimestamp"
-				>
-					<span class="lucide-clock-3 size-3" aria-hidden="true" />
-					{{ formatTimestamp(review.currentTime.value) }}
-				</Button>
+				/>
 				<Button
 					v-if="!isImage"
 					:variant="drawingActive || pendingAnnotation ? 'subtle' : 'ghost'"
 					size="sm"
+					icon="lucide-pen-tool"
 					:aria-pressed="drawingActive"
+					:aria-label="drawingActive ? 'Cancel drawing' : 'Draw annotation'"
 					:title="drawingActive ? 'Cancel drawing' : 'Draw annotation'"
 					@click="toggleDrawing"
-				>
-					<span class="lucide-pen-tool size-3.5" aria-hidden="true" />
-				</Button>
-				<span class="text-xs text-ink-gray-5">{{ attachmentHint }}</span>
+				/>
 			</div>
 
 			<CommentEditor
@@ -124,7 +137,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { Button, FormControl, LoadingIndicator, ScrollArea, Select, toast } from 'frappe-ui'
+import { Button, FormControl, ScrollArea, Select, Skeleton, toast } from 'frappe-ui'
 import type { AnnotationJson, ReviewComment } from '@/types'
 import AnnotationToolbar from '@/components/review/AnnotationToolbar.vue'
 import CommentEditor from '@/components/review/CommentEditor.vue'
@@ -182,11 +195,10 @@ const emptyMessage = computed(() =>
 		? `No comments on v${comments.versionFilter.value}.`
 		: 'No comments yet. Be the first to add feedback.',
 )
-const attachmentHint = computed(() => {
-	if (drawingActive.value) return 'drawing…'
-	if (pendingAnnotation.value) return 'drawing attached'
-	return attachTimestamp.value ? 'timestamp attached' : 'no timestamp'
-})
+const sortOptions = [
+	{ label: 'Recent', value: 'recent' },
+	{ label: 'By time', value: 'timestamp' },
+]
 const editorPlaceholder = computed(() =>
 	review.isGuest.value ? 'Add a comment…' : 'Add a comment… Type @ to mention',
 )
@@ -197,10 +209,6 @@ watch(
 		if (mode === 'off' && !pendingAnnotation.value) editingAnnotation.value = null
 	},
 )
-
-function toggleSort() {
-	comments.sortBy.value = comments.sortBy.value === 'timestamp' ? 'recent' : 'timestamp'
-}
 
 async function startReply(comment: ReviewComment) {
 	replyTo.value = comment

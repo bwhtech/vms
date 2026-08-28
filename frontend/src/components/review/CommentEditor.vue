@@ -21,12 +21,11 @@
 					<Button
 						variant="ghost"
 						size="sm"
+						icon="lucide-image-plus"
 						aria-label="Attach image"
 						title="Attach image"
 						@click="editor?.commands.selectAndUploadImage()"
-					>
-						<span class="lucide-image-plus size-4" />
-					</Button>
+					/>
 					<div class="flex items-center gap-2">
 						<span class="hidden text-xs text-ink-gray-5 sm:inline">{{
 							shortcutLabel
@@ -34,13 +33,12 @@
 						<Button
 							variant="solid"
 							size="sm"
+							icon-left="lucide-send"
+							:label="submitLabel"
 							:loading="submitting"
 							:disabled="editorEmpty || submitting"
 							@click="submit"
-						>
-							<span class="lucide-send size-4" />
-							{{ submitLabel }}
-						</Button>
+						/>
 					</div>
 				</div>
 			</div>
