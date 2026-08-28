@@ -11,6 +11,9 @@ from vms.r2 import (
 )
 from vms.youtube import channel_display_name
 
+# Keys minted by `upload_comment_image`, and the only keys a comment may re-sign.
+COMMENT_IMAGE_KEY = re.compile(r"^comment-images/[0-9a-f]{32}\.[A-Za-z0-9]{1,16}$")
+
 
 def _validate_public_token(asset_name, token):
 	"""Validate guest access via public review token.
@@ -44,6 +47,22 @@ def get_review_data(asset_name: str, token: str | None = None):
 
 	asset = frappe.get_doc("VMS Asset", asset_name)
 
+	if is_guest:
+		# A share link grants access to one asset, nothing around it: no
+		# uploader identity, no parent project or folder, no sibling split
+		# parts. This is every field the guest review page actually renders.
+		return {
+			"name": asset.name,
+			"file_name": asset.file_name,
+			"file_type": asset.file_type,
+			"file_size": asset.file_size,
+			"status": asset.status,
+			"category": asset.category,
+			"duration_seconds": asset.duration_seconds,
+			"proxy_status": asset.proxy_status or "",
+			"version": asset.version or 1,
+		}
+
 	data = {
 		"name": asset.name,
 		"file_name": asset.file_name,
@@ -66,11 +85,9 @@ def get_review_data(asset_name: str, token: str | None = None):
 		"youtube_description": asset.youtube_description or "",
 		"youtube_privacy": asset.youtube_privacy or "",
 		"version": asset.version or 1,
+		# Guests returned above, so the share token is authenticated-only.
+		"review_token": asset.review_token,
 	}
-
-	# Only expose review_token to authenticated users
-	if not is_guest:
-		data["review_token"] = asset.review_token
 
 	# Split history
 	if asset.split_from and frappe.db.exists("VMS Asset", asset.split_from):
@@ -289,13 +306,19 @@ def add_comment(
 @frappe.whitelist(allow_guest=True)
 def get_annotation_data(comment_name: str, token: str | None = None):
 	"""Get annotation JSON data for a single comment (fetched on demand)."""
-	if not frappe.db.exists("VMS Review Comment", comment_name):
+	# Look up the asset first so the token can be validated against it. Comment
+	# names are a sequential series, so an unauthenticated caller must never get
+	# a different answer for an existing comment than for a missing one.
+	asset_name = frappe.db.get_value("VMS Review Comment", comment_name, "asset")
+
+	if not asset_name:
+		if not frappe.session.user or frappe.session.user == "Guest":
+			frappe.throw(_("Authentication required"), frappe.AuthenticationError)
 		frappe.throw(_("Comment {0} does not exist").format(comment_name))
 
-	# Look up the asset from the comment to validate token
-	asset_name = frappe.db.get_value("VMS Review Comment", comment_name, "asset")
-	if token:
-		_validate_public_token(asset_name, token)
+	# Guests need a valid review token for *this comment's* asset; authenticated
+	# users pass through as before.
+	_validate_public_token(asset_name, token)
 
 	data = frappe.db.get_value(
 		"VMS Review Comment",
@@ -378,7 +401,10 @@ def upload_comment_image(
 	if not content_type.startswith("image/"):
 		frappe.throw(_("Only image files are allowed"))
 
+	# Keep the extension alphanumeric so every minted key matches
+	# COMMENT_IMAGE_KEY and stays re-signable later.
 	ext = file_name.rsplit(".", 1)[-1] if "." in file_name else "png"
+	ext = re.sub(r"[^A-Za-z0-9]", "", ext)[:16] or "png"
 	r2_key = f"comment-images/{uuid.uuid4().hex}.{ext}"
 
 	upload_url = generate_presigned_upload_url_raw(r2_key, content_type)
@@ -392,7 +418,16 @@ def upload_comment_image(
 
 
 def _re_sign_comment_images(html: str) -> str:
-	"""Find <img> tags with data-r2-key attribute and replace src with fresh presigned URLs."""
+	"""Find <img> tags with data-r2-key attribute and replace src with fresh presigned URLs.
+
+	The r2 key comes out of stored comment HTML, which the commenter (including a
+	token-holding guest) controls, so it is only re-signed when it has the exact
+	shape `upload_comment_image` mints: `comment-images/<uuid4 hex>.<ext>`. That
+	keeps the signing oracle away from asset media, proxies and every other
+	bucket prefix, and comment-image keys of other assets stay out of reach
+	because a random uuid4 is not guessable. Keys that do not match are left
+	alone rather than signed.
+	"""
 	if not html or "data-r2-key" not in html:
 		return html
 
@@ -402,6 +437,8 @@ def _re_sign_comment_images(html: str) -> str:
 		if not r2_key_match:
 			return full_tag
 		r2_key = r2_key_match.group(1)
+		if not COMMENT_IMAGE_KEY.match(r2_key):
+			return full_tag
 		fresh_url = generate_presigned_view_url(r2_key)
 		# Replace the src attribute value
 		return re.sub(r'src="[^"]*"', f'src="{fresh_url}"', full_tag)
