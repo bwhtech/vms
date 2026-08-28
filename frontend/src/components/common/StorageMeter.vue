@@ -6,15 +6,14 @@
 		</div>
 		<LoadingText v-if="counts.loading && !counts.data" class="w-full" />
 		<template v-else>
-			<Progress v-if="counts.data" :value="percent" size="sm" />
-			<p class="text-xs text-ink-gray-5">{{ usageText }}</p>
+			<p class="text-sm text-ink-gray-8">{{ usageText }}</p>
 		</template>
 	</div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { LoadingText, Progress, useCall } from 'frappe-ui'
+import { LoadingText, useCall } from 'frappe-ui'
 import { formatBytes } from '@/lib/format'
 
 interface SidebarCounts {
@@ -30,13 +29,6 @@ const counts = useCall<SidebarCounts>({
 })
 
 const storage = computed(() => counts.data?.storage ?? { used: 0, total: 0 })
-
-// R2 buckets have no quota, so `total` is 0 when unknown.
-const percent = computed(() => {
-	const { used, total } = storage.value
-	if (!total) return 0
-	return Math.min(100, Math.round((used / total) * 100))
-})
 
 const usageText = computed(() => {
 	if (counts.error) return 'Usage unavailable'

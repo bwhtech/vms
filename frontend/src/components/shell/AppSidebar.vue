@@ -49,7 +49,7 @@
 
 			<SidebarProjects />
 
-			<SidebarSection v-model:collapsed="moreCollapsed" label="More" collapsible>
+			<SidebarSection label="More">
 				<SidebarItem icon="lucide-wrench" label="Tools" to="/tools" />
 				<SidebarItem icon="lucide-scroll-text" label="Audit log" to="/audit-logs" />
 				<SidebarItem icon="lucide-trash-2" label="Trash" to="/trash" />
@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import {
 	KeyboardShortcut,
@@ -79,8 +79,6 @@ import SidebarProjects from '@/components/shell/SidebarProjects.vue'
 import { useNotifications } from '@/composables/useNotifications'
 import { useOverlays } from '@/composables/useOverlays'
 import { useSession } from '@/composables/useSession'
-
-const MORE_KEY = 'vms_sidebar_more'
 
 /** Vite serves `public/` at the build's base URL. */
 const LOGO_URL = `${import.meta.env.BASE_URL}vms-logo.png`
@@ -100,10 +98,6 @@ const route = useRoute()
 const { logout } = useSession()
 const { commandPaletteOpen, notificationsOpen, openSettings, shortcutsOpen } = useOverlays()
 const { unreadCount } = useNotifications()
-
-// "More" starts collapsed and remembers the choice per browser.
-const moreCollapsed = ref(localStorage.getItem(MORE_KEY) !== 'open')
-watch(moreCollapsed, (collapsed) => localStorage.setItem(MORE_KEY, collapsed ? 'closed' : 'open'))
 
 const siteName = window.site_name ?? ''
 

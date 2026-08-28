@@ -20,7 +20,13 @@
 					data-testid="palette-asset"
 				>
 					<template #prefix>
-						<span :class="[fileIcon(asset.file_type), 'mr-2 size-4 text-ink-gray-5']" />
+						<span
+							:class="[
+								fileKindStyle(asset.file_type).icon,
+								fileKindStyle(asset.file_type).ink,
+								'mr-2 size-4',
+							]"
+						/>
 					</template>
 					{{ asset.file_name }}
 					<template #suffix>
@@ -109,6 +115,7 @@ import {
 	type CommandPaletteValue,
 } from 'frappe-ui/experimental'
 import { useOverlays } from '@/composables/useOverlays'
+import { fileKindStyle } from '@/lib/fileType'
 
 interface AssetResult {
 	name: string
@@ -264,10 +271,6 @@ async function run(value: CommandPaletteValue) {
 		return
 	}
 	await router.push(pick.kind === 'asset' ? `/review/${pick.name}` : `/projects/${pick.name}`)
-}
-
-function fileIcon(fileType?: string): string {
-	return fileType?.startsWith('image/') ? 'lucide-image' : 'lucide-film'
 }
 
 function nav(id: string, label: string, icon: string, keywords: string[], to: string): Command {

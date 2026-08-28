@@ -83,10 +83,13 @@
 								/>
 								<div
 									v-else
-									class="grid size-full place-items-center text-ink-gray-4"
+									:class="[
+										'grid size-full place-items-center',
+										fileKindStyle(asset.file_type).tile,
+									]"
 								>
 									<span
-										:class="[previewIcon(asset), 'size-8']"
+										:class="[fileKindStyle(asset.file_type).icon, 'size-8']"
 										aria-hidden="true"
 									/>
 								</div>
@@ -178,6 +181,7 @@ import {
 } from 'frappe-ui'
 import type { ViewUrlResponse } from '@/types'
 import EmptyState from '@/components/common/EmptyState.vue'
+import { fileKindStyle } from '@/lib/fileType'
 import MediaPreviewDialog from '@/components/common/MediaPreviewDialog.vue'
 import { formatBytes, serverMessage } from '@/lib/format'
 
@@ -274,10 +278,6 @@ const totalPages = computed(() => assetsCall.data?.total_pages ?? 1)
 usePageMeta(() => ({
 	title: project.data ? `${project.data.project_name} · VMS` : 'Shared project · VMS',
 }))
-
-function previewIcon(asset: SharedAsset): string {
-	return asset.file_type?.startsWith('image/') ? 'lucide-image' : 'lucide-film'
-}
 
 function paramsFor(asset: SharedAsset): SharedAssetParams {
 	return { asset_name: asset.name, project: props.projectId, token: token.value }

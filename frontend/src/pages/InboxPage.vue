@@ -90,24 +90,11 @@
 						>
 							<ListCell>
 								<div class="flex min-w-0 items-center gap-3">
-									<div
-										class="flex h-6 w-10 shrink-0 items-center justify-center overflow-hidden rounded bg-surface-gray-2"
-									>
-										<img
-											v-if="asset.thumbnail_url"
-											:src="asset.thumbnail_url"
-											:alt="asset.file_name"
-											class="size-full object-cover"
-										/>
-										<span
-											v-else
-											:class="[
-												fileIcon(asset.file_type),
-												'size-3.5 text-ink-gray-5',
-											]"
-											aria-hidden="true"
-										/>
-									</div>
+									<FileTypeIcon
+										:file-type="asset.file_type"
+										:thumbnail-url="asset.thumbnail_url"
+										:alt="asset.file_name"
+									/>
 									<div class="min-w-0">
 										<RouterLink
 											v-if="asset.status === 'Ready'"
@@ -221,6 +208,7 @@ import { useOverlays } from '@/composables/useOverlays'
 import AssetActions from '@/components/assets/AssetActions.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import RelativeTime from '@/components/common/RelativeTime.vue'
+import FileTypeIcon from '@/components/common/FileTypeIcon.vue'
 
 usePageMeta(() => ({ title: 'Inbox · VMS' }))
 
@@ -345,12 +333,5 @@ async function bulkCategorise(value: string | number | undefined) {
 
 function toCategory(value: string | number | undefined): AssetCategory | null {
 	return ASSET_CATEGORIES.includes(value as AssetCategory) ? (value as AssetCategory) : null
-}
-
-function fileIcon(fileType?: string): string {
-	if (fileType?.startsWith('video/')) return 'lucide-film'
-	if (fileType?.startsWith('image/')) return 'lucide-image'
-	if (fileType?.startsWith('audio/')) return 'lucide-music'
-	return 'lucide-file'
 }
 </script>

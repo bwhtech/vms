@@ -34,6 +34,7 @@ declare module 'vue' {
     DropZoneOverlay: typeof import('./src/components/upload/DropZoneOverlay.vue')['default']
     EmptyState: typeof import('./src/components/common/EmptyState.vue')['default']
     ExtensionsField: typeof import('./src/components/settings/ExtensionsField.vue')['default']
+    FileTypeIcon: typeof import('./src/components/common/FileTypeIcon.vue')['default']
     FolderBreadcrumbs: typeof import('./src/components/folders/FolderBreadcrumbs.vue')['default']
     FolderRow: typeof import('./src/components/folders/FolderRow.vue')['default']
     ImageViewer: typeof import('./src/components/review/ImageViewer.vue')['default']

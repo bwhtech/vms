@@ -52,18 +52,11 @@
 						@dragstart="startDrag($event, asset)"
 					>
 						<ListCell class="gap-3">
-							<div
-								class="grid h-8 w-12 shrink-0 place-items-center overflow-hidden rounded bg-surface-gray-2 text-ink-gray-4"
-							>
-								<img
-									v-if="asset.thumbnail_url"
-									:src="asset.thumbnail_url"
-									alt=""
-									draggable="false"
-									class="size-full object-cover"
-								/>
-								<span v-else class="lucide-film size-4" aria-hidden="true" />
-							</div>
+							<FileTypeIcon
+								:file-type="asset.file_type"
+								:thumbnail-url="asset.thumbnail_url"
+								size="md"
+							/>
 							<div class="min-w-0 flex-1">
 								<Button
 									class="max-w-full justify-start"
@@ -130,6 +123,7 @@ import { fromNow } from '@/lib/dates'
 import AssetActions from '@/components/assets/AssetActions.vue'
 import CategoryBadge from '@/components/assets/CategoryBadge.vue'
 import FolderRow from '@/components/folders/FolderRow.vue'
+import FileTypeIcon from '@/components/common/FileTypeIcon.vue'
 
 type AssetSortField = 'creation' | 'file_size' | 'file_name'
 interface AssetSort {

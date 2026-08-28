@@ -21,32 +21,28 @@
 	</PageHeader>
 
 	<div class="mx-auto max-w-4xl space-y-6 px-3 py-5 pb-10 sm:px-5" data-testid="dashboard">
-		<!-- KPI strip -->
-		<dl class="grid grid-cols-2 sm:grid-cols-4" data-testid="dashboard-kpis">
-			<div
-				v-for="(kpi, index) in kpis"
+		<!-- Number cards -->
+		<dl class="grid grid-cols-2 gap-3 sm:grid-cols-4" data-testid="dashboard-kpis">
+			<component
+				:is="kpi.to ? RouterLink : 'div'"
+				v-for="kpi in kpis"
 				:key="kpi.label"
+				:to="kpi.to"
 				:class="[
-					'px-3 py-3 first:pl-0 sm:px-4 sm:py-2',
-					index % 2 === 1 && 'border-l border-outline-gray-2',
-					index > 0 && 'sm:border-l sm:border-outline-gray-2',
+					'flex flex-col gap-1 rounded-md border border-outline-gray-1 bg-surface-base p-4',
+					kpi.to && 'transition hover:border-outline-gray-2 hover:bg-surface-gray-1',
 				]"
 			>
-				<dt class="text-sm text-ink-gray-5">{{ kpi.label }}</dt>
-				<dd class="mt-1">
+				<dt class="flex items-center gap-1.5 text-sm text-ink-gray-5">
+					<span :class="[kpi.icon, 'size-4']" aria-hidden="true" />
+					{{ kpi.label }}
+				</dt>
+				<dd class="text-2xl-semibold text-ink-gray-9">
 					<LoadingText v-if="kpi.value === null" class="w-12" />
-					<RouterLink
-						v-else-if="kpi.to"
-						:to="kpi.to"
-						class="text-2xl text-ink-gray-9 hover:underline"
-					>
-						{{ kpi.value }}
-					</RouterLink>
-					<span v-else class="text-2xl text-ink-gray-9">{{ kpi.value }}</span>
+					<template v-else>{{ kpi.value }}</template>
 				</dd>
-				<Progress v-if="kpi.progress !== undefined" :value="kpi.progress" class="mt-2" />
-				<p v-if="kpi.hint" class="mt-0.5 text-xs text-ink-gray-5">{{ kpi.hint }}</p>
-			</div>
+				<p v-if="kpi.hint" class="text-xs text-ink-gray-5">{{ kpi.hint }}</p>
+			</component>
 		</dl>
 
 		<EmptyState
@@ -88,7 +84,7 @@
 						v-for="project in recentProjects"
 						:key="project.name"
 						:to="`/projects/${project.name}`"
-						class="flex flex-col gap-2 rounded border border-outline-gray-1 p-3 transition-colors hover:bg-surface-gray-1"
+						class="flex flex-col gap-2 rounded-md border border-outline-gray-1 bg-surface-base p-3 transition hover:border-outline-gray-2 hover:bg-surface-gray-1"
 						data-testid="dashboard-project-card"
 					>
 						<div class="flex items-start justify-between gap-2">
@@ -135,24 +131,11 @@
 							data-testid="dashboard-upload-row"
 						>
 							<ListCell>
-								<div
-									class="flex h-6 w-10 items-center justify-center overflow-hidden rounded bg-surface-gray-2"
-								>
-									<img
-										v-if="item.thumbnail_url"
-										:src="item.thumbnail_url"
-										:alt="item.file_name"
-										class="size-full object-cover"
-									/>
-									<span
-										v-else
-										:class="[
-											fileIcon(item.file_type),
-											'size-3.5 text-ink-gray-5',
-										]"
-										aria-hidden="true"
-									/>
-								</div>
+								<FileTypeIcon
+									:file-type="item.file_type"
+									:thumbnail-url="item.thumbnail_url"
+									:alt="item.file_name"
+								/>
 							</ListCell>
 							<ListCell>
 								<div class="min-w-0">
@@ -189,7 +172,6 @@ import {
 	LoadingText,
 	PageHeader,
 	PageHeaderTitle,
-	Progress,
 	useCall,
 	useList,
 	usePageMeta,
@@ -201,6 +183,7 @@ import { assetStatusTheme, type BadgeTheme } from '@/lib/status'
 import { useOverlays } from '@/composables/useOverlays'
 import EmptyState from '@/components/common/EmptyState.vue'
 import RelativeTime from '@/components/common/RelativeTime.vue'
+import FileTypeIcon from '@/components/common/FileTypeIcon.vue'
 
 usePageMeta(() => ({ title: 'Home · VMS' }))
 
@@ -276,8 +259,8 @@ interface BucketUsage {
 	metadata_size: number
 }
 
-// Throws when Cloudflare is not configured; the tile then shows a dash. R2
-// buckets have no quota, so the tile carries the object count, not a bar.
+// Throws when Cloudflare is not configured; the card then shows a dash. R2
+// buckets have no quota, so the card carries the object count, not a bar.
 const bucketUsage = useCall<BucketUsage>({
 	url: '/api/v2/method/vms.api.get_bucket_usage',
 	method: 'GET',
@@ -293,14 +276,27 @@ const storageValue = computed(() => {
 const countValue = (resource: { data: number | null; error: unknown }) =>
 	resource.error ? '—' : (resource.data ?? null)
 
-const kpis = computed(() => [
-	{ label: 'Assets', value: countValue(assetCount) },
-	{ label: 'Projects', value: countValue(projectCount), to: '/projects' },
-	{ label: 'Uncategorised', value: countValue(uncategorisedCount), to: '/uncategorised' },
+interface Kpi {
+	label: string
+	icon: string
+	value: string | number | null
+	to?: string
+	hint?: string
+}
+
+const kpis = computed<Kpi[]>(() => [
+	{ label: 'Assets', icon: 'lucide-film', value: countValue(assetCount) },
+	{ label: 'Projects', icon: 'lucide-folder', value: countValue(projectCount), to: '/projects' },
+	{
+		label: 'Uncategorised',
+		icon: 'lucide-inbox',
+		value: countValue(uncategorisedCount),
+		to: '/uncategorised',
+	},
 	{
 		label: 'Storage used',
+		icon: 'lucide-hard-drive',
 		value: storageValue.value,
-		progress: 0,
 		hint: bucketUsage.data
 			? `${bucketUsage.data.object_count.toLocaleString()} objects`
 			: bucketUsage.error
@@ -319,12 +315,5 @@ const PROJECT_STATUS_THEME: Record<ProjectStatus, BadgeTheme> = {
 
 function projectStatusTheme(status: ProjectStatus): BadgeTheme {
 	return PROJECT_STATUS_THEME[status] ?? 'gray'
-}
-
-function fileIcon(fileType?: string): string {
-	if (fileType?.startsWith('video/')) return 'lucide-film'
-	if (fileType?.startsWith('image/')) return 'lucide-image'
-	if (fileType?.startsWith('audio/')) return 'lucide-music'
-	return 'lucide-file'
 }
 </script>

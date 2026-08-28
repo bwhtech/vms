@@ -14,8 +14,8 @@
 				draggable="false"
 				class="size-full object-cover"
 			/>
-			<div v-else class="grid size-full place-items-center text-ink-gray-4">
-				<span :class="[previewIcon, 'size-8']" aria-hidden="true" />
+			<div v-else :class="['grid size-full place-items-center', previewStyle.tile]">
+				<span :class="[previewStyle.icon, 'size-8']" aria-hidden="true" />
 			</div>
 			<div
 				class="absolute left-2 top-2 transition-opacity"
@@ -92,6 +92,7 @@ import { Button, Checkbox, Progress } from 'frappe-ui'
 import type { Asset } from '@/types'
 import { formatBytes, formatDuration } from '@/lib/format'
 import { fromNow } from '@/lib/dates'
+import { fileKindStyle } from '@/lib/fileType'
 import AssetActions from '@/components/assets/AssetActions.vue'
 
 const props = defineProps<{
@@ -119,9 +120,7 @@ const accentClass = computed(
 			pink: 'border-t-[3px] border-t-outline-pink-4',
 		})[props.asset.card_color ?? ''],
 )
-const previewIcon = computed(() =>
-	props.asset.file_type?.startsWith('image/') ? 'lucide-image' : 'lucide-film',
-)
+const previewStyle = computed(() => fileKindStyle(props.asset.file_type))
 const statusDotClass = computed(
 	() =>
 		({
