@@ -1,17 +1,20 @@
 <template>
-	<div class="space-y-1.5 px-2 py-2">
+	<div class="space-y-1.5 px-2 py-2" data-testid="storage-meter">
 		<div class="flex items-center gap-1.5 text-xs text-ink-gray-6">
 			<span class="lucide-hard-drive size-3.5" aria-hidden="true" />
 			<span>Storage</span>
 		</div>
-		<Progress :value="percent" size="sm" />
-		<p class="text-xs text-ink-gray-5">{{ usageText }}</p>
+		<LoadingText v-if="counts.loading && !counts.data" class="w-full" />
+		<template v-else>
+			<Progress v-if="counts.data" :value="percent" size="sm" />
+			<p class="text-xs text-ink-gray-5">{{ usageText }}</p>
+		</template>
 	</div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Progress, useCall } from 'frappe-ui'
+import { LoadingText, Progress, useCall } from 'frappe-ui'
 import { formatBytes } from '@/lib/format'
 
 interface SidebarCounts {
@@ -36,6 +39,7 @@ const percent = computed(() => {
 })
 
 const usageText = computed(() => {
+	if (counts.error) return 'Usage unavailable'
 	const { used, total } = storage.value
 	return total
 		? `${formatBytes(used)} of ${formatBytes(total)} used`

@@ -51,7 +51,7 @@ interface AssetParams {
 export function useAssetActions(asset: Ref<Asset>, ctx: AssetActionsContext): DropdownOption[] {
 	const router = useRouter()
 	const { downloadOne } = useDownload()
-	const { uploadNewVersion } = useVersionUpload()
+	const { openVersionUpload } = useVersionUpload()
 
 	const isReady = () => asset.value.status === 'Ready'
 
@@ -115,14 +115,8 @@ export function useAssetActions(asset: Ref<Asset>, ctx: AssetActionsContext): Dr
 		}
 	}
 
-	async function newVersion() {
-		try {
-			await uploadNewVersion(asset.value.name)
-			toast.success('New version uploaded')
-			ctx.onChanged()
-		} catch (e) {
-			toast.error(serverMessage(e))
-		}
+	function newVersion() {
+		openVersionUpload(asset.value.name, ctx.onChanged)
 	}
 
 	async function shareLink() {
