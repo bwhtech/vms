@@ -81,20 +81,17 @@
 			/>
 			<template v-else-if="assets.length || visibleFolders.length">
 				<template v-if="view === 'grid'">
-					<List
-						v-if="visibleFolders.length"
-						:columns="['minmax(0,1fr)', '5rem']"
-						:row-height="40"
-						class="mb-6"
-					>
-						<ListGroup label="Folders">
-							<FolderRow
+					<template v-if="visibleFolders.length">
+						<div class="mb-3 text-sm-medium text-ink-gray-5">Folders</div>
+						<div
+							class="mb-6 grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3"
+						>
+							<FolderCard
 								v-for="folder in visibleFolders"
 								:key="folder.name"
 								:folder="folder"
 								:project="projectId"
 								:item-count="folderCounts.get(folder.name) ?? 0"
-								compact
 								draggable
 								@rename="openRenameFolder"
 								@move="openMoveFolder"
@@ -102,8 +99,8 @@
 								@drop-assets="(names, target) => moveAssets(names, target)"
 								@drop-folder="(name, target) => moveFolder(name, target)"
 							/>
-						</ListGroup>
-					</List>
+						</div>
+					</template>
 					<div v-if="assets.length" class="mb-3 text-sm-medium text-ink-gray-5">
 						Files
 					</div>
@@ -224,7 +221,6 @@
 
 <script setup lang="ts">
 import { Button, Dropdown, ErrorMessage, PageHeader, PageHeaderTitle, usePageMeta } from 'frappe-ui'
-import { List, ListGroup } from 'frappe-ui/list'
 import AssetGrid from '@/components/assets/AssetGrid.vue'
 import AssetList from '@/components/assets/AssetList.vue'
 import BulkActionBar from '@/components/assets/BulkActionBar.vue'
@@ -232,7 +228,7 @@ import EmptyState from '@/components/common/EmptyState.vue'
 import MediaPreviewDialog from '@/components/common/MediaPreviewDialog.vue'
 import CreateFolderDialog from '@/components/folders/CreateFolderDialog.vue'
 import FolderBreadcrumbs from '@/components/folders/FolderBreadcrumbs.vue'
-import FolderRow from '@/components/folders/FolderRow.vue'
+import FolderCard from '@/components/folders/FolderCard.vue'
 import MoveFolderDialog from '@/components/folders/MoveFolderDialog.vue'
 import MoveToFolderDialog from '@/components/folders/MoveToFolderDialog.vue'
 import RenameFolderDialog from '@/components/folders/RenameFolderDialog.vue'
