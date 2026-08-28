@@ -30,6 +30,13 @@ export interface Project {
 	due_date?: string
 	thumbnail_url?: string
 	share_token?: string | null
+	/** Identity — see `lib/project.ts`. All optional; a bare row shows a folder. */
+	icon?: string | null
+	color?: string | null
+	avatar?: string | null
+	avatar_style?: string | null
+	avatar_seed?: string | null
+	avatar_options?: string | null
 	creation: string
 	modified: string
 }
@@ -247,7 +254,13 @@ export interface ConfirmUploadResponse {
 	asset_name: string
 }
 
-export type SettingsTab = 'profile' | 'general' | 'transcription' | 'youtube' | 'users'
+export type SettingsTab =
+	| 'profile'
+	| 'appearance'
+	| 'general'
+	| 'transcription'
+	| 'youtube'
+	| 'users'
 
 /** What the upload dialog needs from whoever opened it. */
 export interface UploadContext {

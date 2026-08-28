@@ -15,15 +15,20 @@
 		]"
 	>
 		<div class="space-y-4">
-			<FormControl
-				v-model="projectName"
-				label="Project name"
-				placeholder="My video project"
-				required
-				autofocus
-				:error="createProject.error?.message"
-				@keydown.enter.prevent="submit({ close: closeDialog })"
-			/>
+			<!-- The project's mark first, the way it will read everywhere else. -->
+			<div class="flex items-end gap-2">
+				<IdentityPicker v-model:icon="icon" v-model:color="color" v-model:avatar="avatar" />
+				<FormControl
+					v-model="projectName"
+					class="min-w-0 flex-1"
+					label="Project name"
+					placeholder="My video project"
+					required
+					autofocus
+					:error="createProject.error?.message"
+					@keydown.enter.prevent="submit({ close: closeDialog })"
+				/>
+			</div>
 			<FormControl
 				v-model="description"
 				type="textarea"
@@ -40,6 +45,9 @@ import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Dialog, FormControl, toast, useNewDoc } from 'frappe-ui'
 import type { Project } from '@/types'
+import type { ProjectAvatarValue } from '@/lib/dicebear'
+import { identityPatch, type ProjectColor } from '@/lib/project'
+import IdentityPicker from '@/components/common/IdentityPicker.vue'
 import { serverMessage } from '@/lib/format'
 import { useOverlays } from '@/composables/useOverlays'
 import { useSession } from '@/composables/useSession'
@@ -52,6 +60,9 @@ const { userId } = useSession()
 const projectName = ref('')
 const description = ref('')
 const dueDate = ref('')
+const icon = ref('')
+const color = ref<ProjectColor | ''>('')
+const avatar = ref<ProjectAvatarValue | null>(null)
 
 const createProject = useNewDoc<Project>('VMS Project')
 
@@ -64,6 +75,9 @@ watch(createProjectOpen, (open) => {
 	projectName.value = ''
 	description.value = ''
 	dueDate.value = ''
+	icon.value = ''
+	color.value = ''
+	avatar.value = null
 	createProject.reset()
 })
 
@@ -76,6 +90,7 @@ async function submit({ close }: { close: () => void }) {
 		due_date: dueDate.value || undefined,
 		owner_user: userId.value || 'Administrator',
 		status: 'Open',
+		...identityPatch(icon.value, color.value, avatar.value),
 	})
 	try {
 		const project = await createProject.submit()

@@ -18,6 +18,13 @@ export interface VMSProject {
 	owner_user?: string;
 	due_date?: string;
 	description?: string;
+	/** Identity fields — see `frontend/src/lib/project.ts`. */
+	icon?: string | null;
+	color?: string | null;
+	avatar?: string | null;
+	avatar_style?: string | null;
+	avatar_seed?: string | null;
+	avatar_options?: string | null;
 	creation?: string;
 	modified?: string;
 }

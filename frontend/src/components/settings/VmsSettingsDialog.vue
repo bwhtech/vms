@@ -8,6 +8,12 @@
 					</template>
 					Profile
 				</SettingsNavItem>
+				<SettingsNavItem value="appearance" data-testid="settings-nav-appearance">
+					<template #prefix>
+						<span class="lucide-palette size-4" aria-hidden="true" />
+					</template>
+					Appearance
+				</SettingsNavItem>
 			</SettingsNavGroup>
 			<SettingsNavGroup v-if="isSystemManager" label="Workspace">
 				<SettingsNavItem value="general" data-testid="settings-nav-general">
@@ -38,6 +44,7 @@
 		</SettingsSidebar>
 		<SettingsContent>
 			<SettingsTabProfile />
+			<SettingsTabAppearance />
 			<template v-if="isSystemManager">
 				<SettingsTabGeneral />
 				<SettingsTabTranscription />
@@ -59,6 +66,7 @@ import {
 import { useOverlays } from '@/composables/useOverlays'
 import { useSession } from '@/composables/useSession'
 import YoutubeIcon from '@/components/common/YoutubeIcon.vue'
+import SettingsTabAppearance from './SettingsTabAppearance.vue'
 import SettingsTabGeneral from './SettingsTabGeneral.vue'
 import SettingsTabProfile from './SettingsTabProfile.vue'
 import SettingsTabTranscription from './SettingsTabTranscription.vue'

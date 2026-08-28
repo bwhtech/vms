@@ -4,9 +4,15 @@
 		class="group flex min-h-32 flex-col rounded-5 border border-outline-gray-1 bg-surface-base p-4 transition hover:border-outline-gray-2 hover:bg-surface-gray-1"
 	>
 		<div class="flex min-w-0 items-start gap-3">
-			<div class="rounded-4 bg-surface-gray-2 p-2 text-ink-gray-5">
-				<span class="lucide-folder size-5" aria-hidden="true" />
-			</div>
+			<IdentityAvatar
+				:name="project.name"
+				:title="project.project_name"
+				:icon="project.icon"
+				:color="project.color"
+				:avatar="project.avatar"
+				size="lg"
+				hide-tooltip
+			/>
 			<div class="min-w-0 flex-1">
 				<h2 class="truncate text-lg-semibold text-ink-gray-8">
 					{{ project.project_name }}
@@ -31,6 +37,7 @@
 import { computed } from 'vue'
 import { Badge, type BadgeProps } from 'frappe-ui'
 import type { Project } from '@/types'
+import IdentityAvatar from '@/components/common/IdentityAvatar.vue'
 import { formatDate, fromNow, isOverdue } from '@/lib/dates'
 
 const props = defineProps<{ project: Project }>()

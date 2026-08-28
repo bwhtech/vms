@@ -37,6 +37,11 @@ export default defineConfig({
 				globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
 				// Otherwise sw.min.js importScripts() a sibling workbox-*.js.
 				inlineWorkboxRuntime: true,
+				// The DiceBear style definitions are code-split so the picker pays
+				// for them and nobody else does. Precaching them puts all 1.2 MB
+				// back on every install and undoes that.
+				globIgnores: ['**/*.min-*.js'],
+				maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
 				// Precache URLs are relative to the worker's location (site root).
 				manifestTransforms: [
 					(entries) => ({

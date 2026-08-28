@@ -57,7 +57,14 @@ const { commandPaletteOpen, shortcutsOpen, openSettings, openUpload } = useOverl
 // their own ScrollArea, so the shell must not page-scroll around them.
 const ownScroll = computed(() => route.meta.ownScroll === true)
 
-const SETTINGS_TABS: SettingsTab[] = ['profile', 'general', 'transcription', 'youtube', 'users']
+const SETTINGS_TABS: SettingsTab[] = [
+	'profile',
+	'appearance',
+	'general',
+	'transcription',
+	'youtube',
+	'users',
+]
 
 // `?settings=<tab>` is the deep link the YouTube OAuth callback and the old
 // app's links use. Read it once, then strip it so a reload does not reopen.

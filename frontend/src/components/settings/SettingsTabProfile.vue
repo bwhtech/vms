@@ -61,24 +61,6 @@
 				</section>
 
 				<section>
-					<h3 class="text-lg-semibold text-ink-gray-8">Appearance</h3>
-					<div class="divide-y divide-outline-gray-1">
-						<SettingsRow
-							title="Theme"
-							description="Follows your device unless you pick one."
-						>
-							<Select
-								:model-value="colorScheme"
-								:options="THEMES"
-								class="w-40"
-								aria-label="Theme"
-								@update:model-value="setColorScheme($event as ColorScheme)"
-							/>
-						</SettingsRow>
-					</div>
-				</section>
-
-				<section>
 					<h3 class="text-lg-semibold text-ink-gray-8">Session</h3>
 					<div class="divide-y divide-outline-gray-1">
 						<SettingsRow title="Log out" :description="`Signed in as ${userId}`">
@@ -103,15 +85,12 @@ import {
 	Button,
 	FileUploader,
 	FormControl,
-	Select,
 	SettingsBody,
 	SettingsHeader,
 	SettingsPanel,
 	SettingsRow,
 	toast,
-	type ColorScheme,
 	type UploadedFile,
-	useColorScheme,
 	useDoc,
 } from 'frappe-ui'
 import { serverMessage } from '@/lib/format'
@@ -127,14 +106,7 @@ interface UserProfile {
 	user_image: string | null
 }
 
-const THEMES = [
-	{ label: 'Light', value: 'light' },
-	{ label: 'Dark', value: 'dark' },
-	{ label: 'System', value: 'system' },
-]
-
 const { userId, logout } = useSession()
-const { colorScheme, setColorScheme } = useColorScheme()
 
 // Same doctype + name as the session's doc, so both read one store entry and
 // a save here updates the sidebar avatar too.

@@ -1,6 +1,33 @@
 <template>
 	<PageHeader>
-		<div class="flex min-w-0 items-center gap-1">
+		<div class="flex min-w-0 items-center gap-2">
+			<!-- The project's own mark leads the header and doubles as the
+			     identity picker's trigger. -->
+			<IdentityPicker
+				v-if="project.doc"
+				:icon="project.doc.icon ?? ''"
+				:color="identityColor"
+				:avatar="storedAvatarValue(project.doc)"
+				@update:icon="saveIdentity({ icon: $event })"
+				@update:color="saveIdentity({ color: $event })"
+				@update:avatar="saveIdentity({ avatar: $event })"
+			>
+				<button
+					type="button"
+					class="flex shrink-0 rounded-[6px] ring-outline-gray-3 hover:ring-2"
+					aria-label="Project icon and color"
+					data-testid="project-icon-trigger"
+				>
+					<IdentityAvatar
+						:name="project.doc.name"
+						:icon="project.doc.icon"
+						:color="project.doc.color"
+						:avatar="project.doc.avatar"
+						size="lg"
+						hide-tooltip
+					/>
+				</button>
+			</IdentityPicker>
 			<FolderBreadcrumbs
 				v-if="project.doc"
 				:project="projectId"
@@ -14,31 +41,38 @@
 				<Button variant="ghost" icon="lucide-ellipsis" aria-label="Project actions" />
 			</Dropdown>
 		</div>
-		<div class="hidden shrink-0 items-center gap-2 sm:flex">
-			<Dropdown v-if="currentFolderDoc" :options="folderActions" align="end">
-				<Button variant="subtle" icon="lucide-folder-cog" label="Folder actions" />
-			</Dropdown>
-			<Button
-				label="New folder"
-				icon-left="lucide-folder-plus"
-				variant="subtle"
-				@click="createFolderOpen = true"
-			/>
-			<Button
-				label="Upload"
-				icon-left="lucide-upload"
-				variant="solid"
-				theme="gray"
-				@click="openProjectUpload"
-			/>
+		<!-- One right-hand group: `Dropdown` declares `inheritAttrs: false`, so a
+		     `sm:hidden` on the component itself never reaches the DOM and the
+		     mobile trigger used to sit apart from the actions at every width. -->
+		<div class="flex shrink-0 items-center gap-2">
+			<div class="hidden items-center gap-2 sm:flex">
+				<Dropdown v-if="currentFolderDoc" :options="folderActions" align="end">
+					<Button variant="subtle" icon="lucide-folder-cog" label="Folder actions" />
+				</Dropdown>
+				<Button
+					label="New folder"
+					icon-left="lucide-folder-plus"
+					variant="subtle"
+					@click="createFolderOpen = true"
+				/>
+				<Button
+					label="Upload"
+					icon-left="lucide-upload"
+					variant="solid"
+					theme="gray"
+					@click="openProjectUpload"
+				/>
+			</div>
+			<div class="sm:hidden">
+				<Dropdown :options="mobileActions" align="end">
+					<Button
+						variant="ghost"
+						icon="lucide-ellipsis-vertical"
+						aria-label="Project browser actions"
+					/>
+				</Dropdown>
+			</div>
 		</div>
-		<Dropdown :options="mobileActions" align="end" class="sm:hidden">
-			<Button
-				variant="ghost"
-				icon="lucide-ellipsis-vertical"
-				aria-label="Project browser actions"
-			/>
-		</Dropdown>
 	</PageHeader>
 
 	<ProjectBrowserToolbar
@@ -220,7 +254,16 @@
 </template>
 
 <script setup lang="ts">
-import { Button, Dropdown, ErrorMessage, PageHeader, PageHeaderTitle, usePageMeta } from 'frappe-ui'
+import { computed } from 'vue'
+import {
+	Button,
+	Dropdown,
+	ErrorMessage,
+	PageHeader,
+	PageHeaderTitle,
+	toast,
+	usePageMeta,
+} from 'frappe-ui'
 import AssetGrid from '@/components/assets/AssetGrid.vue'
 import AssetList from '@/components/assets/AssetList.vue'
 import BulkActionBar from '@/components/assets/BulkActionBar.vue'
@@ -234,6 +277,11 @@ import MoveToFolderDialog from '@/components/folders/MoveToFolderDialog.vue'
 import RenameFolderDialog from '@/components/folders/RenameFolderDialog.vue'
 import ProjectBrowserToolbar from '@/components/projects/ProjectBrowserToolbar.vue'
 import ProjectSettingsDialog from '@/components/projects/ProjectSettingsDialog.vue'
+import IdentityAvatar from '@/components/common/IdentityAvatar.vue'
+import IdentityPicker from '@/components/common/IdentityPicker.vue'
+import type { ProjectAvatarValue } from '@/lib/dicebear'
+import { identityPatch, storedAvatarValue, type ProjectColor } from '@/lib/project'
+import { serverMessage } from '@/lib/format'
 import ShareProjectPanel from '@/components/projects/ShareProjectPanel.vue'
 import { useProjectBrowser } from '@/components/projects/useProjectBrowser'
 import { useProjectPageActions } from '@/components/projects/useProjectPageActions'
@@ -298,6 +346,34 @@ const {
 	handleAssetsMoved,
 	saveProject,
 } = useProjectPageActions(() => props.projectId, browser)
+
+/**
+ * An identity is six fields that must move together: switching to an icon has
+ * to clear the avatar, and an avatar has to carry its style, seed and options
+ * or it can never be rolled again — so every change writes the full patch.
+ */
+const identityColor = computed<ProjectColor | ''>(
+	() => (project.doc?.color ?? '') as ProjectColor | '',
+)
+
+function saveIdentity(change: {
+	icon?: string
+	color?: ProjectColor | ''
+	avatar?: ProjectAvatarValue | null
+}) {
+	if (!project.doc) return
+	const current = storedAvatarValue(project.doc)
+	const patch = identityPatch(
+		change.icon ?? project.doc.icon ?? '',
+		change.color ?? identityColor.value,
+		'avatar' in change ? (change.avatar ?? null) : current,
+	)
+	// No success toast: the mark updates in place, and a colour swatch or an
+	// avatar shuffle is a repeated tweak — one toast per click is noise.
+	project.setValue.submit(patch).catch((error: unknown) => {
+		toast.error(serverMessage(error) || 'Could not update project')
+	})
+}
 
 usePageMeta(() => ({ title: `${project.doc?.project_name ?? props.projectId} · VMS` }))
 </script>
