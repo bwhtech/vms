@@ -4,6 +4,8 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from vms.html import sanitize_rich_text
+
 AVATAR_DATA_URI = re.compile(r"^data:image/svg\+xml[;,]", re.IGNORECASE)
 
 
@@ -34,6 +36,8 @@ class VMSProject(Document):
 
 	def validate(self):
 		self._validate_avatar()
+		# The public share page renders this as HTML to logged-out visitors.
+		self.description = sanitize_rich_text(self.description)
 
 	def on_trash(self):
 		# A pin is a per-user convenience, never a reason to keep a project

@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from frappe.utils import escape_html
 
 
 def send_comment_notification(doc, method):
@@ -55,8 +56,11 @@ def _process_comment_notifications(comment_name):
 	if mentioned_users:
 		mention_emails = _user_names_to_emails(mentioned_users)
 		if mention_emails:
+			# Both values are user-controlled — a file name is free text and a
+			# full name is self-set — and the subject is rendered as HTML in the
+			# notifications panel, so they are escaped before they become markup.
 			mention_subject = _("<b>{0}</b> mentioned you in a comment on <b>{1}</b>").format(
-				commenter_name, asset.file_name
+				escape_html(commenter_name), escape_html(asset.file_name)
 			)
 			enqueue_create_notification(
 				mention_emails,
@@ -78,7 +82,9 @@ def _process_comment_notifications(comment_name):
 		if alert_emails:
 			is_reply = bool(comment.parent_comment)
 			action = _("replied to your comment") if is_reply else _("commented")
-			alert_subject = _("<b>{0}</b> {1} on <b>{2}</b>").format(commenter_name, action, asset.file_name)
+			alert_subject = _("<b>{0}</b> {1} on <b>{2}</b>").format(
+				escape_html(commenter_name), action, escape_html(asset.file_name)
+			)
 			enqueue_create_notification(
 				alert_emails,
 				{
@@ -146,8 +152,10 @@ def _send_comment_email(comment, asset, commenter_name, recipients):
 	is_reply = bool(comment.parent_comment)
 	action_text = _("replied to a comment") if is_reply else _("left a comment")
 
+	# Escaped for the same reason as the in-app subjects above: both values are
+	# user-controlled and this f-string is an HTML email body.
 	message = f"""
-<p><strong>{commenter_name}</strong> {action_text} on <strong>{asset.file_name}</strong>{timestamp_str}:</p>
+<p><strong>{escape_html(commenter_name)}</strong> {action_text} on <strong>{escape_html(asset.file_name)}</strong>{timestamp_str}:</p>
 <blockquote style="border-left: 3px solid #ccc; padding-left: 12px; margin: 12px 0; color: #555;">
 {frappe.utils.sanitize_html(comment.comment_text)}
 </blockquote>
