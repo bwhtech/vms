@@ -1,0 +1,50 @@
+@import 'frappe-ui/style.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	/* The shells size themselves with `h-full`, so the chain to <html> must be
+	   explicit, and the page needs a painted ground in both color schemes. */
+	html,
+	body,
+	#app {
+		height: 100%;
+	}
+
+	body {
+		@apply bg-surface-base text-ink-gray-8 antialiased;
+	}
+}
+
+/*
+ * Review comments come back from the API as raw HTML (tiptap output). The
+ * editor styles its own content; read-only renderings need the same ladder.
+ */
+@layer components {
+	.vms-prose {
+		@apply text-p-base text-ink-gray-8;
+	}
+	.vms-prose :where(p) {
+		@apply my-1.5 first:mt-0 last:mb-0;
+	}
+	.vms-prose :where(ul) {
+		@apply my-1.5 list-disc pl-5;
+	}
+	.vms-prose :where(ol) {
+		@apply my-1.5 list-decimal pl-5;
+	}
+	.vms-prose :where(a) {
+		@apply text-ink-blue-link underline underline-offset-2;
+	}
+	.vms-prose :where(code) {
+		@apply rounded-1 bg-surface-gray-2 px-1 py-0.5 font-mono text-xs text-ink-gray-8;
+	}
+	.vms-prose :where(img) {
+		@apply my-2 max-w-full rounded-3;
+	}
+	.vms-prose :where(.mention) {
+		@apply rounded-1 bg-surface-gray-3 px-1 text-ink-gray-8;
+	}
+}
