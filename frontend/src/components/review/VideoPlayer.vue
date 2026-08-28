@@ -121,14 +121,18 @@ watch(canvasActive, (active) => {
 	if (active) video.value?.pause()
 })
 
-function openComment(comment: ReviewComment) {
+async function openComment(comment: ReviewComment) {
 	const time = comment.video_timestamp ?? 0
-	if (!comment.annotation_data) {
+	let raw = comment.annotation_data
+	if (!raw && comment.has_annotation) {
+		raw = (await review.comments.getAnnotation(comment.name))?.annotation_data ?? null
+	}
+	if (!raw) {
 		player.seek(time)
 		return
 	}
 	try {
-		review.annotation.view(JSON.parse(comment.annotation_data) as AnnotationJson, time)
+		review.annotation.view(JSON.parse(raw) as AnnotationJson, time)
 	} catch {
 		player.seek(time)
 	}

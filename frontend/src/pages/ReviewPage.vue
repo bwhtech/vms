@@ -73,6 +73,18 @@ import { provideReview } from '@/composables/useReview'
 const props = defineProps<{ assetId: string }>()
 const token = new URLSearchParams(window.location.search).get('token')
 const review = provideReview({ assetId: props.assetId, token })
+
+// A logged-out visitor without a share token cannot see anything here: send
+// them to login instead of showing the "invalid link" state.
+watch(
+	() => Boolean(review.error.value) && review.isGuest.value && !token,
+	(shouldLogin) => {
+		if (!shouldLogin) return
+		const redirect = encodeURIComponent(window.location.pathname)
+		window.location.href = `/login?redirect-to=${redirect}`
+	},
+	{ immediate: true },
+)
 usePageMeta(() => ({ title: `${review.asset.value?.file_name ?? 'Review'} · VMS` }))
 
 const realtimeProxyStatus = ref('')
