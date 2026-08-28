@@ -40,6 +40,9 @@ def _validate_public_token(asset_name, token):
 	return True
 
 
+# nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
+# Reviewed: guests reach this only with a review token that is checked against
+# this asset, and the payload they get is trimmed to what the guest page renders.
 @frappe.whitelist(allow_guest=True)
 def get_review_data(asset_name: str, token: str | None = None):
 	"""Get asset info + project info for the review page header."""
@@ -303,6 +306,9 @@ def add_comment(
 	}
 
 
+# nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
+# Reviewed: the token is now validated unconditionally against the comment's own
+# asset, and a missing comment answers like an unauthorised one.
 @frappe.whitelist(allow_guest=True)
 def get_annotation_data(comment_name: str, token: str | None = None):
 	"""Get annotation JSON data for a single comment (fetched on demand)."""

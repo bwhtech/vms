@@ -704,7 +704,7 @@ def permanently_delete_folder(folder_name: str):
 
 
 @frappe.whitelist(methods=["GET"])
-def get_trash_folders(page=1, page_size=20):
+def get_trash_folders(page: int | str = 1, page_size: int | str = 20):
 	"""Get paginated folders in trash (deleted_at is set)."""
 	require_vms_access()
 
@@ -843,15 +843,15 @@ def _asset_order_by(sort_by=None, sort_order=None):
 
 @frappe.whitelist(methods=["GET"])
 def get_project_assets(
-	project,
-	folder=None,
-	category=None,
-	tag=None,
-	search=None,
-	page=1,
-	page_size=20,
-	sort_by=None,
-	sort_order=None,
+	project: str,
+	folder: str | None = None,
+	category: str | None = None,
+	tag: str | None = None,
+	search: str | None = None,
+	page: int | str = 1,
+	page_size: int | str = 20,
+	sort_by: str | None = None,
+	sort_order: str | None = None,
 ):
 	"""Get project assets with server-side folder/category/tag/name filtering, sorting and pagination.
 
@@ -996,7 +996,12 @@ def _parse_user_tags(value):
 
 
 @frappe.whitelist(methods=["GET"])
-def get_inbox_assets(page=1, page_size=20, start=None, page_length=None):
+def get_inbox_assets(
+	page: int | str = 1,
+	page_size: int | str = 20,
+	start: int | str | None = None,
+	page_length: int | str | None = None,
+):
 	"""Get paginated assets that have no project (Uncategorised / Inbox).
 
 	Parameters:
@@ -1086,7 +1091,7 @@ def add_asset_tag(asset_name: str, tag: str):
 
 
 @frappe.whitelist(methods=["GET"])
-def get_project_tags(project: str, folder=None):
+def get_project_tags(project: str, folder: str | None = None):
 	"""Return distinct tags applied to non-trashed assets in this project, with usage counts.
 
 	Used by the project page tag filter dropdown.
@@ -1209,7 +1214,12 @@ def delete_asset(asset_name: str):
 
 
 @frappe.whitelist(methods=["GET"])
-def get_trash_assets(page=1, page_size=20, start=None, page_length=None):
+def get_trash_assets(
+	page: int | str = 1,
+	page_size: int | str = 20,
+	start: int | str | None = None,
+	page_length: int | str | None = None,
+):
 	"""Get paginated assets in trash (deleted_at is set).
 
 	`start` / `page_length` override `page` / `page_size` when given.
