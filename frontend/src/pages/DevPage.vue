@@ -1,5 +1,5 @@
 <template>
-	<div class="mx-auto max-w-3xl space-y-10 px-4 py-6 pb-16 text-ink-gray-8">
+	<div class="mx-auto max-w-3xl space-y-10 px-3 py-5 pb-10 text-ink-gray-8 sm:px-5">
 		<h1 class="text-xl font-semibold text-ink-gray-9">Dev sandbox</h1>
 
 		<section class="space-y-3">

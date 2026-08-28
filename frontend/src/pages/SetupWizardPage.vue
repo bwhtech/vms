@@ -6,7 +6,7 @@
 			</PageHeaderTitle>
 		</PageHeaderBase>
 
-		<div class="mx-auto max-w-2xl px-3 py-6 pb-10 sm:px-5">
+		<div class="mx-auto max-w-2xl px-3 py-5 pb-10 sm:px-5">
 			<p class="text-p-base text-ink-gray-6">
 				Let's get VMS configured in a few quick steps.
 			</p>
