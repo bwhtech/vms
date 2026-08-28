@@ -10,7 +10,7 @@
 		</template>
 	</MobileShell>
 
-	<DesktopShell v-else>
+	<DesktopShell v-else :scroll="!ownScroll">
 		<template #sidebar>
 			<AppSidebar />
 		</template>
@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DesktopShell, MobileShell, Spinner, useKeyboardShortcut, usePageMeta } from 'frappe-ui'
 import CreateProjectDialog from '@/components/projects/CreateProjectDialog.vue'
@@ -52,6 +52,10 @@ const router = useRouter()
 const { isDesktop } = useBreakpoint()
 const { ready } = useSession()
 const { commandPaletteOpen, shortcutsOpen, openSettings, openUpload } = useOverlays()
+
+// Pages that own their scroll (the audit log) render a fixed-height body with
+// their own ScrollArea, so the shell must not page-scroll around them.
+const ownScroll = computed(() => route.meta.ownScroll === true)
 
 const SETTINGS_TABS: SettingsTab[] = ['profile', 'general', 'transcription', 'youtube', 'users']
 

@@ -24,7 +24,13 @@ const shellRoutes: RouteRecordRaw[] = [
 		component: () => import('@/pages/ProjectDetailPage.vue'),
 		props: true,
 	},
-	{ path: 'audit-logs', name: 'AuditLog', component: () => import('@/pages/AuditLogPage.vue') },
+	{
+		path: 'audit-logs',
+		name: 'AuditLog',
+		component: () => import('@/pages/AuditLogPage.vue'),
+		// The page owns its scroll: filters stay pinned, only the log scrolls.
+		meta: { ownScroll: true },
+	},
 	{ path: 'trash', name: 'Trash', component: () => import('@/pages/TrashPage.vue') },
 	{ path: 'tools', name: 'Tools', component: () => import('@/pages/ToolsPage.vue') },
 	{
