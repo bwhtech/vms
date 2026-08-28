@@ -56,7 +56,6 @@
 		>
 			<template #actions>
 				<Button
-					variant="solid"
 					label="Upload"
 					icon-left="lucide-upload"
 					@click="openUpload({ onDone: reload })"

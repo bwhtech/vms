@@ -36,8 +36,6 @@
 				<Button
 					label="New project"
 					icon-left="lucide-plus"
-					variant="solid"
-					theme="gray"
 					@click="createProjectOpen = true"
 				/>
 			</template>

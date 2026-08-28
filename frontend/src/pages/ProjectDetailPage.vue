@@ -163,13 +163,7 @@
 						icon-left="lucide-folder-plus"
 						@click="createFolderOpen = true"
 					/>
-					<Button
-						label="Upload"
-						icon-left="lucide-upload"
-						variant="solid"
-						theme="gray"
-						@click="openProjectUpload"
-					/>
+					<Button label="Upload" icon-left="lucide-upload" @click="openProjectUpload" />
 				</template>
 			</EmptyState>
 		</template>
