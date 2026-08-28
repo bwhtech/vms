@@ -5,6 +5,7 @@ import uuid
 import frappe
 import requests
 from frappe import _
+from frappe.utils import cint
 
 from vms.r2 import (
 	complete_multipart_upload,
@@ -16,6 +17,9 @@ from vms.r2 import (
 	generate_presigned_view_url,
 	get_r2_client,
 )
+
+# Assets with no project, not uploading, not trashed (Inbox / Uncategorised)
+INBOX_FILTERS = {"project": ["is", "not set"], "status": ["!=", "Uploading"], "deleted_at": ["is", "not set"]}
 
 
 @frappe.whitelist()
@@ -62,6 +66,39 @@ def get_bucket_usage():
 		"object_count": int(result.get("objectCount", 0)),
 		"metadata_size": int(result.get("metadataSize", 0)),
 	}
+
+
+def _safe_bucket_usage():
+	"""Bucket usage as {used, total}; zeros when Cloudflare is not configured or unreachable."""
+	try:
+		usage = get_bucket_usage()
+	except Exception:
+		return {"used": 0, "total": 0}
+	# R2 buckets have no size quota, so total is 0 (unknown).
+	return {"used": usage["payload_size"], "total": 0}
+
+
+@frappe.whitelist(methods=["GET"])
+def get_sidebar_counts():
+	"""Counts for the sidebar suffixes and storage meter in a single call."""
+	return {
+		"uncategorised": frappe.db.count("VMS Asset", filters=dict(INBOX_FILTERS)),
+		"unread_notifications": frappe.db.count(
+			"Notification Log", filters={"for_user": frappe.session.user, "read": 0}
+		),
+		"storage": _safe_bucket_usage(),
+	}
+
+
+def _resolve_pagination(page, page_size, start, page_length, max_size):
+	"""Return (page, page_size, start). `start`/`page_length` override `page`/`page_size` when given."""
+	page_size = cint(page_length) if page_length is not None else cint(page_size)
+	page_size = min(max_size, max(1, page_size))
+	if start is not None:
+		start = max(0, cint(start))
+		return start // page_size + 1, page_size, start
+	page = max(1, cint(page))
+	return page, page_size, (page - 1) * page_size
 
 
 @frappe.whitelist()
@@ -542,9 +579,7 @@ def rename_folder(folder_name_id: str, new_name: str):
 
 
 @frappe.whitelist()
-def move_folder(
-	folder_name_id: str, parent_folder: str | None = None, target_project: str | None = None
-):
+def move_folder(folder_name_id: str, parent_folder: str | None = None, target_project: str | None = None):
 	"""Reparent a folder. `parent_folder` empty means move it to the project root.
 
 	`target_project` moves the folder to a different project. The whole subtree goes
@@ -563,9 +598,7 @@ def move_folder(
 
 	parent_folder = parent_folder or None
 	if parent_folder:
-		parent = frappe.db.get_value(
-			"VMS Folder", parent_folder, ["project", "deleted_at"], as_dict=True
-		)
+		parent = frappe.db.get_value("VMS Folder", parent_folder, ["project", "deleted_at"], as_dict=True)
 		if not parent:
 			frappe.throw(_("Destination folder {0} does not exist").format(parent_folder))
 		if parent.deleted_at:
@@ -918,18 +951,17 @@ def _parse_user_tags(value):
 
 
 @frappe.whitelist(methods=["GET"])
-def get_inbox_assets(page=1, page_size=20):
+def get_inbox_assets(page=1, page_size=20, start=None, page_length=None):
 	"""Get paginated assets that have no project (Uncategorised / Inbox).
 
 	Parameters:
 		page: Page number (1-indexed, default 1)
 		page_size: Items per page (default 20, max 500)
+		start / page_length: offset-style pagination; override page / page_size when given
 	"""
-	page = max(1, int(page))
-	page_size = min(500, max(1, int(page_size)))
-	start = (page - 1) * page_size
+	page, page_size, start = _resolve_pagination(page, page_size, start, page_length, 500)
 
-	filters = {"project": ["is", "not set"], "status": ["!=", "Uploading"], "deleted_at": ["is", "not set"]}
+	filters = dict(INBOX_FILTERS)
 
 	total = frappe.db.count("VMS Asset", filters=filters)
 
@@ -1118,11 +1150,12 @@ def delete_asset(asset_name: str):
 
 
 @frappe.whitelist(methods=["GET"])
-def get_trash_assets(page=1, page_size=20):
-	"""Get paginated assets in trash (deleted_at is set)."""
-	page = max(1, int(page))
-	page_size = min(500, max(1, int(page_size)))
-	start = (page - 1) * page_size
+def get_trash_assets(page=1, page_size=20, start=None, page_length=None):
+	"""Get paginated assets in trash (deleted_at is set).
+
+	`start` / `page_length` override `page` / `page_size` when given.
+	"""
+	page, page_size, start = _resolve_pagination(page, page_size, start, page_length, 500)
 
 	filters = {"deleted_at": ["is", "set"]}
 
@@ -1276,8 +1309,13 @@ def get_audit_logs(
 	to_date: str | None = None,
 	page: int = 1,
 	page_size: int = 20,
+	start: int | None = None,
+	page_length: int | None = None,
 ):
-	"""Get paginated audit logs with optional filters."""
+	"""Get paginated audit logs with optional filters.
+
+	`start` / `page_length` override `page` / `page_size` when given.
+	"""
 	filters = {}
 	if action:
 		filters["action"] = action
@@ -1295,9 +1333,7 @@ def get_audit_logs(
 		else:
 			filters["timestamp"] = ["<=", to_date + " 23:59:59"]
 
-	page = max(1, int(page))
-	page_size = min(100, max(1, int(page_size)))
-	start = (page - 1) * page_size
+	page, page_size, start = _resolve_pagination(page, page_size, start, page_length, 100)
 
 	total = frappe.db.count("VMS Audit Log", filters=filters)
 
