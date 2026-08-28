@@ -44,7 +44,22 @@
 					<p class="mt-1 text-p-sm text-ink-gray-5">Published to {{ channelName }}</p>
 				</div>
 			</div>
-			<PublishedMetadata :title="publishedTitle" :description="publishedDescription" :privacy="publishedPrivacy" />
+			<dl class="space-y-2 rounded border border-outline-gray-2 p-3 text-p-sm">
+				<div
+					v-for="row in metadataRows(
+						publishedTitle,
+						publishedDescription,
+						publishedPrivacy,
+					)"
+					:key="row.label"
+					class="flex gap-3"
+				>
+					<dt class="w-20 shrink-0 text-ink-gray-5">{{ row.label }}</dt>
+					<dd class="min-w-0 whitespace-pre-wrap break-words text-ink-gray-8">
+						{{ row.value }}
+					</dd>
+				</div>
+			</dl>
 		</div>
 		<div v-else-if="uploadStatus === 'Error'" class="space-y-4 py-2">
 			<div class="flex items-start gap-3 rounded bg-surface-red-1 p-3">
@@ -56,7 +71,18 @@
 					</p>
 				</div>
 			</div>
-			<PublishedMetadata :title="targetTitle" :description="targetDescription" :privacy="targetPrivacy" />
+			<dl class="space-y-2 rounded border border-outline-gray-2 p-3 text-p-sm">
+				<div
+					v-for="row in metadataRows(targetTitle, targetDescription, targetPrivacy)"
+					:key="row.label"
+					class="flex gap-3"
+				>
+					<dt class="w-20 shrink-0 text-ink-gray-5">{{ row.label }}</dt>
+					<dd class="min-w-0 whitespace-pre-wrap break-words text-ink-gray-8">
+						{{ row.value }}
+					</dd>
+				</div>
+			</dl>
 		</div>
 		<div v-else class="space-y-4">
 			<Select
@@ -96,11 +122,21 @@
 				<template v-else-if="uploadStatus === 'Error'">
 					<Button label="Start over" :loading="reset.loading" @click="resetUpload" />
 					<Button label="Close" @click="close" />
-					<Button variant="solid" label="Retry" :loading="upload.loading" @click="startUpload" />
+					<Button
+						variant="solid"
+						label="Retry"
+						:loading="upload.loading"
+						@click="startUpload"
+					/>
 				</template>
 				<template v-else-if="connected">
 					<Button label="Cancel" :disabled="upload.loading" @click="close" />
-					<Button variant="solid" label="Upload" :loading="upload.loading" @click="startUpload" />
+					<Button
+						variant="solid"
+						label="Upload"
+						:loading="upload.loading"
+						@click="startUpload"
+					/>
 				</template>
 				<Button v-else label="Close" @click="close" />
 			</div>
@@ -109,7 +145,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, onMounted, onScopeDispose, ref, watch } from 'vue'
+import { computed, onMounted, onScopeDispose, ref, watch } from 'vue'
 import {
 	Button,
 	Dialog,
@@ -186,13 +222,16 @@ const status = useCall<YouTubeStatus, { asset_name: string }>({
 	cacheKey: ['youtube-upload-status', assetName],
 	onSuccess: applyStatus,
 })
-const upload = useCall<unknown, {
-	asset_name: string
-	title: string
-	description: string
-	privacy_status: string
-	channel: string
-}>({ url: '/api/v2/method/vms.youtube.upload_to_youtube', method: 'POST', immediate: false })
+const upload = useCall<
+	unknown,
+	{
+		asset_name: string
+		title: string
+		description: string
+		privacy_status: string
+		channel: string
+	}
+>({ url: '/api/v2/method/vms.youtube.upload_to_youtube', method: 'POST', immediate: false })
 const reset = useCall<unknown, { asset_name: string }>({
 	url: '/api/v2/method/vms.youtube.reset_youtube_upload',
 	method: 'POST',
@@ -200,7 +239,9 @@ const reset = useCall<unknown, { asset_name: string }>({
 })
 
 const connected = computed(() => Boolean(channels.data?.length))
-const isActive = computed(() => uploadStatus.value === 'Queued' || uploadStatus.value === 'Uploading')
+const isActive = computed(
+	() => uploadStatus.value === 'Queued' || uploadStatus.value === 'Uploading',
+)
 const hasUpload = computed(() => Boolean(uploadStatus.value))
 const channelOptions = computed(() =>
 	(channels.data ?? []).map((channel) => ({ label: channel.channel_name, value: channel.name })),
@@ -212,7 +253,10 @@ const channelName = computed(
 		'YouTube',
 )
 const targetChannel = computed(() => {
-	if (hasUpload.value && channels.data?.some((channel) => channel.name === publishedChannel.value)) {
+	if (
+		hasUpload.value &&
+		channels.data?.some((channel) => channel.name === publishedChannel.value)
+	) {
 		return publishedChannel.value
 	}
 	return selectedChannel.value || channels.data?.[0]?.name || ''
@@ -365,26 +409,12 @@ function fileTitle(fileName: string): string {
 	return fileName.replace(/\.[^/.]+$/, '')
 }
 
-const PublishedMetadata = defineComponent({
-	props: { title: String, description: String, privacy: String },
-	setup(props) {
-		return () =>
-			h('dl', { class: 'space-y-2 rounded border border-outline-gray-2 p-3 text-p-sm' }, [
-				metadataRow('Title', props.title),
-				metadataRow('Description', props.description),
-				metadataRow(
-					'Privacy',
-					privacyOptions.find((option) => option.value === props.privacy)?.label ?? props.privacy,
-				),
-			].filter(Boolean))
-	},
-})
-
-function metadataRow(label: string, value?: string) {
-	if (!value) return null
-	return h('div', { class: 'flex gap-3' }, [
-		h('dt', { class: 'w-20 shrink-0 text-ink-gray-5' }, label),
-		h('dd', { class: 'min-w-0 whitespace-pre-wrap break-words text-ink-gray-8' }, value),
-	])
+function metadataRows(title: string, description: string, privacy: string) {
+	const privacyLabel = privacyOptions.find((option) => option.value === privacy)?.label ?? privacy
+	return [
+		{ label: 'Title', value: title },
+		{ label: 'Description', value: description },
+		{ label: 'Privacy', value: privacyLabel },
+	].filter((row) => Boolean(row.value))
 }
 </script>

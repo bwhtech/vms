@@ -14,14 +14,20 @@
 		<div v-if="transcription.loading && !loaded" class="grid place-items-center py-16">
 			<LoadingIndicator class="text-ink-gray-5" />
 		</div>
-		<div v-else-if="status === 'Processing'" class="flex flex-col items-center px-6 py-16 text-center">
+		<div
+			v-else-if="status === 'Processing'"
+			class="flex flex-col items-center px-6 py-16 text-center"
+		>
 			<LoadingIndicator class="text-ink-blue-6" />
 			<p class="mt-4 text-base-medium text-ink-gray-8">Generating transcription</p>
 			<p class="mt-2 text-p-sm text-ink-gray-5">
 				This can take a few minutes. The transcript refreshes automatically.
 			</p>
 		</div>
-		<div v-else-if="status === 'Error'" class="flex flex-col items-center px-6 py-16 text-center">
+		<div
+			v-else-if="status === 'Error'"
+			class="flex flex-col items-center px-6 py-16 text-center"
+		>
 			<span class="lucide-circle-alert size-8 text-ink-red-6" aria-hidden="true" />
 			<p class="mt-4 text-base-medium text-ink-gray-8">Transcription failed</p>
 			<p v-if="content" class="mt-2 text-p-sm text-ink-gray-5">{{ content }}</p>
@@ -88,7 +94,10 @@
 					</ListCell>
 				</ListRow>
 			</List>
-			<p v-if="visibleSegments.length === 0" class="py-10 text-center text-p-sm text-ink-gray-5">
+			<p
+				v-if="visibleSegments.length === 0"
+				class="py-10 text-center text-p-sm text-ink-gray-5"
+			>
 				No matching transcript text.
 			</p>
 		</div>
@@ -178,10 +187,14 @@ watch(
 		else query.value = ''
 	},
 )
-watch(status, (value) => {
-	if (value === 'Processing') startPolling()
-	else stopPolling()
-}, { immediate: true })
+watch(
+	status,
+	(value) => {
+		if (value === 'Processing') startPolling()
+		else stopPolling()
+	},
+	{ immediate: true },
+)
 
 async function startTranscription() {
 	try {
@@ -216,7 +229,10 @@ function renameSpeaker(speaker: string) {
 			else delete next[speaker]
 			speakerNames.value = next
 			try {
-				await saveNames.submit({ asset_name: assetName, speaker_names: JSON.stringify(next) })
+				await saveNames.submit({
+					asset_name: assetName,
+					speaker_names: JSON.stringify(next),
+				})
 				toast.success('Speaker name saved')
 			} catch (error) {
 				speakerNames.value = previous
@@ -256,7 +272,9 @@ function parseTranscription(markdown: string): TranscriptSegment[] {
 	return markdown
 		.split(/\n\s*\n/)
 		.map((block) => {
-			const match = block.trim().match(/^\*\*\[([\d:]+)\]\*\*\s*(?:\*\*Speaker (\d+):\*\*\s*)?([\s\S]*)$/)
+			const match = block
+				.trim()
+				.match(/^\*\*\[([\d:]+)\]\*\*\s*(?:\*\*Speaker (\d+):\*\*\s*)?([\s\S]*)$/)
 			if (!match) return null
 			return {
 				timestamp: match[1],

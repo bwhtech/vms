@@ -23,13 +23,15 @@
 		</div>
 		<div v-else class="space-y-5">
 			<p class="text-p-sm text-ink-gray-6">
-				Split <span class="font-medium text-ink-gray-8">{{ asset.file_name }}</span> into equal
-				parts without re-encoding.
+				Split <span class="font-medium text-ink-gray-8">{{ asset.file_name }}</span> into
+				equal parts without re-encoding.
 			</p>
 			<div class="space-y-3">
 				<div class="flex items-center justify-between">
 					<label class="text-sm-medium text-ink-gray-7">Number of parts</label>
-					<span class="text-base-semibold tabular-nums text-ink-gray-8">{{ sliceCount }}</span>
+					<span class="text-base-semibold tabular-nums text-ink-gray-8">{{
+						sliceCount
+					}}</span>
 				</div>
 				<Slider v-model="slices" :min="2" :max="10" :step="1" />
 				<div class="flex justify-between text-p-xs text-ink-gray-5">
@@ -43,19 +45,19 @@
 				</div>
 				<div class="flex justify-between gap-4">
 					<span class="text-ink-gray-5">Approx. per part</span>
-					<span class="text-ink-gray-8">{{ formatBytes(asset.file_size / sliceCount) }}</span>
+					<span class="text-ink-gray-8">{{
+						formatBytes(asset.file_size / sliceCount)
+					}}</span>
 				</div>
 			</div>
 			<p class="text-p-xs text-ink-gray-5">
-				This background job uses stream copy, so there is no quality loss. You will also receive
-				an email when it finishes.
+				This background job uses stream copy, so there is no quality loss. You will also
+				receive an email when it finishes.
 			</p>
 		</div>
 
 		<div v-if="parts.length" class="mt-5 border-t border-outline-gray-1 pt-4">
-			<p class="mb-2 text-sm-medium text-ink-gray-7">
-				Split parts ({{ parts.length }})
-			</p>
+			<p class="mb-2 text-sm-medium text-ink-gray-7">Split parts ({{ parts.length }})</p>
 			<List :columns="['minmax(0,1fr)', 'auto']" divider="full">
 				<ListRow
 					v-for="part in parts"
@@ -116,7 +118,7 @@ interface SplitProgress {
 }
 
 interface SplitStatus {
-	status: string
+	status: AssetStatus
 	progress?: SplitProgress | null
 }
 
@@ -148,7 +150,10 @@ const start = useCall<unknown, { asset_name: string; num_slices: number }>({
 	immediate: false,
 })
 
-const fallbackParts = (asset.split_parts ?? []).map((part) => ({ ...part, status: 'Ready' }))
+const fallbackParts: SplitPart[] = (asset.split_parts ?? []).map((part) => ({
+	...part,
+	status: 'Ready',
+}))
 const parts = computed(() => partsRequest.data ?? fallbackParts)
 const progressLabel = computed(() => {
 	const value = progress.value
@@ -205,7 +210,8 @@ async function applyStatus(data: SplitStatus) {
 	await partsRequest.reload()
 	review.reload()
 	trackedJob.value = false
-	if (parts.value.length) toast.success(`Video split complete · ${parts.value.length} parts created`)
+	if (parts.value.length)
+		toast.success(`Video split complete · ${parts.value.length} parts created`)
 	else toast.error('The split finished without creating any parts')
 }
 

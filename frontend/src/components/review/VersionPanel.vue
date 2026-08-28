@@ -22,7 +22,10 @@
 				<p>Version history could not be loaded.</p>
 				<Button class="mt-2" label="Try again" @click="versions.reload" />
 			</div>
-			<p v-else-if="allVersions.length === 0" class="py-10 text-center text-p-sm text-ink-gray-5">
+			<p
+				v-else-if="allVersions.length === 0"
+				class="py-10 text-center text-p-sm text-ink-gray-5"
+			>
 				No versions found.
 			</p>
 			<template v-else>
@@ -44,20 +47,39 @@
 									alt=""
 									class="size-10 shrink-0 rounded object-cover"
 								/>
-								<div v-else class="grid size-10 shrink-0 place-items-center rounded bg-surface-gray-2">
-									<span class="lucide-file size-4 text-ink-gray-5" aria-hidden="true" />
+								<div
+									v-else
+									class="grid size-10 shrink-0 place-items-center rounded bg-surface-gray-2"
+								>
+									<span
+										class="lucide-file size-4 text-ink-gray-5"
+										aria-hidden="true"
+									/>
 								</div>
 								<div class="min-w-0 flex-1">
 									<div class="flex items-center gap-2">
-										<span class="text-base-medium text-ink-gray-8">v{{ version.version_number }}</span>
-										<Badge v-if="version.is_current" label="Current" theme="green" />
+										<span class="text-base-medium text-ink-gray-8">
+											v{{ version.version_number }}
+										</span>
+										<Badge
+											v-if="version.is_current"
+											label="Current"
+											theme="green"
+										/>
 									</div>
-									<p class="mt-1 truncate text-sm text-ink-gray-6">{{ version.file_name }}</p>
+									<p class="mt-1 truncate text-sm text-ink-gray-6">
+										{{ version.file_name }}
+									</p>
 									<p class="mt-1 text-p-xs text-ink-gray-5">
 										{{ version.uploader_name || version.uploaded_by }}
-										<span v-if="version.file_size"> · {{ formatBytes(version.file_size) }}</span>
+										<span v-if="version.file_size">
+											· {{ formatBytes(version.file_size) }}
+										</span>
 									</p>
-									<p v-if="version.uploaded_at" class="mt-1 text-p-xs text-ink-gray-5">
+									<p
+										v-if="version.uploaded_at"
+										class="mt-1 text-p-xs text-ink-gray-5"
+									>
 										{{ formatDate(version.uploaded_at) }}
 									</p>
 								</div>
@@ -173,7 +195,10 @@ function confirmRestore(version: AssetVersion) {
 		onConfirm: async () => {
 			restoringVersion.value = version.version_number
 			try {
-				await restore.submit({ asset_name: assetName, version_number: version.version_number })
+				await restore.submit({
+					asset_name: assetName,
+					version_number: version.version_number,
+				})
 				await versions.reload()
 				review.reload()
 				toast.success(`Restored v${version.version_number}`)
