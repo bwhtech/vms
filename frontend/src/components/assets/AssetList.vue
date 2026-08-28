@@ -4,9 +4,9 @@
 		:columns="['minmax(0,1fr)', '8rem', '7.5rem', '6rem', '3rem']"
 		selectable
 		:row-height="56"
-		class="-mx-3 list-row-px-3 sm:-mx-5 sm:list-row-px-5"
+		class="-mx-3 list-row-px-3 sm:-mx-5 sm:list-row-px-5 max-sm:[--list-columns:auto_minmax(0,1fr)_3rem]"
 	>
-		<ListHeader>
+		<ListHeader class="max-sm:!hidden">
 			<ListHeaderCellSort
 				:direction="direction('file_name')"
 				@click="toggleSort('file_name')"
@@ -84,19 +84,19 @@
 								</div>
 							</div>
 						</ListCell>
-						<ListCell>
+						<ListCell class="max-sm:hidden">
 							<CategoryBadge
 								:asset-name="asset.name"
 								:category="asset.category"
 								@changed="emit('changed')"
 							/>
 						</ListCell>
-						<ListCell>
+						<ListCell class="max-sm:hidden">
 							<span class="text-sm text-ink-gray-5">{{
 								fromNow(asset.modified || asset.creation)
 							}}</span>
 						</ListCell>
-						<ListCell class="justify-end">
+						<ListCell class="justify-end max-sm:hidden">
 							<span class="text-sm text-ink-gray-7">{{
 								formatBytes(asset.file_size ?? 0)
 							}}</span>

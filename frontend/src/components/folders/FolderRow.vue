@@ -22,11 +22,13 @@
 			{{ itemCount }}
 		</ListCell>
 		<template v-else>
-			<ListCell><span class="text-sm text-ink-gray-5">Folder</span></ListCell>
-			<ListCell>
+			<ListCell class="max-sm:hidden">
+				<span class="text-sm text-ink-gray-5">Folder</span>
+			</ListCell>
+			<ListCell class="max-sm:hidden">
 				<span class="text-sm text-ink-gray-5">{{ fromNow(folder.modified) }}</span>
 			</ListCell>
-			<ListCell>
+			<ListCell class="max-sm:hidden">
 				<span class="text-sm text-ink-gray-5">{{ itemCount }} items</span>
 			</ListCell>
 			<ListCell class="justify-end">
