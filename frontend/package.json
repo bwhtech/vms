@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && yarn copy-service-worker",
-    "copy-service-worker": "cp ../vms/public/frontend/sw.min.js ../vms/www/sw.min.js",
+    "copy-service-worker": "cp ../vms/public/frontend/sw.min.js ../vms/public/frontend/registerSW.js ../vms/www/",
     "typecheck": "vue-tsc --noEmit",
     "lint": "eslint . && prettier --check src",
     "preview": "vite preview",
