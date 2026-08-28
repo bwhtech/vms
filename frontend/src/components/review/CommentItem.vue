@@ -31,22 +31,37 @@
 							<span class="lucide-clock-3 size-3" />
 							{{ formatTimestamp(comment.video_timestamp ?? 0) }}
 						</Button>
-						<Badge v-if="comment.has_annotation" theme="blue" variant="subtle" size="sm">
+						<Badge
+							v-if="comment.has_annotation"
+							theme="blue"
+							variant="subtle"
+							size="sm"
+						>
 							<span class="lucide-pen-tool size-3" />
 							Drawing
 						</Badge>
-						<Badge v-if="comment.is_resolved" variant="outline" size="sm">Resolved</Badge>
+						<Badge
+							v-if="comment.is_resolved"
+							variant="outline"
+							size="sm"
+							label="Resolved"
+						/>
 					</div>
 
+					<!-- eslint-disable vue/no-v-html -- editor HTML, sanitized by Frappe on save -->
 					<div
 						data-comment-body
 						class="comment-body mt-1 break-words text-sm text-ink-gray-8"
 						@click="handleBodyClick"
 						v-html="comment.comment_text"
 					/>
+					<!-- eslint-enable vue/no-v-html -->
 
 					<div class="mt-1.5 flex min-h-6 items-center gap-1">
-						<span class="text-xs text-ink-gray-5" :title="formatDateTime(comment.creation)">
+						<span
+							class="text-xs text-ink-gray-5"
+							:title="formatDateTime(comment.creation)"
+						>
 							{{ fromNow(comment.creation) }}
 							<template v-if="comment.is_edited"> · edited</template>
 						</span>
@@ -61,7 +76,10 @@
 								:title="copied ? 'Copied' : 'Copy comment'"
 								@click="copyComment"
 							>
-								<span :class="copied ? 'lucide-check' : 'lucide-copy'" class="size-3.5" />
+								<span
+									:class="copied ? 'lucide-check' : 'lucide-copy'"
+									class="size-3.5"
+								/>
 							</Button>
 							<Button
 								v-if="!nested"
@@ -97,7 +115,9 @@
 								v-if="!review.isGuest.value"
 								variant="ghost"
 								size="sm"
-								:aria-label="comment.is_resolved ? 'Reopen comment' : 'Resolve comment'"
+								:aria-label="
+									comment.is_resolved ? 'Reopen comment' : 'Resolve comment'
+								"
 								:title="comment.is_resolved ? 'Reopen' : 'Resolve'"
 								@click="emit('resolve', comment, !comment.is_resolved)"
 							>
@@ -128,7 +148,10 @@
 				class="ml-9"
 				@click="repliesOpen = !repliesOpen"
 			>
-				<span :class="repliesOpen ? 'lucide-chevron-up' : 'lucide-chevron-down'" class="size-3" />
+				<span
+					:class="repliesOpen ? 'lucide-chevron-up' : 'lucide-chevron-down'"
+					class="size-3"
+				/>
 				{{ repliesOpen ? 'Hide' : 'Show' }} {{ replies.length }} replies
 			</Button>
 			<CommentItem
@@ -169,7 +192,11 @@
 					>
 						<span class="lucide-x size-5" />
 					</Button>
-					<img :src="previewSource" alt="Comment attachment" class="max-h-[80vh] max-w-full object-contain" />
+					<img
+						:src="previewSource"
+						alt="Comment attachment"
+						class="max-h-[80vh] max-w-full object-contain"
+					/>
 				</div>
 			</template>
 		</Dialog>
@@ -216,9 +243,7 @@ const interactive = computed(() => hasTimestamp.value || Boolean(props.comment.h
 const isGuestComment = computed(
 	() => Boolean(props.comment.guest_name) && !props.comment.commented_by,
 )
-const isOwner = computed(
-	() => Boolean(userId.value) && props.comment.commented_by === userId.value,
-)
+const isOwner = computed(() => Boolean(userId.value) && props.comment.commented_by === userId.value)
 
 function openComment(event: MouseEvent) {
 	if ((event.target as HTMLElement).closest('a, button, img')) return

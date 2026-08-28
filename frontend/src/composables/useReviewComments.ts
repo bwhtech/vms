@@ -55,7 +55,10 @@ export function useReviewComments(assetId: string, token: string | null, version
 		method: 'POST',
 		immediate: false,
 	})
-	const editRequest = useCall<CommentMutationResponse, { comment_name: string; comment_text: string }>({
+	const editRequest = useCall<
+		CommentMutationResponse,
+		{ comment_name: string; comment_text: string }
+	>({
 		url: '/api/v2/method/vms.review_api.edit_comment',
 		method: 'POST',
 		immediate: false,
@@ -73,10 +76,7 @@ export function useReviewComments(assetId: string, token: string | null, version
 		method: 'POST',
 		immediate: false,
 	})
-	const annotationRequest = useCall<
-		AnnotationResponse,
-		{ comment_name: string; token?: string }
-	>({
+	const annotationRequest = useCall<AnnotationResponse, { comment_name: string; token?: string }>({
 		url: '/api/v2/method/vms.review_api.get_annotation_data',
 		method: 'GET',
 		immediate: false,

@@ -35,10 +35,14 @@
 					:key="color"
 					type="button"
 					class="size-5 rounded-full border-2 border-surface-base shadow-sm outline outline-1 transition-transform hover:scale-110 focus-visible:outline-2"
-					:class="color === activeColor ? 'outline-outline-gray-5' : 'outline-transparent'"
+					:class="
+						color === fabricCanvas.activeColor.value
+							? 'outline-outline-gray-5'
+							: 'outline-transparent'
+					"
 					:style="{ backgroundColor: color }"
 					:aria-label="`Use ${color} for drawing`"
-					:aria-pressed="color === activeColor"
+					:aria-pressed="color === fabricCanvas.activeColor.value"
 					@click="fabricCanvas.changeColor(color)"
 				/>
 			</div>
@@ -72,11 +76,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Button, TabButtons } from 'frappe-ui'
-import {
-	ANNOTATION_COLORS,
-	useFabricCanvas,
-	type DrawingTool,
-} from '@/composables/useFabricCanvas'
+import { ANNOTATION_COLORS, useFabricCanvas, type DrawingTool } from '@/composables/useFabricCanvas'
 
 withDefaults(defineProps<{ editing?: boolean; saving?: boolean }>(), {
 	editing: false,

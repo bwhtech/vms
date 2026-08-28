@@ -368,8 +368,10 @@ function scaleObject(object: JsonObject, xScale: number, yScale: number) {
 	if (Array.isArray(object.path)) {
 		for (const segment of object.path as unknown[][]) {
 			for (let index = 1; index < segment.length; index += 2) {
-				if (typeof segment[index] === 'number') segment[index] = segment[index] * xScale
-				if (typeof segment[index + 1] === 'number') segment[index + 1] = segment[index + 1] * yScale
+				const x = segment[index]
+				const y = segment[index + 1]
+				if (typeof x === 'number') segment[index] = x * xScale
+				if (typeof y === 'number') segment[index + 1] = y * yScale
 			}
 		}
 	}

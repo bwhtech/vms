@@ -7,7 +7,7 @@
 		:upload-function="uploadImage"
 		@transaction="syncR2Keys"
 	>
-		<template #default="{ editor, isEmpty }">
+		<template #default="{ editor, isEmpty: editorEmpty }">
 			<div
 				class="overflow-hidden rounded border border-outline-gray-2 bg-surface-base focus-within:border-outline-gray-3"
 				@keydown.capture="handleKeydown"
@@ -28,12 +28,14 @@
 						<span class="lucide-image-plus size-4" />
 					</Button>
 					<div class="flex items-center gap-2">
-						<span class="hidden text-xs text-ink-gray-5 sm:inline">{{ shortcutLabel }}</span>
+						<span class="hidden text-xs text-ink-gray-5 sm:inline">{{
+							shortcutLabel
+						}}</span>
 						<Button
 							variant="solid"
 							size="sm"
 							:loading="submitting"
-							:disabled="isEmpty || submitting"
+							:disabled="editorEmpty || submitting"
 							@click="submit"
 						>
 							<span class="lucide-send size-4" />
@@ -49,6 +51,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { Button, dialog, useCall } from 'frappe-ui'
+import type { Extension } from '@tiptap/core'
 import {
 	CommentKit,
 	Editor,
@@ -123,7 +126,7 @@ const ReviewImage = Image.extend({
 	},
 })
 
-const extensions = [
+const extensions: Extension[] = [
 	CommentKit.configure({
 		heading: false,
 		image: false,
@@ -143,8 +146,8 @@ const extensions = [
 						})),
 				},
 	}),
-	ReviewImage,
-	MediaDrop,
+	ReviewImage as unknown as Extension,
+	MediaDrop as unknown as Extension,
 ]
 
 const shortcutLabel = computed(() =>
