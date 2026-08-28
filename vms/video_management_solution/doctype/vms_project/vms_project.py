@@ -35,6 +35,12 @@ class VMSProject(Document):
 	def validate(self):
 		self._validate_avatar()
 
+	def on_trash(self):
+		# A pin is a per-user convenience, never a reason to keep a project
+		# alive. Frappe runs `on_trash` before its link check, so clearing the
+		# rows here is what lets a pinned project be deleted at all.
+		frappe.db.delete("VMS Pinned Project", {"project": self.name})
+
 	def _validate_avatar(self):
 		"""Keep `avatar` to the one shape the frontend will render.
 

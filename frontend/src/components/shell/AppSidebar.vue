@@ -2,7 +2,7 @@
 	<Sidebar width="14rem">
 		<SidebarHeader
 			title="VMS"
-			:subtitle="siteName"
+			:subtitle="user?.full_name ?? ''"
 			:logo="LOGO_URL"
 			:menu-items="workspaceMenu"
 		/>
@@ -95,11 +95,9 @@ interface MenuItem {
 }
 
 const route = useRoute()
-const { logout } = useSession()
+const { logout, user } = useSession()
 const { commandPaletteOpen, notificationsOpen, openSettings, shortcutsOpen } = useOverlays()
 const { unreadCount } = useNotifications()
-
-const siteName = window.site_name ?? ''
 
 const counts = useCall<SidebarCounts>({
 	url: '/api/v2/method/vms.api.get_sidebar_counts',
