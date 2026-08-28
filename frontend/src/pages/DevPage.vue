@@ -76,10 +76,10 @@
 			<Button label="Preview image" @click="previewOpen = true" />
 			<MediaPreviewDialog
 				v-model:open="previewOpen"
-				url="/assets/vms/frontend/vms-logo.png"
-				name="vms-logo.png"
+				url="/assets/vms/frontend/vms-mark.png"
+				name="vms-mark.png"
 				mime="image/png"
-				download-url="/assets/vms/frontend/vms-logo.png"
+				download-url="/assets/vms/frontend/vms-mark.png"
 			/>
 		</section>
 

@@ -11,15 +11,15 @@ app_license = "agpl-3.0"
 # required_apps = []
 
 # Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
-# 	{
-# 		"name": "vms",
-# 		"logo": "/assets/vms/logo.png",
-# 		"title": "Video Management Solution",
-# 		"route": "/vms",
-# 		"has_permission": "vms.api.permission.has_app_permission"
-# 	}
-# ]
+add_to_apps_screen = [
+	{
+		"name": "vms",
+		"logo": "/assets/vms/images/vms-mark.svg",
+		"title": "VMS",
+		"route": "/vms",
+		"has_permission": "vms.permissions.has_vms_access",
+	}
+]
 
 # Includes in <head>
 # ------------------

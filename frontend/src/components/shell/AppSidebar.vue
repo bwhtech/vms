@@ -28,12 +28,6 @@
 					</template>
 				</SidebarItem>
 				<SidebarItem
-					icon="lucide-folder"
-					label="Projects"
-					to="/projects"
-					:active="route.path.startsWith('/projects')"
-				/>
-				<SidebarItem
 					icon="lucide-bell"
 					label="Notifications"
 					@click="notificationsOpen = true"
@@ -63,7 +57,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, h } from 'vue'
+import type { VNode } from 'vue'
 import { useRoute } from 'vue-router'
 import {
 	KeyboardShortcut,
@@ -81,7 +76,7 @@ import { useOverlays } from '@/composables/useOverlays'
 import { useSession } from '@/composables/useSession'
 
 /** Vite serves `public/` at the build's base URL. */
-const LOGO_URL = `${import.meta.env.BASE_URL}vms-logo.png`
+const LOGO_URL = `${import.meta.env.BASE_URL}vms-mark.png`
 
 interface SidebarCounts {
 	uncategorised: number
@@ -90,12 +85,22 @@ interface SidebarCounts {
 /** The `SidebarHeader` dropdown takes a narrower shape than `Dropdown` does. */
 interface MenuItem {
 	label: string
-	icon: string
-	onClick: () => void
+	icon?: string
+	onClick?: () => void
+	submenu?: MenuItem[]
+	slots?: { prefix?: () => VNode }
+}
+
+/** One row of `frappe.apps.get_apps`: an installed app that opted into the apps screen. */
+interface AppEntry {
+	name: string
+	logo: string
+	title: string
+	route: string
 }
 
 const route = useRoute()
-const { logout, user } = useSession()
+const { isSystemManager, logout, user } = useSession()
 const { commandPaletteOpen, notificationsOpen, openSettings, shortcutsOpen } = useOverlays()
 const { unreadCount } = useNotifications()
 
@@ -110,8 +115,45 @@ const uncategorisedCount = computed(() => counts.data?.uncategorised ?? 0)
 // panel clears the dot without a second round trip.
 const hasUnread = computed(() => unreadCount.value > 0)
 
+// The apps screen hook is the site-wide list of installed apps, so the switcher
+// stays correct as apps are installed or removed without a VMS-side registry.
+const apps = useCall<AppEntry[]>({
+	url: '/api/v2/method/frappe.apps.get_apps',
+	method: 'GET',
+	cacheKey: 'installed-apps',
+})
+
+// Desk is not on the apps screen (it is every site's fallback), so it is added by
+// hand — but only for System Managers, since a Video Manager has no desk access
+// and would land on a permission error. VMS itself is dropped: switching to where
+// you already are is a no-op.
+const deskApp: AppEntry = {
+	name: 'frappe',
+	logo: '/assets/frappe/images/framework.png',
+	title: 'Desk',
+	route: '/desk',
+}
+
+const appSwitcherItems = computed<MenuItem[]>(() =>
+	[
+		...(isSystemManager.value ? [deskApp] : []),
+		...(apps.data ?? []).filter((app) => app.name !== 'vms'),
+	].map((app) => ({
+		label: app.title,
+		onClick: () => {
+			window.location.href = app.route
+		},
+		slots: {
+			prefix: () => h('img', { src: app.logo, alt: '', class: 'size-4 rounded-sm' }),
+		},
+	})),
+)
+
 // Workspace-level actions belong to the workspace, so they hang off its header.
-const workspaceMenu: MenuItem[] = [
+const workspaceMenu = computed<MenuItem[]>(() => [
+	...(appSwitcherItems.value.length
+		? [{ label: 'Switch app', icon: 'lucide-layout-grid', submenu: appSwitcherItems.value }]
+		: []),
 	{ label: 'Settings', icon: 'lucide-settings', onClick: () => openSettings('profile') },
 	{
 		label: 'Keyboard shortcuts',
@@ -121,5 +163,5 @@ const workspaceMenu: MenuItem[] = [
 		},
 	},
 	{ label: 'Log out', icon: 'lucide-log-out', onClick: () => logout() },
-]
+])
 </script>

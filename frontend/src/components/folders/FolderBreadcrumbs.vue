@@ -17,8 +17,9 @@ const emit = defineEmits<{
 const container = ref<HTMLElement | null>(null)
 const highlighted = ref<HTMLElement | null>(null)
 
+// The trail starts at the project, not at "Projects": the sidebar already lists
+// every project and links to the index, so the crumb only cost header width.
 const items = computed(() => [
-	{ label: 'Projects', route: '/projects' },
 	{ label: props.projectName, route: `/projects/${props.project}` },
 	...props.trail.map((folder) => ({
 		label: folder.folder_name,
@@ -31,8 +32,9 @@ function targetFor(event: DragEvent): { element: HTMLElement; folder: string | n
 	if (!element || !container.value?.contains(element)) return null
 	const crumbs = Array.from(container.value.querySelectorAll<HTMLElement>('a, button'))
 	const index = crumbs.indexOf(element)
-	if (index < 1) return null
-	return { element, folder: index === 1 ? null : (props.trail[index - 2]?.name ?? null) }
+	if (index < 0) return null
+	// Crumb 0 is the project itself — dropping on it means the project root.
+	return { element, folder: index === 0 ? null : (props.trail[index - 1]?.name ?? null) }
 }
 
 function dragOver(event: DragEvent) {
