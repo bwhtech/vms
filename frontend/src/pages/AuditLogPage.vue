@@ -69,15 +69,16 @@
 		<template v-else>
 			<List
 				:columns="COLUMNS"
-				class="-mx-3 list-row-px-3 sm:-mx-5 sm:list-row-px-5 max-sm:[--list-columns:minmax(0,1fr)_auto]"
+				class="max-sm:[--list-columns:minmax(0,1fr)_auto]"
 				data-testid="audit-list"
 			>
 				<ListHeader class="max-sm:!hidden">
 					<ListHeaderCell>Time</ListHeaderCell>
 					<ListHeaderCell>User</ListHeaderCell>
 					<ListHeaderCell>Action</ListHeaderCell>
-					<ListHeaderCell>Target</ListHeaderCell>
-					<ListHeaderCell>Details</ListHeaderCell>
+					<ListHeaderCell>File</ListHeaderCell>
+					<ListHeaderCell>Project</ListHeaderCell>
+					<ListHeaderCell class="justify-end">Size</ListHeaderCell>
 				</ListHeader>
 				<ListRows v-slot="{ item: groupRow }" :items="groupedRows">
 					<ListGroup v-if="groupRow.dayGroup" :label="groupRow.dayGroup.label">
@@ -88,42 +89,41 @@
 							class="min-h-12"
 							data-testid="audit-row"
 						>
-							<ListCell class="text-sm text-ink-gray-7 tabular-nums max-sm:hidden">
-								{{ formatDate(log.timestamp, 'HH:mm') }}
+							<ListCell class="max-sm:hidden">
+								<Tooltip :text="formatDateTime(log.timestamp)">
+									<span class="text-sm text-ink-gray-7 tabular-nums">
+										{{ formatDate(log.timestamp, 'h:mm A') }}
+									</span>
+								</Tooltip>
 							</ListCell>
 							<ListCell class="max-sm:hidden">
-								<div class="flex min-w-0 items-center gap-2">
-									<UserAvatar
-										:user="{
-											full_name: log.user_full_name,
-											user_image: log.user_image,
-										}"
-									/>
-									<span class="truncate text-sm text-ink-gray-7">{{
-										log.user_full_name || log.user
-									}}</span>
-								</div>
+								<UserHoverCard :user="log" />
 							</ListCell>
 							<ListCell class="max-sm:hidden">
 								<Badge :label="log.action" :theme="actionTheme(log.action)" />
 							</ListCell>
 							<ListCell>
-								<div class="min-w-0">
-									<p class="truncate text-base text-ink-gray-8">
-										{{ log.file_name || log.asset_name }}
-									</p>
-									<p
-										class="mt-0.5 truncate text-sm text-ink-gray-5 max-sm:hidden"
-									>
-										{{ log.project_name || 'No project' }}
-									</p>
-									<p class="mt-0.5 truncate text-sm text-ink-gray-5 sm:hidden">
-										{{ mobileMeta(log) }}
-									</p>
+								<div class="flex min-w-0 items-center gap-3">
+									<UserAvatar :user="log" class="sm:hidden" />
+									<div class="min-w-0">
+										<p class="truncate text-base text-ink-gray-8">
+											{{ log.file_name || log.asset_name }}
+										</p>
+										<p
+											class="mt-0.5 truncate text-sm text-ink-gray-5 sm:hidden"
+										>
+											{{ mobileMeta(log) }}
+										</p>
+									</div>
 								</div>
 							</ListCell>
-							<ListCell class="text-sm text-ink-gray-7 tabular-nums">
-								{{ details(log) }}
+							<ListCell class="max-sm:hidden">
+								<span class="truncate text-sm text-ink-gray-7">
+									{{ log.project_name || '—' }}
+								</span>
+							</ListCell>
+							<ListCell class="justify-end text-sm text-ink-gray-5 tabular-nums">
+								{{ log.file_size ? formatBytes(log.file_size) : '—' }}
 							</ListCell>
 						</ListRow>
 					</ListGroup>
@@ -157,6 +157,7 @@ import {
 	PageHeaderTitle,
 	Select,
 	TextInput,
+	Tooltip,
 	useCall,
 	usePageMeta,
 } from 'frappe-ui'
@@ -170,16 +171,17 @@ import {
 	ListRows,
 } from 'frappe-ui/list'
 import type { AuditAction, AuditLog } from '@/types'
-import { formatDate, groupByDay } from '@/lib/dates'
+import { formatDate, formatDateTime, groupByDay } from '@/lib/dates'
 import { formatBytes } from '@/lib/format'
 import EmptyState from '@/components/common/EmptyState.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import UserHoverCard from '@/components/common/UserHoverCard.vue'
 import SkeletonRows from '@/components/common/SkeletonRows.vue'
 
 usePageMeta(() => ({ title: 'Audit log · VMS' }))
 
 const PAGE_SIZE = 20
-const COLUMNS = ['6rem', '11rem', '8rem', 'minmax(10rem,1fr)', '8rem']
+const COLUMNS = ['5.5rem', '3rem', '9rem', 'minmax(10rem,1fr)', '11rem', '5rem']
 const ACTIONS: AuditAction[] = ['Download', 'Delete', 'Permanent Delete', 'Rename', 'Restore']
 
 const action = ref('')
@@ -281,12 +283,12 @@ function clearFilters() {
 }
 
 function mobileMeta(log: AuditLog) {
-	return `${log.user_full_name || log.user} · ${log.action} · ${log.project_name || 'No project'}`
-}
-
-function details(log: AuditLog) {
-	const parts = [log.file_size ? formatBytes(log.file_size) : '', log.file_type || '']
-	return parts.filter(Boolean).join(' · ') || '—'
+	const parts = [
+		formatDate(log.timestamp, 'h:mm A'),
+		log.action,
+		log.project_name || 'No project',
+	]
+	return parts.join(' · ')
 }
 
 function actionTheme(value: AuditAction) {

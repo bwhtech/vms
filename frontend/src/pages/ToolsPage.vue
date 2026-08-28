@@ -38,7 +38,7 @@
 		<template v-else>
 			<List
 				:columns="COLUMNS"
-				class="-mx-3 list-row-px-3 sm:-mx-5 sm:list-row-px-5 max-sm:[--list-columns:minmax(0,1fr)_auto]"
+				class="max-sm:[--list-columns:minmax(0,1fr)_auto]"
 				data-testid="tools-jobs"
 			>
 				<ListHeader class="max-sm:!hidden">
@@ -59,7 +59,10 @@
 								<p class="mt-0.5 truncate text-sm text-ink-gray-5 sm:hidden">
 									{{ mobileMeta(job) }}
 								</p>
-								<div v-if="isActive(job.status)" class="mt-1.5 w-40">
+								<div
+									v-if="isActive(job.status) && job.status !== 'Queued'"
+									class="mt-1.5 w-40"
+								>
 									<Progress :value="job.progress || 0" size="sm" />
 								</div>
 							</div>
@@ -187,7 +190,7 @@ usePageMeta(() => ({ title: 'Tools · VMS' }))
 
 const PAGE_SIZE = 20
 const POLL_MS = 5000
-const COLUMNS = ['minmax(10rem,1fr)', '7rem', '8rem', '6rem', '9rem', 'auto']
+const COLUMNS = ['minmax(10rem,1fr)', '7rem', '8rem', '6rem', '9rem', '3rem']
 const ACTIVE_STATUSES: CompressJobStatus[] = ['Queued', 'Uploading', 'Processing']
 
 interface ToolUploadUrl {
