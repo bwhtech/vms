@@ -89,7 +89,7 @@
 							data-testid="audit-row"
 						>
 							<ListCell class="text-sm text-ink-gray-7 tabular-nums max-sm:hidden">
-								{{ formatTime(log.timestamp) }}
+								{{ formatDate(log.timestamp, 'HH:mm') }}
 							</ListCell>
 							<ListCell class="max-sm:hidden">
 								<div class="flex min-w-0 items-center gap-2">
@@ -171,7 +171,7 @@ import {
 	ListRows,
 } from 'frappe-ui/list'
 import type { AuditAction, AuditLog } from '@/types'
-import { dayjs, groupByDay } from '@/lib/dates'
+import { formatDate, groupByDay } from '@/lib/dates'
 import { formatBytes } from '@/lib/format'
 import EmptyState from '@/components/common/EmptyState.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
@@ -278,10 +278,6 @@ function clearFilters() {
 	user.value = ''
 	project.value = ''
 	search.value = ''
-}
-
-function formatTime(value: string) {
-	return dayjs(value).format('HH:mm')
 }
 
 function mobileMeta(log: AuditLog) {

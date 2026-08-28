@@ -80,7 +80,7 @@
 										v-if="version.uploaded_at"
 										class="mt-1 text-p-xs text-ink-gray-5"
 									>
-										{{ formatDate(version.uploaded_at) }}
+										{{ formatDateTime(version.uploaded_at) }}
 									</p>
 								</div>
 								<div class="flex shrink-0 gap-1">
@@ -116,6 +116,7 @@ import { List, ListCell, ListRow } from 'frappe-ui/list'
 import SidePanel from '@/components/common/SidePanel.vue'
 import { useReview } from '@/composables/useReview'
 import { useVersionUpload } from '@/composables/useVersionUpload'
+import { formatDateTime } from '@/lib/dates'
 import { formatBytes } from '@/lib/format'
 import type { AssetVersion, AssetVersionsResponse, ViewUrlResponse } from '@/types'
 
@@ -207,12 +208,5 @@ function confirmRestore(version: AssetVersion) {
 			}
 		},
 	})
-}
-
-function formatDate(value: string): string {
-	return new Intl.DateTimeFormat(undefined, {
-		dateStyle: 'medium',
-		timeStyle: 'short',
-	}).format(new Date(value))
 }
 </script>

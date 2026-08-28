@@ -14,32 +14,31 @@
 		<div v-if="transcription.loading && !loaded" class="grid place-items-center py-16">
 			<LoadingIndicator class="text-ink-gray-5" />
 		</div>
-		<div
+		<EmptyState
 			v-else-if="status === 'Processing'"
-			class="flex flex-col items-center px-6 py-16 text-center"
+			title="Generating transcription"
+			description="This can take a few minutes. The transcript refreshes automatically."
 		>
-			<LoadingIndicator class="text-ink-blue-6" />
-			<p class="mt-4 text-base-medium text-ink-gray-8">Generating transcription</p>
-			<p class="mt-2 text-p-sm text-ink-gray-5">
-				This can take a few minutes. The transcript refreshes automatically.
-			</p>
-		</div>
-		<div
+			<template #icon><LoadingIndicator class="text-ink-gray-5" /></template>
+		</EmptyState>
+		<EmptyState
 			v-else-if="status === 'Error'"
-			class="flex flex-col items-center px-6 py-16 text-center"
+			title="Transcription failed"
+			:description="content || undefined"
 		>
-			<span class="lucide-circle-alert size-8 text-ink-red-6" aria-hidden="true" />
-			<p class="mt-4 text-base-medium text-ink-gray-8">Transcription failed</p>
-			<p v-if="content" class="mt-2 text-p-sm text-ink-gray-5">{{ content }}</p>
-			<Button
-				class="mt-4"
-				variant="solid"
-				icon-left="lucide-refresh-cw"
-				label="Retry"
-				:loading="start.loading"
-				@click="startTranscription"
-			/>
-		</div>
+			<template #icon>
+				<span class="lucide-circle-alert size-6 text-ink-red-6" aria-hidden="true" />
+			</template>
+			<template #actions>
+				<Button
+					variant="solid"
+					icon-left="lucide-refresh-cw"
+					label="Retry"
+					:loading="start.loading"
+					@click="startTranscription"
+				/>
+			</template>
+		</EmptyState>
 		<div v-else-if="status === 'Complete'" class="space-y-4 p-4">
 			<FormControl
 				v-if="segments.length > 6"
@@ -101,21 +100,22 @@
 				No matching transcript text.
 			</p>
 		</div>
-		<div v-else class="flex flex-col items-center px-6 py-16 text-center">
-			<span class="lucide-captions size-10 text-ink-gray-4" aria-hidden="true" />
-			<p class="mt-4 text-base-medium text-ink-gray-8">No transcription yet</p>
-			<p class="mt-2 text-p-sm text-ink-gray-5">
-				Generate a timestamped transcript for this asset.
-			</p>
-			<Button
-				class="mt-4"
-				variant="solid"
-				icon-left="lucide-wand-sparkles"
-				label="Generate transcription"
-				:loading="start.loading"
-				@click="startTranscription"
-			/>
-		</div>
+		<EmptyState
+			v-else
+			icon="lucide-captions"
+			title="No transcription yet"
+			description="Generate a timestamped transcript for this asset."
+		>
+			<template #actions>
+				<Button
+					variant="solid"
+					icon-left="lucide-wand-sparkles"
+					label="Generate transcription"
+					:loading="start.loading"
+					@click="startTranscription"
+				/>
+			</template>
+		</EmptyState>
 	</SidePanel>
 </template>
 
@@ -123,6 +123,7 @@
 import { computed, onScopeDispose, ref, watch } from 'vue'
 import { Button, FormControl, LoadingIndicator, dialog, toast, useCall } from 'frappe-ui'
 import { List, ListCell, ListRow } from 'frappe-ui/list'
+import EmptyState from '@/components/common/EmptyState.vue'
 import SidePanel from '@/components/common/SidePanel.vue'
 import { useReview } from '@/composables/useReview'
 import type { Transcription, TranscriptionStatus } from '@/types'

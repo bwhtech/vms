@@ -9,14 +9,16 @@
 		<div v-if="channels.loading && !channels.data" class="grid place-items-center py-10">
 			<LoadingIndicator class="text-ink-gray-5" />
 		</div>
-		<div v-else-if="!connected && !hasUpload" class="py-8 text-center">
-			<span class="lucide-youtube size-10 text-ink-gray-4" aria-hidden="true" />
-			<p class="mt-3 text-base-medium text-ink-gray-8">YouTube is not connected</p>
-			<p class="mt-2 text-p-sm text-ink-gray-5">
-				Connect a channel in Settings before publishing this video.
-			</p>
-			<Button class="mt-4" variant="solid" label="Open settings" @click="openSettings" />
-		</div>
+		<EmptyState
+			v-else-if="!connected && !hasUpload"
+			icon="lucide-youtube"
+			title="YouTube is not connected"
+			description="Connect a channel in Settings before publishing this video."
+		>
+			<template #actions>
+				<Button variant="solid" label="Open settings" @click="openSettings" />
+			</template>
+		</EmptyState>
 		<div v-else-if="isActive" class="space-y-5 py-3">
 			<div class="flex items-start gap-3 rounded bg-surface-blue-1 p-3">
 				<span class="lucide-loader-circle mt-0.5 size-4 animate-spin text-ink-blue-6" />
@@ -157,6 +159,7 @@ import {
 	useCall,
 } from 'frappe-ui'
 import { useRouter } from 'vue-router'
+import EmptyState from '@/components/common/EmptyState.vue'
 import { getSocket, onRealtime } from '@/composables/useRealtime'
 import { useReview } from '@/composables/useReview'
 
