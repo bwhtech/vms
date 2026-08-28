@@ -125,7 +125,8 @@ const menuOptions = computed<DropdownOption[]>(() => {
 	if (!props.asset.file_type?.startsWith('image/')) {
 		options.push(
 			{
-				label: 'Transcribe',
+				label:
+					props.asset.transcription_status === 'Complete' ? 'Transcript' : 'Transcribe',
 				icon: 'lucide-captions',
 				onClick: () => (review.panels.transcription.value = true),
 			},

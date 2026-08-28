@@ -6,7 +6,7 @@
 				<p class="text-sm text-ink-gray-5">Compress a video to a smaller H.264 MP4.</p>
 			</div>
 		</PageHeaderTitle>
-		<template #actions>
+		<div class="flex items-center gap-2">
 			<Button
 				label="Compress video"
 				icon-left="lucide-file-archive"
@@ -14,7 +14,7 @@
 				data-testid="tools-compress"
 				@click="openCompress"
 			/>
-		</template>
+		</div>
 	</PageHeader>
 
 	<div class="px-3 py-5 pb-10 sm:px-5" data-testid="tools-page">

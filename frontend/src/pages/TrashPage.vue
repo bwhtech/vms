@@ -6,7 +6,7 @@
 				<p class="text-sm text-ink-gray-5">{{ summary }}</p>
 			</div>
 		</PageHeaderTitle>
-		<template #actions>
+		<div class="flex items-center gap-2">
 			<template v-if="selected.length">
 				<Button
 					:label="`Restore (${selected.length})`"
@@ -34,7 +34,7 @@
 				data-testid="trash-empty"
 				@click="confirmEmpty"
 			/>
-		</template>
+		</div>
 	</PageHeader>
 
 	<div class="px-3 py-5 pb-10 sm:px-5" data-testid="trash-page">
