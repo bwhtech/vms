@@ -1,5 +1,12 @@
+import re
+
 import frappe
+from frappe import _
 from frappe.model.document import Document
+
+from vms.html import sanitize_rich_text
+
+AVATAR_DATA_URI = re.compile(r"^data:image/svg\+xml[;,]", re.IGNORECASE)
 
 
 class VMSProject(Document):
@@ -11,13 +18,46 @@ class VMSProject(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
+		avatar: DF.LongText | None
+		avatar_options: DF.SmallText | None
+		avatar_seed: DF.Data | None
+		avatar_style: DF.Data | None
+		color: DF.Literal["", "gray", "blue", "green", "amber", "red", "violet"]
 		description: DF.TextEditor | None
 		due_date: DF.Date | None
+		icon: DF.Data | None
 		naming_series: DF.Literal["VMS-PROJ-.#####"]
 		owner_user: DF.Link | None
 		project_name: DF.Data
+		share_token: DF.Data | None
 		status: DF.Literal["Open", "In Progress", "In Review", "Completed", "Archived"]
 		thumbnail_url: DF.Data | None
 	# end: auto-generated types
 
-	pass
+	def validate(self):
+		self._validate_avatar()
+		# The public share page renders this as HTML to logged-out visitors.
+		self.description = sanitize_rich_text(self.description)
+
+	def on_trash(self):
+		# A pin is a per-user convenience, never a reason to keep a project
+		# alive. Frappe runs `on_trash` before its link check, so clearing the
+		# rows here is what lets a pinned project be deleted at all.
+		frappe.db.delete("VMS Pinned Project", {"project": self.name})
+
+	def _validate_avatar(self):
+		"""Keep `avatar` to the one shape the frontend will render.
+
+		An SVG can carry script, so the client only ever puts the value in an
+		`<img src>` and only after checking the prefix. Repeating the check here
+		means a value that could never be drawn also never reaches the row.
+		"""
+		if not self.avatar:
+			return
+
+		self.avatar = self.avatar.strip()
+		if not AVATAR_DATA_URI.match(self.avatar):
+			frappe.throw(
+				_("Avatar must be an SVG data URI (data:image/svg+xml,…)"),
+				title=_("Invalid Avatar"),
+			)

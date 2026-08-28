@@ -5,7 +5,9 @@ import uuid
 import frappe
 import requests
 from frappe import _
+from frappe.utils import cint
 
+from vms.permissions import require_vms_access
 from vms.r2 import (
 	complete_multipart_upload,
 	configure_bucket_cors,
@@ -17,10 +19,15 @@ from vms.r2 import (
 	get_r2_client,
 )
 
+# Assets with no project, not uploading, not trashed (Inbox / Uncategorised)
+INBOX_FILTERS = {"project": ["is", "not set"], "status": ["!=", "Uploading"], "deleted_at": ["is", "not set"]}
+
 
 @frappe.whitelist()
 def test_r2_connection():
 	"""Test R2 credentials by calling head_bucket, then configure CORS."""
+	require_vms_access()
+
 	settings = frappe.get_single("VMS Settings")
 	if not settings.r2_account_id or not settings.r2_access_key_id or not settings.r2_bucket_name:
 		frappe.throw(_("R2 credentials are incomplete. Please fill in all required fields."))
@@ -40,6 +47,8 @@ def test_r2_connection():
 @frappe.whitelist()
 def get_bucket_usage():
 	"""Get R2 bucket storage usage via the Cloudflare API."""
+	require_vms_access()
+
 	settings = frappe.get_single("VMS Settings")
 	api_token = settings.get_password("cloudflare_api_token")
 	if not api_token:
@@ -64,9 +73,46 @@ def get_bucket_usage():
 	}
 
 
+def _safe_bucket_usage():
+	"""Bucket usage as {used, total}; zeros when Cloudflare is not configured or unreachable."""
+	try:
+		usage = get_bucket_usage()
+	except Exception:
+		return {"used": 0, "total": 0}
+	# R2 buckets have no size quota, so total is 0 (unknown).
+	return {"used": usage["payload_size"], "total": 0}
+
+
+@frappe.whitelist(methods=["GET"])
+def get_sidebar_counts():
+	"""Counts for the sidebar suffixes and storage meter in a single call."""
+	require_vms_access()
+
+	return {
+		"uncategorised": frappe.db.count("VMS Asset", filters=dict(INBOX_FILTERS)),
+		"unread_notifications": frappe.db.count(
+			"Notification Log", filters={"for_user": frappe.session.user, "read": 0}
+		),
+		"storage": _safe_bucket_usage(),
+	}
+
+
+def _resolve_pagination(page, page_size, start, page_length, max_size):
+	"""Return (page, page_size, start). `start`/`page_length` override `page`/`page_size` when given."""
+	page_size = cint(page_length) if page_length is not None else cint(page_size)
+	page_size = min(max_size, max(1, page_size))
+	if start is not None:
+		start = max(0, cint(start))
+		return start // page_size + 1, page_size, start
+	page = max(1, cint(page))
+	return page, page_size, (page - 1) * page_size
+
+
 @frappe.whitelist()
 def fail_upload(asset_name: str):
 	"""Mark an asset as Failed and delete the record."""
+	require_vms_access()
+
 	from vms.deletion import cleanup_failed_upload
 
 	cleanup_failed_upload(asset_name)
@@ -94,6 +140,8 @@ def get_upload_url(
 	Returns dict with upload_url (or upload_id for multipart), r2_key, and asset_name.
 	If project is omitted, the asset goes to the Inbox.
 	"""
+	require_vms_access()
+
 	settings = frappe.get_single("VMS Settings")
 	file_size = int(file_size or 0)
 
@@ -180,6 +228,8 @@ def get_upload_url(
 @frappe.whitelist()
 def get_part_upload_url(r2_key: str, upload_id: str, part_number: int):
 	"""Get a presigned URL for uploading a single part of a multipart upload."""
+	require_vms_access()
+
 	part_number = int(part_number)
 	if part_number < 1:
 		frappe.throw(_("Part number must be >= 1"))
@@ -191,6 +241,8 @@ def get_part_upload_url(r2_key: str, upload_id: str, part_number: int):
 @frappe.whitelist()
 def complete_multipart(asset_name: str, upload_id: str, parts: str | list):
 	"""Complete a multipart upload by combining all parts."""
+	require_vms_access()
+
 	if isinstance(parts, str):
 		parts = json.loads(parts)
 
@@ -217,6 +269,8 @@ def complete_multipart(asset_name: str, upload_id: str, parts: str | list):
 @frappe.whitelist()
 def abort_multipart(asset_name: str, upload_id: str):
 	"""Abort a multipart upload and clean up."""
+	require_vms_access()
+
 	from vms.deletion import cleanup_aborted_multipart
 
 	cleanup_aborted_multipart(asset_name, upload_id)
@@ -234,6 +288,8 @@ def confirm_upload(asset_name: str, file_size: int, version_of: str | None = Non
 	- Deletes the temporary source asset record
 	- Returns the target asset info
 	"""
+	require_vms_access()
+
 	asset = frappe.get_doc("VMS Asset", asset_name)
 
 	if asset.status != "Uploading":
@@ -342,6 +398,8 @@ def _apply_version_swap(source_asset, target_name: str) -> dict:
 @frappe.whitelist()
 def send_upload_report(files: str):
 	"""Send an email report to the uploader after bulk upload completes."""
+	require_vms_access()
+
 	file_list = json.loads(files)
 	if len(file_list) < 2:
 		return {"status": "skipped"}
@@ -429,6 +487,8 @@ def _create_audit_log(
 @frappe.whitelist()
 def get_view_url(asset_name: str):
 	"""Get a presigned view URL for streaming an asset."""
+	require_vms_access()
+
 	asset = frappe.get_doc("VMS Asset", asset_name)
 
 	if not asset.r2_key:
@@ -442,6 +502,8 @@ def get_view_url(asset_name: str):
 @frappe.whitelist()
 def get_download_url(asset_name: str):
 	"""Get a presigned download URL for an asset (with Content-Disposition: attachment)."""
+	require_vms_access()
+
 	asset = frappe.get_doc("VMS Asset", asset_name)
 
 	if not asset.r2_key:
@@ -464,6 +526,8 @@ def get_download_url(asset_name: str):
 @frappe.whitelist()
 def move_asset(asset_name: str, target_project: str):
 	"""Move an asset to a different project (or from Inbox to a project)."""
+	require_vms_access()
+
 	if not frappe.db.exists("VMS Project", target_project):
 		frappe.throw(_("Target project {0} does not exist").format(target_project))
 
@@ -478,6 +542,8 @@ def move_asset(asset_name: str, target_project: str):
 @frappe.whitelist()
 def create_folder(folder_name: str, project: str, parent_folder: str | None = None):
 	"""Create a folder within a project, optionally nested inside another folder."""
+	require_vms_access()
+
 	folder_name = (folder_name or "").strip()
 	if not folder_name:
 		frappe.throw(_("Folder name cannot be empty"))
@@ -527,6 +593,8 @@ def _check_duplicate_folder_name(folder_name, project, parent_folder, exclude=No
 @frappe.whitelist()
 def rename_folder(folder_name_id: str, new_name: str):
 	"""Rename a folder."""
+	require_vms_access()
+
 	new_name = (new_name or "").strip()
 	if not new_name:
 		frappe.throw(_("Folder name cannot be empty"))
@@ -542,9 +610,7 @@ def rename_folder(folder_name_id: str, new_name: str):
 
 
 @frappe.whitelist()
-def move_folder(
-	folder_name_id: str, parent_folder: str | None = None, target_project: str | None = None
-):
+def move_folder(folder_name_id: str, parent_folder: str | None = None, target_project: str | None = None):
 	"""Reparent a folder. `parent_folder` empty means move it to the project root.
 
 	`target_project` moves the folder to a different project. The whole subtree goes
@@ -555,6 +621,8 @@ def move_folder(
 	Cycle and same-project checks live in the VMS Folder controller, so they also
 	cover desk edits; this only adds the sibling-name collision check.
 	"""
+	require_vms_access()
+
 	folder = frappe.get_doc("VMS Folder", folder_name_id)
 
 	target_project = target_project or folder.project
@@ -563,9 +631,7 @@ def move_folder(
 
 	parent_folder = parent_folder or None
 	if parent_folder:
-		parent = frappe.db.get_value(
-			"VMS Folder", parent_folder, ["project", "deleted_at"], as_dict=True
-		)
+		parent = frappe.db.get_value("VMS Folder", parent_folder, ["project", "deleted_at"], as_dict=True)
 		if not parent:
 			frappe.throw(_("Destination folder {0} does not exist").format(parent_folder))
 		if parent.deleted_at:
@@ -607,6 +673,8 @@ def _reproject_subtree(folder_name: str, project: str):
 @frappe.whitelist()
 def delete_folder(folder_name: str):
 	"""Soft-delete a folder (move to trash)."""
+	require_vms_access()
+
 	from vms.deletion import soft_delete_folder
 
 	soft_delete_folder(folder_name)
@@ -616,6 +684,8 @@ def delete_folder(folder_name: str):
 @frappe.whitelist()
 def restore_folder(folder_name: str):
 	"""Restore a folder from trash."""
+	require_vms_access()
+
 	from vms.deletion import restore_folder as _restore_folder
 
 	_restore_folder(folder_name)
@@ -625,6 +695,8 @@ def restore_folder(folder_name: str):
 @frappe.whitelist()
 def permanently_delete_folder(folder_name: str):
 	"""Permanently delete a trashed folder."""
+	require_vms_access()
+
 	from vms.deletion import hard_delete_folder
 
 	hard_delete_folder(folder_name)
@@ -632,8 +704,10 @@ def permanently_delete_folder(folder_name: str):
 
 
 @frappe.whitelist(methods=["GET"])
-def get_trash_folders(page=1, page_size=20):
+def get_trash_folders(page: int | str = 1, page_size: int | str = 20):
 	"""Get paginated folders in trash (deleted_at is set)."""
+	require_vms_access()
+
 	page = max(1, int(page))
 	page_size = min(500, max(1, int(page_size)))
 	start = (page - 1) * page_size
@@ -698,6 +772,8 @@ def get_trash_folders(page=1, page_size=20):
 @frappe.whitelist()
 def move_assets_to_folder(asset_names: str | list, folder: str | None = None):
 	"""Move assets into a folder (or back to project root if folder is None)."""
+	require_vms_access()
+
 	if isinstance(asset_names, str):
 		import json
 
@@ -735,7 +811,7 @@ def _folder_subtree(folder, include_trashed=False):
 	if not include_trashed:
 		filters["deleted_at"] = ["is", "not set"]
 	# depth cap mirrors the controller's — corrupt parent data can't spin here
-	for _ in range(50):
+	for _depth in range(50):
 		if not frontier:
 			break
 		filters["parent_folder"] = ["in", frontier]
@@ -767,15 +843,15 @@ def _asset_order_by(sort_by=None, sort_order=None):
 
 @frappe.whitelist(methods=["GET"])
 def get_project_assets(
-	project,
-	folder=None,
-	category=None,
-	tag=None,
-	search=None,
-	page=1,
-	page_size=20,
-	sort_by=None,
-	sort_order=None,
+	project: str,
+	folder: str | None = None,
+	category: str | None = None,
+	tag: str | None = None,
+	search: str | None = None,
+	page: int | str = 1,
+	page_size: int | str = 20,
+	sort_by: str | None = None,
+	sort_order: str | None = None,
 ):
 	"""Get project assets with server-side folder/category/tag/name filtering, sorting and pagination.
 
@@ -795,6 +871,8 @@ def get_project_assets(
 		sort_by: "creation", "file_size" or "file_name" (default "creation")
 		sort_order: "asc" or "desc" (default "desc")
 	"""
+	require_vms_access()
+
 	if not frappe.db.exists("VMS Project", project):
 		frappe.throw(_("Project {0} does not exist").format(project))
 
@@ -918,18 +996,24 @@ def _parse_user_tags(value):
 
 
 @frappe.whitelist(methods=["GET"])
-def get_inbox_assets(page=1, page_size=20):
+def get_inbox_assets(
+	page: int | str = 1,
+	page_size: int | str = 20,
+	start: int | str | None = None,
+	page_length: int | str | None = None,
+):
 	"""Get paginated assets that have no project (Uncategorised / Inbox).
 
 	Parameters:
 		page: Page number (1-indexed, default 1)
 		page_size: Items per page (default 20, max 500)
+		start / page_length: offset-style pagination; override page / page_size when given
 	"""
-	page = max(1, int(page))
-	page_size = min(500, max(1, int(page_size)))
-	start = (page - 1) * page_size
+	require_vms_access()
 
-	filters = {"project": ["is", "not set"], "status": ["!=", "Uploading"], "deleted_at": ["is", "not set"]}
+	page, page_size, start = _resolve_pagination(page, page_size, start, page_length, 500)
+
+	filters = dict(INBOX_FILTERS)
 
 	total = frappe.db.count("VMS Asset", filters=filters)
 
@@ -985,6 +1069,8 @@ def get_inbox_assets(page=1, page_size=20):
 @frappe.whitelist()
 def add_asset_tag(asset_name: str, tag: str):
 	"""Add a user tag to a VMS Asset. Returns the updated tag list."""
+	require_vms_access()
+
 	if not frappe.db.exists("VMS Asset", asset_name):
 		frappe.throw(_("Asset {0} does not exist").format(asset_name))
 
@@ -1005,7 +1091,7 @@ def add_asset_tag(asset_name: str, tag: str):
 
 
 @frappe.whitelist(methods=["GET"])
-def get_project_tags(project: str, folder=None):
+def get_project_tags(project: str, folder: str | None = None):
 	"""Return distinct tags applied to non-trashed assets in this project, with usage counts.
 
 	Used by the project page tag filter dropdown.
@@ -1016,6 +1102,8 @@ def get_project_tags(project: str, folder=None):
 			in the dropdown and yield 2 rows once picked. None counts the whole project,
 			minus assets in trashed folders, which are unreachable in the UI.
 	"""
+	require_vms_access()
+
 	if not frappe.db.exists("VMS Project", project):
 		frappe.throw(_("Project {0} does not exist").format(project))
 
@@ -1055,6 +1143,8 @@ def get_project_tags(project: str, folder=None):
 @frappe.whitelist()
 def remove_asset_tag(asset_name: str, tag: str):
 	"""Remove a user tag from a VMS Asset. Returns the updated tag list."""
+	require_vms_access()
+
 	if not frappe.db.exists("VMS Asset", asset_name):
 		frappe.throw(_("Asset {0} does not exist").format(asset_name))
 
@@ -1075,6 +1165,8 @@ ALLOWED_CARD_COLORS = {"", "red", "amber", "green", "blue", "purple", "pink"}
 @frappe.whitelist()
 def set_asset_card_color(asset_name: str, color: str = ""):
 	"""Set (or clear) the accent colour for an asset card. Pass empty string to clear."""
+	require_vms_access()
+
 	if not frappe.db.exists("VMS Asset", asset_name):
 		frappe.throw(_("Asset {0} does not exist").format(asset_name))
 
@@ -1091,6 +1183,8 @@ def set_asset_card_color(asset_name: str, color: str = ""):
 @frappe.whitelist()
 def get_vms_users():
 	"""Get all users with the Video Manager role."""
+	require_vms_access()
+
 	user_names = frappe.get_all(
 		"Has Role",
 		filters={"role": "Video Manager", "parenttype": "User"},
@@ -1111,6 +1205,8 @@ def get_vms_users():
 @frappe.whitelist()
 def delete_asset(asset_name: str):
 	"""Soft-delete an asset by moving it to trash."""
+	require_vms_access()
+
 	from vms.deletion import soft_delete_asset
 
 	soft_delete_asset(asset_name)
@@ -1118,11 +1214,19 @@ def delete_asset(asset_name: str):
 
 
 @frappe.whitelist(methods=["GET"])
-def get_trash_assets(page=1, page_size=20):
-	"""Get paginated assets in trash (deleted_at is set)."""
-	page = max(1, int(page))
-	page_size = min(500, max(1, int(page_size)))
-	start = (page - 1) * page_size
+def get_trash_assets(
+	page: int | str = 1,
+	page_size: int | str = 20,
+	start: int | str | None = None,
+	page_length: int | str | None = None,
+):
+	"""Get paginated assets in trash (deleted_at is set).
+
+	`start` / `page_length` override `page` / `page_size` when given.
+	"""
+	require_vms_access()
+
+	page, page_size, start = _resolve_pagination(page, page_size, start, page_length, 500)
 
 	filters = {"deleted_at": ["is", "set"]}
 
@@ -1195,6 +1299,8 @@ def get_trash_assets(page=1, page_size=20):
 @frappe.whitelist()
 def restore_asset(asset_name: str):
 	"""Restore an asset from trash."""
+	require_vms_access()
+
 	from vms.deletion import restore_asset as _restore
 
 	_restore(asset_name)
@@ -1204,6 +1310,8 @@ def restore_asset(asset_name: str):
 @frappe.whitelist()
 def permanently_delete_asset(asset_name: str):
 	"""Permanently delete a trashed asset (hard delete)."""
+	require_vms_access()
+
 	from vms.deletion import hard_delete_asset
 
 	hard_delete_asset(asset_name)
@@ -1213,6 +1321,8 @@ def permanently_delete_asset(asset_name: str):
 @frappe.whitelist()
 def empty_trash():
 	"""Permanently delete all assets and folders in trash."""
+	require_vms_access()
+
 	from vms.deletion import empty_all_trash
 
 	result = empty_all_trash()
@@ -1222,6 +1332,8 @@ def empty_trash():
 @frappe.whitelist()
 def rename_asset(asset_name: str, new_file_name: str):
 	"""Rename an asset's display file name (metadata only, no R2 changes)."""
+	require_vms_access()
+
 	new_file_name = (new_file_name or "").strip()
 	if not new_file_name:
 		frappe.throw(_("File name cannot be empty"))
@@ -1253,6 +1365,8 @@ def rename_asset(asset_name: str, new_file_name: str):
 @frappe.whitelist()
 def update_asset_category(asset_name: str, category: str):
 	"""Change an asset's category (Footage/For Review/Deliverable)."""
+	require_vms_access()
+
 	valid_categories = ("Footage", "For Review", "Deliverable")
 	if category not in valid_categories:
 		frappe.throw(
@@ -1276,8 +1390,15 @@ def get_audit_logs(
 	to_date: str | None = None,
 	page: int = 1,
 	page_size: int = 20,
+	start: int | None = None,
+	page_length: int | None = None,
 ):
-	"""Get paginated audit logs with optional filters."""
+	"""Get paginated audit logs with optional filters.
+
+	`start` / `page_length` override `page` / `page_size` when given.
+	"""
+	require_vms_access()
+
 	filters = {}
 	if action:
 		filters["action"] = action
@@ -1295,9 +1416,7 @@ def get_audit_logs(
 		else:
 			filters["timestamp"] = ["<=", to_date + " 23:59:59"]
 
-	page = max(1, int(page))
-	page_size = min(100, max(1, int(page_size)))
-	start = (page - 1) * page_size
+	page, page_size, start = _resolve_pagination(page, page_size, start, page_length, 100)
 
 	total = frappe.db.count("VMS Audit Log", filters=filters)
 
@@ -1360,6 +1479,8 @@ def get_audit_logs(
 @frappe.whitelist(methods=["GET"])
 def get_audit_log_filters():
 	"""Get distinct users and projects for audit log filter dropdowns."""
+	require_vms_access()
+
 	user_names = frappe.get_all(
 		"VMS Audit Log",
 		fields=["user"],
@@ -1405,6 +1526,8 @@ def search_assets(query: str, project: str | None = None, limit: int = 10):
 
 	Falls back to SQL LIKE if the search index is not built yet.
 	"""
+	require_vms_access()
+
 	query = (query or "").strip()
 	if not query:
 		return {"results": []}
@@ -1470,6 +1593,8 @@ def search_assets(query: str, project: str | None = None, limit: int = 10):
 @frappe.whitelist(methods=["GET"])
 def search_projects(query: str, limit: int = 5):
 	"""Search VMS projects by name."""
+	require_vms_access()
+
 	query = (query or "").strip()
 	if not query:
 		return {"results": []}
@@ -1541,6 +1666,8 @@ def is_convertible_video(asset) -> bool:
 @frappe.whitelist()
 def convert_asset_to_mp4(asset_name: str):
 	"""Start converting an asset to MP4 format. Sets status to Processing and enqueues a background job."""
+	require_vms_access()
+
 	asset = frappe.get_doc("VMS Asset", asset_name)
 
 	if asset.status != "Ready":
@@ -1573,6 +1700,8 @@ def convert_asset_to_mp4(asset_name: str):
 @frappe.whitelist()
 def enable_project_sharing(project: str):
 	"""Generate a share token for a project and return the public URL."""
+	require_vms_access()
+
 	doc = frappe.get_doc("VMS Project", project)
 	if not doc.share_token:
 		doc.share_token = uuid.uuid4().hex
@@ -1588,6 +1717,8 @@ def enable_project_sharing(project: str):
 @frappe.whitelist()
 def disable_project_sharing(project: str):
 	"""Remove the share token, revoking all public links."""
+	require_vms_access()
+
 	doc = frappe.get_doc("VMS Project", project)
 	doc.share_token = None
 	doc.save(ignore_permissions=True)
@@ -1709,6 +1840,8 @@ def get_shared_asset_view_url(asset_name: str, project: str, token: str | None =
 @frappe.whitelist(methods=["GET"])
 def get_asset_versions(asset_name: str):
 	"""Get version history for an asset, including the current version."""
+	require_vms_access()
+
 	asset = frappe.db.get_value(
 		"VMS Asset",
 		asset_name,
@@ -1789,6 +1922,8 @@ def get_asset_versions(asset_name: str):
 @frappe.whitelist()
 def get_version_download_url(asset_name: str, version_number: int):
 	"""Get a presigned download URL for a specific version of an asset."""
+	require_vms_access()
+
 	version_number = int(version_number)
 
 	asset = frappe.db.get_value(
@@ -1845,6 +1980,8 @@ def restore_version(asset_name: str, version_number: int):
 	Saves the current asset state as a new VMS Asset Version record,
 	then copies the target version's file data back onto the asset.
 	"""
+	require_vms_access()
+
 	version_number = int(version_number)
 	asset = frappe.get_doc("VMS Asset", asset_name)
 

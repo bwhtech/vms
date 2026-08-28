@@ -14,6 +14,14 @@
   "section_break_1",
   "description",
   "thumbnail_url",
+  "identity_section",
+  "icon",
+  "color",
+  "identity_column",
+  "avatar",
+  "avatar_style",
+  "avatar_seed",
+  "avatar_options",
   "share_section",
   "share_token"
  ],
@@ -72,6 +80,53 @@
    "fieldtype": "Data",
    "label": "Thumbnail URL",
    "hidden": 1
+  },
+  {
+   "fieldname": "identity_section",
+   "fieldtype": "Section Break",
+   "label": "Identity",
+   "collapsible": 1
+  },
+  {
+   "description": "Lucide icon name shown on the project avatar (e.g. rocket). Blank falls back to a folder.",
+   "fieldname": "icon",
+   "fieldtype": "Data",
+   "label": "Icon"
+  },
+  {
+   "description": "Avatar tint. Blank derives a stable color from the project id.",
+   "fieldname": "color",
+   "fieldtype": "Select",
+   "label": "Color",
+   "options": "\ngray\nblue\ngreen\namber\nred\nviolet"
+  },
+  {
+   "fieldname": "identity_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Generated DiceBear avatar, stored as a data:image/svg+xml URI. Set means it is shown instead of the icon. Rendered only as an <img> source, never as markup.",
+   "fieldname": "avatar",
+   "fieldtype": "Long Text",
+   "label": "Avatar"
+  },
+  {
+   "description": "DiceBear style id the avatar was generated from (e.g. glass).",
+   "fieldname": "avatar_style",
+   "fieldtype": "Data",
+   "label": "Avatar Style"
+  },
+  {
+   "description": "Seed the avatar was generated from. Same style, seed and options always give the same SVG.",
+   "fieldname": "avatar_seed",
+   "fieldtype": "Data",
+   "label": "Avatar Seed"
+  },
+  {
+   "description": "JSON object of hand-picked component variants, e.g. {\"shape\": \"variant07\"}. Blank leaves every component to the seed.",
+   "fieldname": "avatar_options",
+   "fieldtype": "Small Text",
+   "label": "Avatar Options"
   },
   {
    "fieldname": "share_section",

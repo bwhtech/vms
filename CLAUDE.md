@@ -4,57 +4,63 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-VMS (Video Management Solution) is a Frappe application with a React frontend. It follows a monorepo structure: Python backend in `vms/` and React+TypeScript frontend in `frontend/`.
+VMS (Video Management Solution) is a Frappe application with a Vue 3 + frappe-ui frontend. Monorepo layout: Python backend in `vms/`, frontend in `frontend/`, Playwright e2e suite in `e2e/`.
+
+The rewrite plan and screen specs live in `plans/frappe-ui-rewrite.md`; read the relevant section before changing a screen.
 
 ## Testing
 
-After building a frontend feature, test using the agent-browser, the site name is vms.localhost:8000/vms. For backend testing etc. using bench CLI (execute, etc.)
+After building a frontend feature, test in the browser with the `agent-browser` skill at `vms.localhost:8000/vms` (login `Administrator` / `admin`). Frappe serves the built bundle, so run `yarn build` first — the Vite dev server is not what the site serves. For backend checks use the bench CLI (`bench --site vms.localhost execute ...`).
+
+The e2e suite is the acceptance bar: `npx playwright test` from the app root runs against the live site (no web server is started). Keep it green.
 
 ## Common Commands
 
-### Frontend Development
+### Frontend (`frontend/`)
 ```bash
-yarn dev              # Start Vite dev server on localhost:8080
-yarn build            # Build React app to vms/public/frontend/ and copy HTML entry
-cd frontend && yarn lint   # Run ESLint on frontend code
+yarn dev          # Vite dev server on localhost:8080
+yarn build        # Build to vms/public/frontend/ + vms/www/vms.html, copy sw.min.js
+yarn typecheck    # vue-tsc --noEmit
+yarn lint         # eslint + prettier --check
+yarn format       # prettier --write src
 ```
-
-IMPORTANT: ALWAYS INSTALL USE shadcn components if available, don't make your own custom components if shadcn components are available.
 
 ### Backend / Frappe
-
-IMPORTANT: to create new DocTypes, USE new_doc with bench execute. Then other updates could be done directly in JSON. (Remember DocType is also a DocType). PLUS you will get the boilerplate files are folder structure.
-
 ```bash
-bench start                                    # Start the Frappe development server
-bench --site <site> run-tests --app vms        # Run all backend tests
-bench --site <site> run-tests --app vms --module "Video Management Solution"  # Run module tests
-bench --site <site> migrate                    # Run database migrations, doctype changes
+bench start
+bench --site vms.localhost run-tests --app vms
+bench --site vms.localhost migrate
 ```
+
+IMPORTANT: to create new DocTypes, use `new_doc` via `bench execute` with a temp script in the `vms/` module path, then edit the generated JSON directly. This gives you the boilerplate files and folder structure.
 
 ### Code Quality
 ```bash
-pre-commit run --all-files    # Run all pre-commit hooks (ruff, prettier, eslint)
+pre-commit run --all-files    # ruff, prettier, eslint
 ```
+
+## Frontend rules
+
+- Load the `/frappe-ui` skill (`DESIGN.md`, `COMPONENTS.md`, `TOKENS.md`) before writing UI. Use frappe-ui components (`Button`, `Dialog`, `dialog.*`, `List`, `Select`, `FormControl`, `Dropdown`, `Badge`, `toast`, `PageHeader`, `SettingsDialog`, `CommandPalette` …) — do not hand-roll equivalents. `PageHeader` has only a default slot.
+- Colours come from frappe-ui semantic tokens only (`text-ink-gray-*`, `bg-surface-*`, `border-outline-gray-*`). `grep -rE 'text-gray-|bg-gray-|border-gray-' frontend/src` must stay empty.
+- Icons are `lucide-*` spans (unplugin-icons); no per-icon component imports.
+- Data layer: `useCall` / `useList` / `useDoc` from frappe-ui against `/api/v2/method/...` and `/api/v2/document/...`. No `fetch`, `axios` or `createResource`. Realtime goes through `composables/useRealtime.ts` (`onRealtime`) — frappe-ui beta.55 has no `initSocket`.
+- Shared state is in `composables/` (`useSession`, `useOverlays`, `useUploadQueue`, `useReview`, `useNotifications`, …). Global overlays (upload, settings, palette, notifications, shortcuts) are mounted once in `components/shell/AppShell.vue` and opened via `useOverlays()`.
+- Layout: `PageHeader` + content with gutters `px-3 py-5 pb-10 sm:px-5`; one solid primary action per screen. `SidePanel` (`components/common/SidePanel.vue`) is the right-hand panel — frappe-ui `Dialog` cannot dock right.
+- Guest pages (`/review/:id?token=`, `/shared/:id?token=`) render outside the shell and must work logged out.
+- Keep page files under ~400 LOC; split into `components/<area>/`.
 
 ## Cloudflare (Wrangler CLI)
 
-Wrangler is used to interact with Cloudflare services (R2 storage, Workers, etc.). Always use `npx wrangler` to run commands.
+Always use `npx wrangler`.
 
 ```bash
-npx wrangler whoami                        # Verify authentication
-npx wrangler r2 bucket list                # List R2 buckets
-npx wrangler r2 object put <bucket>/<key> --file <path>  # Upload object to R2
-npx wrangler r2 object get <bucket>/<key>  # Download object from R2
+npx wrangler whoami
+npx wrangler r2 bucket list
+npx wrangler r2 object put <bucket>/<key> --file <path>
+npx wrangler r2 object get <bucket>/<key>
 ```
 
-- **R2 Bucket**: `vms-media` — used for video/media storage
-- **Account ID**: `d6c626b7fc4903cf137f782c7ff88d7a`
-- If wrangler is not authenticated, run `npx wrangler login` (opens browser for OAuth).
-
-## Important: Frappe React SDK
-
-Before using any frappe-react-sdk hook (`useFrappeGetDocList`, `useFrappeGetDoc`, `useFrappePostCall`, `useFrappeAuth`, etc.), you **must** read the Frappe React SDK README first:
-https://github.com/nikkothari22/frappe-react-sdk
-
-Do not guess hook signatures or parameters — refer to the README for the correct API.
+- R2 bucket: `vms-media`
+- Account ID: `d6c626b7fc4903cf137f782c7ff88d7a`
+- If not authenticated, run `npx wrangler login`.

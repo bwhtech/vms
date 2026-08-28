@@ -19,6 +19,18 @@ import {
 	VMSFolder,
 } from "../helpers/vms";
 import { docExists, getList } from "../helpers/frappe";
+import {
+	activeTab,
+	dialog,
+	dialogButton,
+	dropdownItem,
+	listGroup,
+	listRow,
+	listRowCheckbox,
+	selectTrigger,
+	testId,
+} from "../helpers/ui";
+import { Shell } from "../pages";
 
 test.describe("Deletion — API", () => {
 	let project: VMSProject;
@@ -240,13 +252,31 @@ test.describe("Deletion — UI", () => {
 		await cleanupTestProjects(request, "E2E Deletion UI");
 	});
 
-	test("trash page loads with Assets and Folders tabs", async ({ page }) => {
+	// The trash page is one `List` grouped by kind (`ListGroup` "Folders" /
+	// "Assets"); a group only renders when it has rows.
+	test("trash page loads with Assets and Folders sections", async ({ page, request }) => {
+		const asset = await createTestAsset(request, {
+			project: project.name,
+			file_name: `ui-groups-${Date.now()}.mp4`,
+		});
+		const folder = await createTestFolder(
+			request,
+			project.name,
+			`UI Groups Folder ${Date.now()}`,
+		);
+		await softDeleteAsset(request, asset.name);
+		await softDeleteFolder(request, folder.name);
+
 		await page.goto("/vms/trash");
 		await page.waitForLoadState("networkidle");
 
-		// Both tabs should be visible
-		await expect(page.getByRole("tab", { name: /Assets/i })).toBeVisible();
-		await expect(page.getByRole("tab", { name: /Folders/i })).toBeVisible();
+		// Both sections should be visible
+		await expect(listGroup(page, "Assets")).toBeVisible({ timeout: 10000 });
+		await expect(listGroup(page, "Folders")).toBeVisible();
+
+		// cleanup
+		await permanentlyDeleteAsset(request, asset.name);
+		await permanentlyDeleteFolder(request, folder.name);
 	});
 
 	test("soft-deleted asset appears in trash page", async ({ page, request }) => {
@@ -259,8 +289,8 @@ test.describe("Deletion — UI", () => {
 		await page.goto("/vms/trash");
 		await page.waitForLoadState("networkidle");
 
-		// Assets tab should be active by default and show the file
-		await expect(page.getByText(asset.file_name)).toBeVisible({ timeout: 10000 });
+		// The Assets group should show the file
+		await expect(listRow(page, asset.file_name)).toBeVisible({ timeout: 10000 });
 
 		// cleanup
 		await permanentlyDeleteAsset(request, asset.name);
@@ -276,13 +306,12 @@ test.describe("Deletion — UI", () => {
 		await page.goto("/vms/trash");
 		await page.waitForLoadState("networkidle");
 
-		// Find the row with this asset and click restore button
-		const row = page.locator("tr", { hasText: asset.file_name });
+		// Find the row with this asset and click its restore button
+		const row = listRow(page, asset.file_name);
 		await expect(row).toBeVisible({ timeout: 10000 });
-		const restoreBtn = row.locator('button[title="Restore"]');
-		await restoreBtn.click();
+		await row.getByRole("button", { name: "Restore" }).click();
 
-		// Wait for it to disappear from the table
+		// Wait for it to disappear from the list
 		await expect(row).not.toBeVisible({ timeout: 10000 });
 
 		// Verify it's back (no longer in trash)
@@ -309,17 +338,17 @@ test.describe("Deletion — UI", () => {
 		await page.goto("/vms/trash");
 		await page.waitForLoadState("networkidle");
 
-		// Wait for rows to appear, then select both via checkboxes
-		const row1 = page.locator("tr", { hasText: a1.file_name });
-		const row2 = page.locator("tr", { hasText: a2.file_name });
+		// Wait for rows to appear, then select both via their row checkboxes
+		const row1 = listRow(page, a1.file_name);
+		const row2 = listRow(page, a2.file_name);
 		await expect(row1).toBeVisible({ timeout: 10000 });
 		await expect(row2).toBeVisible({ timeout: 10000 });
-		await row1.getByRole("checkbox").first().click();
-		await row2.getByRole("checkbox").first().click();
+		await listRowCheckbox(page, a1.file_name).click();
+		await listRowCheckbox(page, a2.file_name).click();
 
-		// Click bulk "Restore" button in header
-		const bulkRestore = page.getByRole("button", { name: /Restore \(2\)/i });
-		await expect(bulkRestore).toBeVisible();
+		// Click bulk "Restore (2)" button in the page header
+		const bulkRestore = testId(page, "trash-restore-selected");
+		await expect(bulkRestore).toHaveText(/Restore \(2\)/i);
 		await bulkRestore.click();
 
 		// Wait for both to disappear
@@ -344,14 +373,19 @@ test.describe("Deletion — UI", () => {
 		await page.waitForLoadState("networkidle");
 
 		// Wait for row, then select the asset
-		const row = page.locator("tr", { hasText: asset.file_name });
+		const row = listRow(page, asset.file_name);
 		await expect(row).toBeVisible({ timeout: 10000 });
-		await row.getByRole("checkbox").first().click();
+		await listRowCheckbox(page, asset.file_name).click();
 
-		// Click "Delete forever"
-		const deleteBtn = page.getByRole("button", { name: /Delete forever/i });
+		// Click "Delete forever (1)" in the page header
+		const deleteBtn = testId(page, "trash-delete-selected");
 		await expect(deleteBtn).toBeVisible();
 		await deleteBtn.click();
+
+		// Confirm in the `dialog.danger` prompt
+		const confirm = dialog(page, /Delete .* forever\?/);
+		await expect(confirm).toBeVisible();
+		await dialogButton(page, "Delete forever", /Delete .* forever\?/).click();
 
 		// Wait for row to vanish
 		await expect(row).not.toBeVisible({ timeout: 10000 });
@@ -361,7 +395,7 @@ test.describe("Deletion — UI", () => {
 		expect(exists).toBe(false);
 	});
 
-	test("folders tab shows trashed folders", async ({ page, request }) => {
+	test("folders section shows trashed folders", async ({ page, request }) => {
 		const folder = await createTestFolder(
 			request,
 			project.name,
@@ -372,19 +406,18 @@ test.describe("Deletion — UI", () => {
 		await page.goto("/vms/trash");
 		await page.waitForLoadState("networkidle");
 
-		// Switch to Folders tab
-		await page.getByRole("tab", { name: /Folders/i }).click();
-
-		// Should see the folder
-		await expect(page.getByText(folder.folder_name)).toBeVisible({
-			timeout: 10000,
-		});
+		// Should see the folder in the Folders group
+		await expect(
+			listGroup(page, "Folders").locator('[data-slot="list-row"]', {
+				hasText: folder.folder_name,
+			}),
+		).toBeVisible({ timeout: 10000 });
 
 		// cleanup
 		await permanentlyDeleteFolder(request, folder.name);
 	});
 
-	test("restore folder from folders tab", async ({ page, request }) => {
+	test("restore folder from folders section", async ({ page, request }) => {
 		const folder = await createTestFolder(
 			request,
 			project.name,
@@ -394,11 +427,10 @@ test.describe("Deletion — UI", () => {
 
 		await page.goto("/vms/trash");
 		await page.waitForLoadState("networkidle");
-		await page.getByRole("tab", { name: /Folders/i }).click();
 
-		const row = page.locator("tr", { hasText: folder.folder_name });
+		const row = listRow(page, folder.folder_name);
 		await expect(row).toBeVisible({ timeout: 10000 });
-		await row.locator('button[title="Restore"]').click();
+		await row.getByRole("button", { name: "Restore" }).click();
 
 		await expect(row).not.toBeVisible({ timeout: 10000 });
 
@@ -421,26 +453,28 @@ test.describe("Deletion — UI", () => {
 		await page.goto("/vms/trash");
 		await page.waitForLoadState("networkidle");
 
-		// Click "Empty Trash"
-		const emptyBtn = page.getByRole("button", { name: /Empty Trash/i });
+		// Click "Empty trash"
+		const emptyBtn = testId(page, "trash-empty");
 		await expect(emptyBtn).toBeVisible({ timeout: 10000 });
 		await emptyBtn.click();
 
-		// Confirmation dialog should appear
-		const dialog = page.getByRole("alertdialog");
-		await expect(dialog).toBeVisible();
-		await expect(dialog.getByText(/permanently delete/i)).toBeVisible();
+		// Confirmation dialog (`dialog.danger`) should appear
+		const confirm = dialog(page, "Empty trash?");
+		await expect(confirm).toBeVisible();
+		await expect(confirm.getByText(/deleted forever|permanently delete/i)).toBeVisible();
 
 		// Confirm
-		await dialog.getByRole("button", { name: /Empty Trash/i }).click();
+		await dialogButton(page, "Empty trash", "Empty trash?").click();
 
 		// Wait for trash to be empty
 		await page.waitForLoadState("networkidle");
-		await expect(page.getByText(/No deleted assets/i)).toBeVisible({
+		await expect(page.getByText(/Trash is empty|No deleted assets/i)).toBeVisible({
 			timeout: 10000,
 		});
 	});
 
+	// Folder delete lives in the "Folder actions" dropdown of the open folder
+	// (compact folder rows on the project root carry no menu).
 	test("delete folder dialog uses soft-delete language", async ({ page, request }) => {
 		const folder = await createTestFolder(
 			request,
@@ -448,33 +482,20 @@ test.describe("Deletion — UI", () => {
 			`UI SoftDel Folder ${Date.now()}`,
 		);
 
-		// Navigate to the project detail page
-		await page.goto(`/vms/projects/${project.name}`);
+		// Navigate into the folder
+		await page.goto(`/vms/projects/${project.name}/folder/${folder.name}`);
 		await page.waitForLoadState("networkidle");
 
-		// Find the folder card and trigger delete
-		// The folder card should have a context menu or delete button
-		const folderCard = page.locator(`text=${folder.folder_name}`).first();
-		await expect(folderCard).toBeVisible({ timeout: 10000 });
+		await page.getByRole("button", { name: "Folder actions" }).click();
+		await dropdownItem(page, "Delete").click();
 
-		// Right-click or find menu button on the folder
-		await folderCard.click({ button: "right" });
+		// The dialog should show soft-delete language
+		const confirm = dialog(page, /Move folder to Trash/i);
+		await expect(confirm).toBeVisible();
+		await expect(confirm.getByText(/move to Trash/i).first()).toBeVisible();
 
-		// If there's a delete option in a context menu
-		const deleteOption = page.getByText(/Delete/i).first();
-		if (await deleteOption.isVisible({ timeout: 3000 }).catch(() => false)) {
-			await deleteOption.click();
-
-			// The dialog should show soft-delete language
-			const dialog = page.getByRole("alertdialog");
-			if (await dialog.isVisible({ timeout: 3000 }).catch(() => false)) {
-				await expect(dialog.getByText(/Move folder to trash/i)).toBeVisible();
-				await expect(dialog.getByText(/restore/i)).toBeVisible();
-
-				// Cancel so we can clean up
-				await dialog.getByRole("button", { name: /Cancel/i }).click();
-			}
-		}
+		// Cancel so we can clean up
+		await dialogButton(page, /Cancel/i, /Move folder to Trash/i).click();
 
 		// cleanup
 		await softDeleteFolder(request, folder.name);
@@ -482,26 +503,21 @@ test.describe("Deletion — UI", () => {
 	});
 
 	test("settings dialog shows retention select dropdowns", async ({ page }) => {
-		await page.goto("/vms");
-		await page.waitForLoadState("networkidle");
+		const shell = new Shell(page);
+		await shell.goto("/vms");
 
-		// Open settings dialog via sidebar button
-		const settingsBtn = page.getByRole("button", { name: "Settings", exact: true });
-		await expect(settingsBtn).toBeVisible({ timeout: 10000 });
-		await settingsBtn.click();
+		// Open settings from the sidebar workspace menu; it opens on Profile
+		const settings = await shell.openSettings();
+		await settings.getByRole("tab", { name: "General" }).click();
+		await expect(activeTab(page, "General")).toBeVisible();
 
-		// Settings dialog opens on Profile tab — switch to General
-		const dialog = page.getByRole("dialog", { name: "Settings" });
-		await expect(dialog).toBeVisible({ timeout: 10000 });
-		await dialog.getByRole("tab", { name: "General" }).click();
+		// Look for the Housekeeping section with its retention select
+		await expect(
+			settings.getByText(/Permanently delete trashed assets after|Auto-delete after/).first(),
+		).toBeVisible({ timeout: 10000 });
 
-		// Look for the Trash section with select dropdown
-		await expect(dialog.getByText("Auto-delete after").first()).toBeVisible({
-			timeout: 10000,
-		});
-
-		// Should show "Never" as default in the select trigger
-		const trashSelect = dialog.locator("button[role='combobox']").first();
+		// The retention `Select` renders a combobox trigger
+		const trashSelect = selectTrigger(settings).first();
 		await expect(trashSelect).toBeVisible();
 	});
 });

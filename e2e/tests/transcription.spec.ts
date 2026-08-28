@@ -9,6 +9,7 @@ import {
 	cleanupTestProjects,
 } from "../helpers/vms";
 import { callMethod, updateDoc } from "../helpers/frappe";
+import { ReviewPage } from "../pages";
 
 test.describe("Transcription – API", () => {
 	let projectName: string;
@@ -209,17 +210,6 @@ test.describe("Transcription – API", () => {
 	});
 });
 
-/**
- * The transcription entry point lives inside the review header's "Tools"
- * dropdown, so it isn't in the DOM until the menu is opened. Returns the
- * menu item, whose label is "Transcript" once transcription is complete
- * and "Transcribe" otherwise.
- */
-async function openToolsMenu(page: import("@playwright/test").Page) {
-	await page.getByRole("button", { name: /tools/i }).click();
-	return page.getByRole("menuitem", { name: /transcri(be|pt)/i });
-}
-
 test.describe("Transcription – UI", () => {
 	let projectName: string;
 	let assetWithTranscript: string;
@@ -248,10 +238,18 @@ test.describe("Transcription – UI", () => {
 		});
 		assetWithTranscript = withTranscript.name;
 		createdAssets.push(assetWithTranscript);
+		// Seven segments: the panel's search control only renders for > 6.
 		await updateDoc(request, "VMS Asset", assetWithTranscript, {
 			transcription_status: "Complete",
-			transcription:
-				"**[00:00]** Welcome to our test video.\n\n**[00:10]** This is the second segment with more content.",
+			transcription: [
+				"**[00:00]** Welcome to our test video.",
+				"**[00:10]** This is the second segment with more content.",
+				"**[00:20]** Third segment.",
+				"**[00:30]** Fourth segment.",
+				"**[00:40]** Fifth segment.",
+				"**[00:50]** Sixth segment.",
+				"**[01:00]** Seventh segment.",
+			].join("\n\n"),
 		});
 
 		// Asset with speaker-labeled transcription
@@ -284,91 +282,92 @@ test.describe("Transcription – UI", () => {
 		await cleanupTestProjects(request, "E2E Test Project Transcription UI");
 	});
 
+	// The transcription entry point is the "Transcribe" item in the review
+	// header's "More actions" dropdown; it opens the Transcription side panel.
+
 	test("review page should show Transcribe button for untranscribed asset", async ({
 		page,
 	}) => {
-		await page.goto(`/vms/review/${assetNoTranscript}`);
-		await page.waitForLoadState("networkidle");
+		const review = new ReviewPage(page);
+		await review.goto(assetNoTranscript);
 
-		// Look for the Transcribe entry in the header's Tools menu
-		const transcribeItem = await openToolsMenu(page);
+		const transcribeItem = await review.menuItem(/transcri(be|pt)/i);
 		await expect(transcribeItem).toHaveText(/transcribe/i);
 	});
 
 	test("review page should show Transcript button for transcribed asset", async ({
 		page,
 	}) => {
-		await page.goto(`/vms/review/${assetWithTranscript}`);
-		await page.waitForLoadState("networkidle");
+		const review = new ReviewPage(page);
+		await review.goto(assetWithTranscript);
 
 		// When transcription is complete, the menu item reads "Transcript"
-		const transcriptItem = await openToolsMenu(page);
+		const transcriptItem = await review.menuItem(/transcri(be|pt)/i);
 		await expect(transcriptItem).toHaveText(/^transcript$/i);
 	});
 
 	test("transcription sheet should open and show CTA for untranscribed asset", async ({
 		page,
 	}) => {
-		await page.goto(`/vms/review/${assetNoTranscript}`);
-		await page.waitForLoadState("networkidle");
+		const review = new ReviewPage(page);
+		await review.goto(assetNoTranscript);
 
-		// Click to open transcription sheet
-		await (await openToolsMenu(page)).click();
+		// Open the transcription panel
+		await (await review.menuItem(/transcri(be|pt)/i)).click();
+		const panel = review.transcriptionPanel();
+		await expect(panel).toBeVisible();
 
-		// Sheet should show the CTA
-		await expect(
-			page.locator("text=No transcription yet"),
-		).toBeVisible();
+		// Panel should show the CTA
+		await expect(panel.getByText("No transcription yet")).toBeVisible();
 
-		// Should have a Transcribe button inside the sheet
-		const sheetTranscribeBtn = page
-			.locator("[role='dialog']")
-			.getByRole("button", { name: /transcribe/i });
-		await expect(sheetTranscribeBtn).toBeVisible();
+		// Should have a button that starts transcription inside the panel
+		const panelTranscribeBtn = panel.getByRole("button", {
+			name: /transcri(be|ption)/i,
+		});
+		await expect(panelTranscribeBtn).toBeVisible();
 	});
 
 	test("transcription sheet should show transcript text when complete", async ({
 		page,
 	}) => {
-		await page.goto(`/vms/review/${assetWithTranscript}`);
-		await page.waitForLoadState("networkidle");
+		const review = new ReviewPage(page);
+		await review.goto(assetWithTranscript);
 
-		// Click to open transcription sheet
-		await (await openToolsMenu(page)).click();
+		// Open the transcription panel
+		await (await review.menuItem(/transcri(be|pt)/i)).click();
+		const panel = review.transcriptionPanel();
+		await expect(panel).toBeVisible();
 
 		// Should show the transcript content
-		await expect(
-			page.locator("text=Welcome to our test video"),
-		).toBeVisible();
-		await expect(
-			page.locator("text=second segment"),
-		).toBeVisible();
+		await expect(panel.getByText("Welcome to our test video")).toBeVisible();
+		await expect(panel.getByText("second segment")).toBeVisible();
 
-		// Should show search button
-		await expect(
-			page.locator("[title='Search transcription']"),
-		).toBeVisible();
+		// Should show the transcript search control
+		await expect(panel.getByLabel("Search transcription")).toBeVisible();
 	});
 
 	test("transcription sheet should show speaker chips for diarized transcript", async ({
 		page,
 	}) => {
-		await page.goto(`/vms/review/${assetWithSpeakers}`);
-		await page.waitForLoadState("networkidle");
+		const review = new ReviewPage(page);
+		await review.goto(assetWithSpeakers);
 
-		// Click to open transcription sheet
-		await (await openToolsMenu(page)).click();
+		// Open the transcription panel
+		await (await review.menuItem(/transcri(be|pt)/i)).click();
+		const panel = review.transcriptionPanel();
+		await expect(panel).toBeVisible();
 
 		// Should show the Speakers bar
-		await expect(page.locator("text=Speakers:")).toBeVisible();
+		await expect(panel.getByText(/^Speakers:?$/)).toBeVisible();
 
-		// Should show renamed speaker chips (Alice and Bob)
-		await expect(page.getByText("Alice", { exact: true })).toBeVisible();
-		await expect(page.getByText("Bob", { exact: true })).toBeVisible();
+		// Should show renamed speaker chips (Alice and Bob); segment speaker
+		// labels are buttons with the same name, so take the chip (first)
+		await expect(panel.getByRole("button", { name: "Alice" }).first()).toBeVisible();
+		await expect(panel.getByRole("button", { name: "Bob" }).first()).toBeVisible();
 
 		// Should show transcript content with speaker labels
 		await expect(
-			page.locator("text=Hello everyone, welcome to the meeting"),
+			panel.getByText("Hello everyone, welcome to the meeting"),
 		).toBeVisible();
 	});
 });
