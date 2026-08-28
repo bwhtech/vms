@@ -104,9 +104,11 @@ const volumeIcon = computed(() => {
 	return props.volume < 0.5 ? 'lucide-volume-1' : 'lucide-volume-2'
 })
 
-const speedOptions = [0.5, 1, 1.5, 2].map((rate) => ({
-	label: `${rate}x`,
-	icon: rate === props.playbackRate ? 'lucide-check' : undefined,
-	onClick: () => emit('playback-rate-change', rate),
-}))
+const speedOptions = computed(() =>
+	[0.5, 1, 1.5, 2].map((rate) => ({
+		label: `${rate}x`,
+		icon: rate === props.playbackRate ? 'lucide-check' : undefined,
+		onClick: () => emit('playback-rate-change', rate),
+	})),
+)
 </script>
