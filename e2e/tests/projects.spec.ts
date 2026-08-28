@@ -6,6 +6,7 @@ import {
 	VMSProject,
 } from "../helpers/vms";
 import { docExists } from "../helpers/frappe";
+import { dialog, dialogButton, formControl, testId } from "../helpers/ui";
 
 test.describe("Projects", () => {
 	let testProject: VMSProject;
@@ -27,19 +28,19 @@ test.describe("Projects", () => {
 		await page.waitForLoadState("networkidle");
 
 		// Click the new project button
-		const newProjectBtn = page.locator('button:has-text("New Project"), button:has-text("Create Project"), [data-testid="new-project"]');
-		await expect(newProjectBtn.first()).toBeVisible({ timeout: 10000 });
-		await newProjectBtn.first().click();
+		const newProjectBtn = testId(page, "new-project");
+		await expect(newProjectBtn).toBeVisible({ timeout: 10000 });
+		await newProjectBtn.click();
 
-		// Fill in the project name
+		// Fill in the project name (`FormControl` labelled "Project name")
 		const projectName = `E2E Test Project ${Date.now()}`;
-		const nameInput = page.locator('input[placeholder*="project" i], input[name="project_name"], [data-fieldname="project_name"] input');
-		await expect(nameInput.first()).toBeVisible({ timeout: 5000 });
-		await nameInput.first().fill(projectName);
+		await expect(dialog(page, "New project")).toBeVisible({ timeout: 5000 });
+		const nameInput = formControl(page, "Project name");
+		await expect(nameInput).toBeVisible();
+		await nameInput.fill(projectName);
 
 		// Submit the form
-		const submitBtn = page.locator('button:has-text("Create"), button[type="submit"]');
-		await submitBtn.first().click();
+		await dialogButton(page, "Create project", "New project").click();
 
 		// Should navigate to the project detail page or show success
 		await page.waitForLoadState("networkidle");

@@ -175,3 +175,43 @@ export function popover(page: Page): Locator {
     '[data-slot="content"][data-state="open"]:not([role="menu"])',
   );
 }
+
+/**
+ * `SidePanel` (app component, `components/common/SidePanel.vue`) → `<aside role="dialog" data-slot="side-panel" aria-label=title>`.
+ * Versions / Transcription / Notifications open in this panel, not in a `Dialog`.
+ */
+export function sidePanel(page: Page, title?: TextMatch): Locator {
+  const panels = page.locator('[data-slot="side-panel"]');
+  return title ? panels.filter({ has: page.getByRole("heading", { name: title }) }) : panels;
+}
+
+/**
+ * `SidebarHeader` workspace button → the `Dropdown` trigger inside `[data-slot="sidebar-header"]`
+ * (Settings / Keyboard shortcuts / Log out live in this menu).
+ */
+export function sidebarHeaderButton(page: Page): Locator {
+  return sidebar(page).locator('[data-slot="sidebar-header"] button').first();
+}
+
+/**
+ * `SettingsNavItem` → reka `TabsTrigger` (`role="tab"`) whose `data-state="active"` marks the selected tab.
+ */
+export function activeTab(page: Page, label: TextMatch): Locator {
+  return page.getByRole("tab", { name: label }).and(page.locator('[data-state="active"]'));
+}
+
+/**
+ * `ListGroup` → `[data-slot="list-group"]` (`role="rowgroup"`) whose header text is `label`.
+ */
+export function listGroup(page: Page, label: TextMatch): Locator {
+  return page
+    .locator('[data-slot="list-group"]')
+    .filter({ has: page.locator('[data-slot="list-group-header"]', { hasText: label }) });
+}
+
+/**
+ * `Select` → reka `SelectTrigger` (`role="combobox"`, `data-slot="trigger"`).
+ */
+export function selectTrigger(scope: Page | Locator): Locator {
+  return scope.locator('[data-slot="trigger"][role="combobox"]');
+}

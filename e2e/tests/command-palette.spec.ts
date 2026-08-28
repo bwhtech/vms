@@ -6,38 +6,39 @@ import {
 	searchAssets,
 	searchProjects,
 } from "../helpers";
+import {
+	activeTab,
+	commandPalette,
+	commandPaletteEmpty,
+	commandPaletteInput,
+	commandPaletteItem,
+	dialog,
+} from "../helpers/ui";
+import { Shell } from "../pages";
 
-// The command palette is a shadcn Dialog wrapping a cmdk Command.
-// The dialog uses role="dialog" and cmdk adds [cmdk-input], [cmdk-item] etc.
-const DIALOG_SELECTOR = "div[role='dialog']:has([cmdk-input])";
+// The command palette is frappe-ui's experimental `CommandPalette` inside a
+// bare `Dialog`: `[data-slot="command-palette"]`, `-input`, `-item`, `-empty`.
 
 /** Open the command palette via keyboard shortcut. */
 async function openCommandPalette(page: Page) {
-	await page.keyboard.press("Meta+k");
-	// Wait for the command dialog to appear
-	await expect(page.locator(DIALOG_SELECTOR)).toBeVisible({ timeout: 5000 });
+	await new Shell(page).openCommandPalette();
 }
 
 test.describe("Command Palette (Cmd+K)", () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto("/vms");
-		await page.waitForLoadState("networkidle");
-		// Wait for the main app sidebar to load (Dashboard link in sidebar)
-		await expect(
-			page.locator("a:has-text('Dashboard'), [data-sidebar] >> text=Dashboard").first(),
-		).toBeVisible({ timeout: 15000 });
+		await new Shell(page).goto("/vms");
 	});
 
 	test("should open with Cmd+K and close with Escape", async ({ page }) => {
 		await openCommandPalette(page);
 
 		// Search input should be visible
-		const input = page.locator("[cmdk-input]");
+		const input = commandPaletteInput(page);
 		await expect(input).toBeVisible();
 
 		// Close with Escape
 		await page.keyboard.press("Escape");
-		await expect(page.locator(DIALOG_SELECTOR)).not.toBeVisible({
+		await expect(commandPalette(page)).not.toBeVisible({
 			timeout: 3000,
 		});
 	});
@@ -47,16 +48,16 @@ test.describe("Command Palette (Cmd+K)", () => {
 
 		// Navigation commands should be visible
 		await expect(
-			page.locator("[cmdk-item]:has-text('Go to Dashboard')"),
+			commandPaletteItem(page, "Go to Dashboard"),
 		).toBeVisible();
 		await expect(
-			page.locator("[cmdk-item]:has-text('Go to Uncategorised')"),
+			commandPaletteItem(page, "Go to Uncategorised"),
 		).toBeVisible();
 		await expect(
-			page.locator("[cmdk-item]:has-text('Go to Projects')"),
+			commandPaletteItem(page, "Go to Projects"),
 		).toBeVisible();
 		await expect(
-			page.locator("[cmdk-item]:has-text('Go to Audit Logs')"),
+			commandPaletteItem(page, "Go to Audit Logs"),
 		).toBeVisible();
 	});
 
@@ -64,16 +65,16 @@ test.describe("Command Palette (Cmd+K)", () => {
 		await openCommandPalette(page);
 
 		await expect(
-			page.locator("[cmdk-item]:has-text('Upload Files')"),
+			commandPaletteItem(page, "Upload Files"),
 		).toBeVisible();
 		await expect(
-			page.locator("[cmdk-item]:has-text('Open Settings')"),
+			commandPaletteItem(page, "Open Settings"),
 		).toBeVisible();
 		await expect(
-			page.locator("[cmdk-item]:has-text('Invite User')"),
+			commandPaletteItem(page, "Invite User"),
 		).toBeVisible();
 		await expect(
-			page.locator("[cmdk-item]:has-text('Profile')"),
+			commandPaletteItem(page, "Profile"),
 		).toBeVisible();
 	});
 
@@ -83,21 +84,19 @@ test.describe("Command Palette (Cmd+K)", () => {
 		await openCommandPalette(page);
 
 		// Click "Invite User" action
-		await page.locator("[cmdk-item]:has-text('Invite User')").click();
+		await commandPaletteItem(page, "Invite User").click();
 
 		// Command palette should close
-		await expect(page.locator(DIALOG_SELECTOR)).not.toBeVisible({
+		await expect(commandPalette(page)).not.toBeVisible({
 			timeout: 3000,
 		});
 
 		// Settings dialog should open with Users tab active
-		const settingsDialog = page.locator("div[role='dialog']:has-text('Settings')");
+		const settingsDialog = dialog(page, "Settings");
 		await expect(settingsDialog).toBeVisible({ timeout: 5000 });
 
-		// Users tab should be the active tab (base-ui sets aria-selected + data-active)
-		await expect(
-			settingsDialog.locator('button[role="tab"][data-active]:has-text("Users")'),
-		).toBeVisible();
+		// Users tab should be the active tab (reka-ui sets data-state="active")
+		await expect(activeTab(page, "Users")).toBeVisible();
 	});
 
 	test("should navigate to Profile (Settings > Profile tab)", async ({
@@ -106,28 +105,26 @@ test.describe("Command Palette (Cmd+K)", () => {
 		await openCommandPalette(page);
 
 		// Click "Profile" action
-		await page.locator("[cmdk-item]:has-text('Profile')").click();
+		await commandPaletteItem(page, "Profile").click();
 
 		// Command palette should close
-		await expect(page.locator(DIALOG_SELECTOR)).not.toBeVisible({
+		await expect(commandPalette(page)).not.toBeVisible({
 			timeout: 3000,
 		});
 
 		// Settings dialog should open with Profile tab active
-		const settingsDialog = page.locator("div[role='dialog']:has-text('Settings')");
+		const settingsDialog = dialog(page, "Settings");
 		await expect(settingsDialog).toBeVisible({ timeout: 5000 });
 
-		// Profile tab should be active (base-ui sets aria-selected + data-active)
-		await expect(
-			settingsDialog.locator('button[role="tab"][data-active]:has-text("Profile")'),
-		).toBeVisible();
+		// Profile tab should be active (reka-ui sets data-state="active")
+		await expect(activeTab(page, "Profile")).toBeVisible();
 	});
 
 	test("should navigate to Projects page via command", async ({ page }) => {
 		await openCommandPalette(page);
 
 		// Click "Go to Projects"
-		await page.locator("[cmdk-item]:has-text('Go to Projects')").click();
+		await commandPaletteItem(page, "Go to Projects").click();
 
 		// Should navigate to projects page
 		await expect(page).toHaveURL(/\/vms\/projects/, { timeout: 10000 });
@@ -136,7 +133,7 @@ test.describe("Command Palette (Cmd+K)", () => {
 	test("should navigate to Uncategorised page via command", async ({ page }) => {
 		await openCommandPalette(page);
 
-		await page.locator("[cmdk-item]:has-text('Go to Uncategorised')").click();
+		await commandPaletteItem(page, "Go to Uncategorised").click();
 
 		await expect(page).toHaveURL(/\/vms\/uncategorised/, { timeout: 10000 });
 	});
@@ -146,7 +143,7 @@ test.describe("Command Palette (Cmd+K)", () => {
 	}) => {
 		await openCommandPalette(page);
 
-		await page.locator("[cmdk-item]:has-text('Go to Audit Logs')").click();
+		await commandPaletteItem(page, "Go to Audit Logs").click();
 
 		await expect(page).toHaveURL(/\/vms\/audit-logs/, { timeout: 10000 });
 	});
@@ -154,17 +151,17 @@ test.describe("Command Palette (Cmd+K)", () => {
 	test("should filter commands when typing", async ({ page }) => {
 		await openCommandPalette(page);
 
-		const input = page.locator("[cmdk-input]");
+		const input = commandPaletteInput(page);
 		await input.fill("invite");
 
 		// "Invite User" should still be visible
 		await expect(
-			page.locator("[cmdk-item]:has-text('Invite User')"),
+			commandPaletteItem(page, "Invite User"),
 		).toBeVisible();
 
-		// Unrelated navigation items should be hidden by cmdk filtering
+		// Unrelated navigation items should be hidden by the palette filtering
 		await expect(
-			page.locator("[cmdk-item]:has-text('Go to Dashboard')"),
+			commandPaletteItem(page, "Go to Dashboard"),
 		).not.toBeVisible({ timeout: 2000 });
 	});
 });
@@ -327,58 +324,46 @@ test.describe("Command Palette – Search UI", () => {
 	test("should show asset search results when typing a query", async ({
 		page,
 	}) => {
-		await page.goto("/vms");
-		await page.waitForLoadState("networkidle");
-		await expect(
-			page.locator("a:has-text('Dashboard'), [data-sidebar] >> text=Dashboard").first(),
-		).toBeVisible({ timeout: 15000 });
+		await new Shell(page).goto("/vms");
 
 		await openCommandPalette(page);
 
-		const input = page.locator("[cmdk-input]");
+		const input = commandPaletteInput(page);
 		await input.fill(UNIQUE_TAG);
 
 		// Wait for search results — asset file name should appear
 		await expect(
-			page.locator(`[cmdk-item]:has-text("${UNIQUE_TAG}-clip.mp4")`),
+			commandPaletteItem(page, `${UNIQUE_TAG}-clip.mp4`),
 		).toBeVisible({ timeout: 10000 });
 	});
 
 	test("should show project search results when typing a query", async ({
 		page,
 	}) => {
-		await page.goto("/vms");
-		await page.waitForLoadState("networkidle");
-		await expect(
-			page.locator("a:has-text('Dashboard'), [data-sidebar] >> text=Dashboard").first(),
-		).toBeVisible({ timeout: 15000 });
+		await new Shell(page).goto("/vms");
 
 		await openCommandPalette(page);
 
-		const input = page.locator("[cmdk-input]");
+		const input = commandPaletteInput(page);
 		await input.fill(UNIQUE_TAG);
 
 		// Project results section should appear — use data-value to target project items specifically
-		const projectItem = page.locator(`[cmdk-item][data-value^="project-"]:has-text("${UNIQUE_TAG}")`);
+		const projectItem = commandPalette(page).locator(`[data-slot="command-palette-item"][data-value^="project-"]`, { hasText: UNIQUE_TAG });
 		await expect(projectItem.first()).toBeVisible({ timeout: 10000 });
 	});
 
 	test("should navigate to review page when clicking an asset result", async ({
 		page,
 	}) => {
-		await page.goto("/vms");
-		await page.waitForLoadState("networkidle");
-		await expect(
-			page.locator("a:has-text('Dashboard'), [data-sidebar] >> text=Dashboard").first(),
-		).toBeVisible({ timeout: 15000 });
+		await new Shell(page).goto("/vms");
 
 		await openCommandPalette(page);
 
-		const input = page.locator("[cmdk-input]");
+		const input = commandPaletteInput(page);
 		await input.fill(UNIQUE_TAG);
 
 		// Wait for asset result to appear and click it
-		const assetItem = page.locator(`[cmdk-item]:has-text("${UNIQUE_TAG}-clip.mp4")`);
+		const assetItem = commandPaletteItem(page, `${UNIQUE_TAG}-clip.mp4`);
 		await expect(assetItem).toBeVisible({ timeout: 10000 });
 		await assetItem.click();
 
@@ -391,19 +376,15 @@ test.describe("Command Palette – Search UI", () => {
 	test("should navigate to project page when clicking a project result", async ({
 		page,
 	}) => {
-		await page.goto("/vms");
-		await page.waitForLoadState("networkidle");
-		await expect(
-			page.locator("a:has-text('Dashboard'), [data-sidebar] >> text=Dashboard").first(),
-		).toBeVisible({ timeout: 15000 });
+		await new Shell(page).goto("/vms");
 
 		await openCommandPalette(page);
 
-		const input = page.locator("[cmdk-input]");
+		const input = commandPaletteInput(page);
 		await input.fill(UNIQUE_TAG);
 
 		// Wait for project result (use data-value to target project items specifically)
-		const projectItem = page.locator(`[cmdk-item][data-value="project-${projectName}"]`);
+		const projectItem = commandPalette(page).locator(`[data-slot="command-palette-item"][data-value="project-${projectName}"]`);
 		await expect(projectItem).toBeVisible({ timeout: 10000 });
 		await projectItem.click();
 
@@ -414,20 +395,16 @@ test.describe("Command Palette – Search UI", () => {
 	});
 
 	test("should show no results for a nonsense query", async ({ page }) => {
-		await page.goto("/vms");
-		await page.waitForLoadState("networkidle");
-		await expect(
-			page.locator("a:has-text('Dashboard'), [data-sidebar] >> text=Dashboard").first(),
-		).toBeVisible({ timeout: 15000 });
+		await new Shell(page).goto("/vms");
 
 		await openCommandPalette(page);
 
-		const input = page.locator("[cmdk-input]");
+		const input = commandPaletteInput(page);
 		await input.fill("zzz_nonexistent_xyzzy_999");
 
-		// Wait for search to complete — cmdk shows "No results found." when empty
-		await expect(
-			page.locator("[cmdk-empty]"),
-		).toBeVisible({ timeout: 10000 });
+		// Wait for search to complete — the palette shows "No results found." when empty
+		await expect(commandPaletteEmpty(page)).toHaveText(/No results found/, {
+			timeout: 10000,
+		});
 	});
 });

@@ -8,6 +8,7 @@ import {
 	uploadToPresignedUrl,
 } from "../helpers/vms";
 import { callMethod, deleteDoc } from "../helpers/frappe";
+import { dialog, dialogButton, pageHeader, testId } from "../helpers/ui";
 
 test.describe("Tools – Compression", () => {
 	// Track job names for cleanup
@@ -193,36 +194,40 @@ test.describe("Tools – Compression", () => {
 	});
 
 	// ── UI tests ────────────────────────────────────────────────────────────
+	// The Tools page is a jobs `List` with a "Compress video" `Dialog`; the
+	// drop zone and the Compress action live inside that dialog.
 
-	test("Tools page should render with Compress tab", async ({ page }) => {
+	test("Tools page should render with the Compress action", async ({ page }) => {
 		await page.goto("/vms/tools");
 		await page.waitForLoadState("networkidle");
 
 		// Page heading
-		await expect(page.locator("h1", { hasText: "Tools" })).toBeVisible();
+		await expect(pageHeader(page).getByRole("heading", { name: "Tools" })).toBeVisible();
 
-		// Compress tab is active
-		await expect(
-			page.locator("[role='tablist'] button", { hasText: "Compress" }),
-		).toBeVisible();
+		// Compress entry point
+		await expect(testId(page, "tools-compress")).toBeVisible();
 	});
 
 	test("Tools page should show file drop zone", async ({ page }) => {
 		await page.goto("/vms/tools");
 		await page.waitForLoadState("networkidle");
 
+		await testId(page, "tools-compress").click();
+		const compressDialog = dialog(page, "Compress video");
+		await expect(compressDialog).toBeVisible();
+
 		// Drop zone text
 		await expect(
-			page.locator("text=Drop a video file here or click to browse"),
+			compressDialog.getByText(/Drop a (video )?file here or click to browse/),
 		).toBeVisible();
 
 		// Supported formats hint
 		await expect(
-			page.locator("text=Supports MP4, MOV, MKV, AVI, WebM"),
+			compressDialog.getByText(/Video, audio, or image files|Supports MP4, MOV, MKV, AVI, WebM/),
 		).toBeVisible();
 
 		// Compress button (disabled when no file selected)
-		const compressBtn = page.getByRole("button", { name: "Compress", exact: true });
+		const compressBtn = dialogButton(page, "Compress", "Compress video");
 		await expect(compressBtn).toBeVisible();
 		await expect(compressBtn).toBeDisabled();
 	});
@@ -231,9 +236,9 @@ test.describe("Tools – Compression", () => {
 		await page.goto("/vms/tools");
 		await page.waitForLoadState("networkidle");
 
-		// "Recent Jobs" heading
+		// Jobs list (or its empty state when the user has no jobs)
 		await expect(
-			page.locator("text=Recent Jobs"),
+			testId(page, "tools-jobs").or(page.getByText("No compression jobs")),
 		).toBeVisible();
 	});
 });
