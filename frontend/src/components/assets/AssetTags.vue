@@ -17,14 +17,12 @@
 					class="gap-1"
 				>
 					{{ tag }}
-					<button
-						type="button"
-						class="ml-0.5 rounded text-ink-gray-5 hover:text-ink-gray-8"
+					<Button
+						variant="ghost"
+						icon="lucide-x"
 						:aria-label="`Remove tag ${tag}`"
 						@click="remove(tag)"
-					>
-						<span class="lucide-x size-3" aria-hidden="true" />
-					</button>
+					/>
 				</Badge>
 				<p v-if="!tags.length" class="text-sm text-ink-gray-5">No tags yet.</p>
 			</div>
@@ -75,12 +73,16 @@ interface TagParams {
 	tag: string
 }
 
-const addCall = useCall<string[], TagParams>({
+interface TagResponse {
+	tags: string[]
+}
+
+const addCall = useCall<TagResponse, TagParams>({
 	url: '/api/v2/method/vms.api.add_asset_tag',
 	method: 'POST',
 	immediate: false,
 })
-const removeCall = useCall<string[], TagParams>({
+const removeCall = useCall<TagResponse, TagParams>({
 	url: '/api/v2/method/vms.api.remove_asset_tag',
 	method: 'POST',
 	immediate: false,
@@ -91,7 +93,7 @@ async function add() {
 	if (!tag) return
 	try {
 		const updated = await addCall.submit({ asset_name: props.asset.name, tag })
-		tags.value = updated ?? [...tags.value, tag]
+		tags.value = updated?.tags ?? [...tags.value, tag]
 		draft.value = ''
 		emit('changed')
 	} catch (e) {
@@ -102,7 +104,7 @@ async function add() {
 async function remove(tag: string) {
 	try {
 		const updated = await removeCall.submit({ asset_name: props.asset.name, tag })
-		tags.value = updated ?? tags.value.filter((t) => t !== tag)
+		tags.value = updated?.tags ?? tags.value.filter((t) => t !== tag)
 		emit('changed')
 	} catch (e) {
 		toast.error(serverMessage(e))
