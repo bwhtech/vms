@@ -12,6 +12,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AnnotationCanvas: typeof import('./src/components/review/AnnotationCanvas.vue')['default']
+    AnnotationToolbar: typeof import('./src/components/review/AnnotationToolbar.vue')['default']
     AppShell: typeof import('./src/components/shell/AppShell.vue')['default']
     AppSidebar: typeof import('./src/components/shell/AppSidebar.vue')['default']
     AssetActions: typeof import('./src/components/assets/AssetActions.vue')['default']
@@ -24,6 +25,8 @@ declare module 'vue' {
     BulkActionBar: typeof import('./src/components/assets/BulkActionBar.vue')['default']
     CategoryBadge: typeof import('./src/components/assets/CategoryBadge.vue')['default']
     CommandPalette: typeof import('./src/components/shell/CommandPalette.vue')['default']
+    CommentEditor: typeof import('./src/components/review/CommentEditor.vue')['default']
+    CommentItem: typeof import('./src/components/review/CommentItem.vue')['default']
     CommentPanel: typeof import('./src/components/review/CommentPanel.vue')['default']
     CreateFolderDialog: typeof import('./src/components/folders/CreateFolderDialog.vue')['default']
     CreateProjectDialog: typeof import('./src/components/projects/CreateProjectDialog.vue')['default']
