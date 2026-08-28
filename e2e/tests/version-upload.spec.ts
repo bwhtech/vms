@@ -7,6 +7,12 @@ import {
 	uploadToPresignedUrl,
 } from "../helpers/vms";
 import { callMethod, callGetMethod, getDoc, getList, deleteDoc } from "../helpers/frappe";
+import { dialog, dropdownItem, pageHeaderButton } from "../helpers/ui";
+
+/** The upload `Dialog` — named by its `#title` slot heading. */
+function uploadDialog(page: import("@playwright/test").Page) {
+	return dialog(page, /Upload (New Version|Assets)/);
+}
 
 test.describe("Version Upload", () => {
 	let projectName: string;
@@ -133,30 +139,24 @@ test.describe("Version Upload", () => {
 		await page.goto(`/vms/projects/${projectName}`);
 		await page.waitForLoadState("networkidle");
 
-		// Wait for asset card to appear (name may be truncated in card)
-		await expect(
-			page.locator('[role="tabpanel"]').getByText(/e2e-version-test/),
-		).toBeVisible({ timeout: 10000 });
+		// Wait for the asset card (`AssetCard` <article>) to appear
+		const card = page.locator("article", { hasText: /e2e-version-test/ }).first();
+		await expect(card).toBeVisible({ timeout: 10000 });
 
-		// Right-click on the asset card text to open context menu
-		await page
-			.locator('[role="tabpanel"]')
-			.getByText(/e2e-version-test/)
-			.first()
-			.click({ button: "right" });
+		// Open the card's three-dot `Dropdown` ("Asset actions")
+		await card.hover();
+		await card.getByRole("button", { name: "Asset actions" }).click();
 
-		// Wait for context menu
-		await expect(
-			page.getByRole("menuitem", { name: "Upload new version" }),
-		).toBeVisible({ timeout: 5000 });
+		// Wait for the menu
+		await expect(dropdownItem(page, "Upload new version")).toBeVisible({
+			timeout: 5000,
+		});
 
 		// Click "Upload new version"
-		await page
-			.getByRole("menuitem", { name: "Upload new version" })
-			.click();
+		await dropdownItem(page, "Upload new version").click();
 
 		// Verify dialog opens in version mode
-		const dialog = page.getByRole("dialog");
+		const dialog = uploadDialog(page);
 		await expect(dialog).toBeVisible({ timeout: 5000 });
 
 		// 1) Title: "Upload New Version"
@@ -196,13 +196,10 @@ test.describe("Version Upload", () => {
 		await page.goto(`/vms/projects/${projectName}`);
 		await page.waitForLoadState("networkidle");
 
-		// Click the project-level "Upload" button
-		await page
-			.getByRole("button", { name: "Upload", exact: true })
-			.last()
-			.click();
+		// Click the project-level "Upload" button in the page header
+		await pageHeaderButton(page, "Upload").click();
 
-		const dialog = page.getByRole("dialog");
+		const dialog = uploadDialog(page);
 		await expect(dialog).toBeVisible({ timeout: 5000 });
 
 		// 1) Title: "Upload Assets"

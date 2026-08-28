@@ -1,4 +1,5 @@
 import { test, expect, Page } from "@playwright/test";
+import { sidebarItem } from "../helpers/ui";
 
 /**
  * Call a Frappe API method from within the browser context (uses browser cookies).
@@ -190,10 +191,8 @@ test.describe("Onboarding Setup Wizard", () => {
 			page.locator("h1:has-text('Set up your workspace')"),
 		).not.toBeVisible({ timeout: 15000 });
 
-		// Main app layout should be visible (sidebar Dashboard link)
-		await expect(
-			page.locator("a:has-text('Dashboard'), [data-sidebar] >> text=Dashboard").first(),
-		).toBeVisible({ timeout: 10000 });
+		// Main app layout should be visible (sidebar Home row)
+		await expect(sidebarItem(page, "Home")).toBeVisible({ timeout: 10000 });
 	});
 
 	test("should navigate back between steps", async ({ page }) => {
