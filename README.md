@@ -3,7 +3,7 @@
 [![CI](https://github.com/BuildWithHussain/vms/actions/workflows/ci.yml/badge.svg)](https://github.com/BuildWithHussain/vms/actions/workflows/ci.yml)
 [![UI Tests](https://github.com/BuildWithHussain/vms/actions/workflows/ui-tests.yml/badge.svg)](https://github.com/BuildWithHussain/vms/actions/workflows/ui-tests.yml)
 
-A video management application built on [Frappe](https://frappeframework.com) with a React frontend. Upload, organize, review, and deliver video assets for your team.
+A video management application built on [Frappe](https://frappeframework.com) with a Vue 3 + frappe-ui frontend. Upload, organize, review, and deliver video assets for your team.
 
 ![Dashboard](docs/screenshots/dashboard.png)
 
@@ -105,7 +105,8 @@ cd apps/vms/frontend
 yarn install
 yarn dev       # Vite dev server on localhost:8080
 yarn build     # Build to vms/public/frontend/
-yarn lint      # ESLint
+yarn lint      # ESLint + Prettier
+yarn typecheck # vue-tsc
 ```
 
 ### Backend
