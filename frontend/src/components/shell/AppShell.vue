@@ -43,6 +43,7 @@ import UploadDialog from '@/components/upload/UploadDialog.vue'
 import UploadQueuePanel from '@/components/upload/UploadQueuePanel.vue'
 import { useBreakpoint } from '@/composables/useBreakpoint'
 import { useOverlays, type SettingsTab } from '@/composables/useOverlays'
+import { usePasteUpload } from '@/composables/usePasteUpload'
 import { useSession } from '@/composables/useSession'
 
 usePageMeta(() => ({ title: 'VMS' }))
@@ -52,6 +53,9 @@ const router = useRouter()
 const { isDesktop } = useBreakpoint()
 const { ready } = useSession()
 const { commandPaletteOpen, shortcutsOpen, openSettings, openUpload } = useOverlays()
+
+// Mod+V / Mod+Shift+V anywhere outside a text field uploads the clipboard.
+usePasteUpload()
 
 // Pages that own their scroll (the audit log) render a fixed-height body with
 // their own ScrollArea, so the shell must not page-scroll around them.

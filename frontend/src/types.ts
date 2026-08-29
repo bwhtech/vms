@@ -274,6 +274,8 @@ export interface UploadContext {
 	category?: string
 	/** Overrides file.name as the stored file name. */
 	fileName?: string
+	/** Files the dialog queues as soon as it opens (paste). */
+	files?: File[]
 }
 
 export type UploadStatus = 'queued' | 'uploading' | 'confirming' | 'done' | 'error' | 'cancelled'

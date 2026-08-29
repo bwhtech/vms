@@ -156,6 +156,9 @@ watch(
 		selectedFolder.value = context.folder ?? ''
 		category.value = context.category ?? 'Footage'
 		versionQueued.value = false
+		// Pasted files arrive with the context, so they queue without a trip
+		// through the drop area.
+		if (context.files?.length) queueFiles(context.files)
 	},
 	{ immediate: true },
 )
