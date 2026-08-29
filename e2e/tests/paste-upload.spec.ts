@@ -102,6 +102,21 @@ test.describe("Paste to upload", () => {
     );
   });
 
+  test("explains itself when the format is not supported", async ({ page }) => {
+    await new Shell(page).goto(`/vms/projects/${projectName}`);
+
+    // BMP passes the client-side media check but is not in allowed_extensions.
+    await pasteFile(page, {
+      fileName: "unsupported.bmp",
+      base64: btoa("not really a bitmap"),
+      type: "image/bmp",
+    });
+
+    await expect(page.getByText(/BMP files are not supported/)).toBeVisible({
+      timeout: 30000,
+    });
+  });
+
   test("opens the upload dialog for a pasted video", async ({ page }) => {
     await new Shell(page).goto(`/vms/projects/${projectName}`);
 

@@ -21,13 +21,26 @@ export function formatDuration(seconds: number): string {
 /**
  * Pull the real failure reason out of a Frappe error.
  *
- * `err.message` is often the generic "There was an error." — the actual reason
- * a whitelisted method threw lives in `_server_messages`, a JSON string holding
- * an array of JSON strings. Returns "" when there is nothing useful, so callers
- * can fall back with `serverMessage(err) || '...'`.
+ * `err.message` is the request URL and exception class — "…/get_upload_url
+ * ValidationError" — which means nothing to a user. The reason the method threw
+ * is either already unpacked by frappe-ui into `err.messages`, or still raw in
+ * `_server_messages`, a JSON string holding an array of JSON strings. Returns ""
+ * when there is nothing useful, so callers can fall back with
+ * `serverMessage(err) || '...'`.
  */
 export function serverMessage(err: unknown): string {
-	const raw = (err as { _server_messages?: string } | null)?._server_messages
+	const error = err as { messages?: unknown; _server_messages?: string } | null
+
+	if (Array.isArray(error?.messages)) {
+		const unpacked = error.messages
+			.filter((entry): entry is string => typeof entry === 'string')
+			.map(cleanMessage)
+			.filter(Boolean)
+			.join(' ')
+		if (unpacked) return unpacked
+	}
+
+	const raw = error?._server_messages
 	if (!raw) return ''
 
 	let entries: unknown
@@ -48,7 +61,11 @@ export function serverMessage(err: unknown): string {
 				return entry
 			}
 		})
-		.map((msg) => msg.replace(/<[^>]*>/g, '').trim())
+		.map(cleanMessage)
 		.filter(Boolean)
 		.join(' ')
+}
+
+function cleanMessage(message: string): string {
+	return message.replace(/<[^>]*>/g, '').trim()
 }

@@ -277,6 +277,14 @@ export interface UploadContext {
 	fileName?: string
 	/** Files the dialog queues as soon as it opens (paste). */
 	files?: File[]
+	/** Every settled batch, failures included — a silent paste reports itself. */
+	onSettled?: (result: UploadResult) => void
+}
+
+/** What became of one batch of uploads. */
+export interface UploadResult {
+	uploaded: string[]
+	failed: { fileName: string; error?: string }[]
 }
 
 export type UploadStatus = 'queued' | 'uploading' | 'confirming' | 'done' | 'error' | 'cancelled'

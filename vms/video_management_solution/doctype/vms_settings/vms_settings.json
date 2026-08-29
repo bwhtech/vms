@@ -108,7 +108,7 @@
    "label": "Presigned URL Expiry (seconds)"
   },
   {
-   "default": "mp4,mov,avi,mkv,webm,m4v",
+   "default": "mp4,mov,avi,mkv,webm,m4v,mp3,wav,png,jpg,jpeg,gif,webp",
    "description": "Comma-separated list of allowed file extensions",
    "fieldname": "allowed_extensions",
    "fieldtype": "Small Text",

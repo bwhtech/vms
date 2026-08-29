@@ -8,6 +8,8 @@
  */
 import { call } from 'frappe-ui'
 
+import { serverMessage } from '@/lib/format'
+
 import type { UploadContext, UploadItem, UploadStatus } from '@/types'
 
 export type { UploadContext, UploadItem, UploadStatus }
@@ -35,6 +37,20 @@ export const TERMINAL_STATUSES: readonly UploadStatus[] = ['done', 'error', 'can
 
 export function isTerminal(status: UploadStatus): boolean {
 	return TERMINAL_STATUSES.includes(status)
+}
+
+/**
+ * What to show a user when an upload fails. Frappe's reason ("File type 'bmp'
+ * is not allowed…") rides in _server_messages, sometimes wrapped in HTML;
+ * error.message is just the exception class, which means nothing to anyone.
+ */
+export function uploadErrorMessage(error: unknown, file: File): string {
+	const reason = serverMessage(error)
+	if (reason) return reason
+	if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+		return `Could not upload “${file.name}” — you appear to be offline`
+	}
+	return `Could not upload “${file.name}”. Please try again.`
 }
 
 export function isAbortError(e: unknown): boolean {

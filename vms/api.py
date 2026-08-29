@@ -161,7 +161,13 @@ def get_upload_url(
 	ext = file_name.rsplit(".", 1)[-1].lower() if "." in file_name else ""
 	allowed = [e.strip().lower() for e in (settings.allowed_extensions or "").split(",") if e.strip()]
 	if allowed and ext not in allowed:
-		frappe.throw(_("File type '{0}' is not allowed. Allowed types: {1}").format(ext, ", ".join(allowed)))
+		if not ext:
+			frappe.throw(_("This file has no extension, so its format cannot be checked"))
+		frappe.throw(
+			_("{0} files are not supported. Supported formats: {1}").format(
+				ext.upper(), ", ".join(e.upper() for e in allowed)
+			)
+		)
 
 	# Validate project exists if provided
 	if project and not frappe.db.exists("VMS Project", project):

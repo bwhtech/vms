@@ -79,9 +79,12 @@ export function usePasteUpload(): void {
 	function uploadAndShare(files: File[], target: UploadContext): void {
 		add(files, {
 			...target,
-			onDone: (assetNames) => {
-				target.onDone?.(assetNames)
-				void shareUploaded(assetNames)
+			onSettled: (result) => {
+				target.onSettled?.(result)
+				if (result.failed.length > 0) {
+					toast.error(result.failed[0].error || 'Could not upload the image')
+				}
+				if (result.uploaded.length > 0) void shareUploaded(result.uploaded)
 			},
 		})
 	}

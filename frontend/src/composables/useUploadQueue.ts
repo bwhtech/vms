@@ -5,10 +5,12 @@ import {
 	MAX_CONCURRENT,
 	isAbortError,
 	isTerminal,
+	uploadErrorMessage,
 	uploadFile,
 	type UploadContext,
 	type UploadItem,
 } from '@/composables/useUpload'
+import type { UploadResult } from '@/types'
 
 export interface UploadCounts {
 	total: number
@@ -22,6 +24,7 @@ export type UploadReportStatus = 'idle' | 'sending' | 'sent' | 'error' | 'skippe
 interface UploadBatch {
 	ids: Set<string>
 	onDone?: (assetNames: string[]) => void
+	onSettled?: (result: UploadResult) => void
 	notified: boolean
 }
 
@@ -90,7 +93,7 @@ function add(files: File[], ctx: UploadContext): void {
 		ids.add(item.id)
 	}
 
-	batches.push({ ids, onDone: context.onDone, notified: false })
+	batches.push({ ids, onDone: context.onDone, onSettled: context.onSettled, notified: false })
 	fillUploadSlots()
 }
 
@@ -184,7 +187,7 @@ async function runItem(id: string): Promise<void> {
 			item.status = 'cancelled'
 		} else {
 			item.status = 'error'
-			item.error = error instanceof Error ? error.message : 'Upload failed'
+			item.error = uploadErrorMessage(error, item.file)
 		}
 	} finally {
 		controllers.delete(id)
@@ -212,12 +215,14 @@ function notifySettledBatches(): void {
 		const uploaded = batchItems
 			.filter((item) => item.status === 'done' && item.assetName)
 			.map((item) => item.assetName as string)
-		if (uploaded.length > 0) {
-			try {
-				batch.onDone?.(uploaded)
-			} catch {
-				// A page refresh callback must not break queue cleanup or reporting.
-			}
+		const failed = batchItems
+			.filter((item) => item.status === 'error')
+			.map((item) => ({ fileName: item.file.name, error: item.error }))
+		try {
+			if (uploaded.length > 0) batch.onDone?.(uploaded)
+			batch.onSettled?.({ uploaded, failed })
+		} catch {
+			// A page refresh callback must not break queue cleanup or reporting.
 		}
 	}
 }
