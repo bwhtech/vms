@@ -1,8 +1,11 @@
 <template>
 	<div
 		ref="container"
-		class="flex w-full flex-col overflow-hidden rounded-6 bg-black md:h-full"
+		class="relative flex w-full flex-col overflow-hidden rounded-6 bg-black md:h-full"
+		:class="{ 'cursor-none': isFullscreen && !barVisible }"
 		data-testid="review-video-player"
+		@mousemove="revealBar"
+		@mouseleave="hideBarNow"
 	>
 		<div
 			ref="videoWrapper"
@@ -32,7 +35,19 @@
 			/>
 		</div>
 
-		<div class="shrink-0 border-t border-outline-gray-2 bg-surface-base">
+		<div
+			class="shrink-0 border-t border-outline-gray-2 bg-surface-base transition-opacity duration-200"
+			:class="
+				isFullscreen
+					? [
+							'absolute inset-x-0 bottom-0 z-10',
+							barVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
+						]
+					: ''
+			"
+			@mouseenter="holdBar"
+			@mouseleave="revealBar"
+		>
 			<VideoTimeline
 				class="hidden md:block"
 				:current-time="player.currentTime.value"
@@ -65,7 +80,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onScopeDispose, ref, watch } from 'vue'
-import { ErrorMessage, Skeleton, useCall } from 'frappe-ui'
+import { ErrorMessage, Skeleton, providePortalTarget, useCall } from 'frappe-ui'
 import type { AnnotationJson, ReviewComment, ViewUrlResponse } from '@/types'
 import AnnotationCanvas from '@/components/review/AnnotationCanvas.vue'
 import VideoControls from '@/components/review/VideoControls.vue'
@@ -85,6 +100,40 @@ const video = ref<HTMLVideoElement | null>(null)
 const player = useVideoPlayer(video)
 const { isFullscreen, toggle } = useFullscreen(container, video)
 const canvasActive = computed(() => review.annotation.mode.value !== 'off')
+
+// Only the fullscreen element's subtree is painted while fullscreen is active,
+// so every overlay below us (the speed menu, tooltips) has to teleport into the
+// player instead of `body` — otherwise it opens invisibly.
+providePortalTarget(() => (isFullscreen.value ? (container.value ?? undefined) : undefined))
+
+const BAR_IDLE_MS = 2500
+const barVisible = ref(true)
+let idleTimer: ReturnType<typeof setTimeout> | undefined
+
+/** The bar stays put while the video is paused, annotated, or windowed. */
+function barMayHide() {
+	return isFullscreen.value && player.isPlaying.value && !canvasActive.value
+}
+
+function revealBar() {
+	barVisible.value = true
+	clearTimeout(idleTimer)
+	if (barMayHide()) idleTimer = setTimeout(() => (barVisible.value = false), BAR_IDLE_MS)
+}
+
+/** Pointer resting on the bar itself: keep it up indefinitely. */
+function holdBar() {
+	barVisible.value = true
+	clearTimeout(idleTimer)
+}
+
+function hideBarNow() {
+	clearTimeout(idleTimer)
+	if (barMayHide()) barVisible.value = false
+}
+
+watch([isFullscreen, player.isPlaying, canvasActive], revealBar)
+onScopeDispose(() => clearTimeout(idleTimer))
 
 const view = useCall<ViewUrlResponse, { asset_name: string; token?: string }>({
 	url: '/api/v2/method/vms.review_api.get_review_view_url',
@@ -152,7 +201,10 @@ function handleShortcut(event: KeyboardEvent) {
 		'KeyF',
 		'KeyM',
 	].includes(event.code)
-	if (handled) event.preventDefault()
+	if (handled) {
+		event.preventDefault()
+		revealBar()
+	}
 
 	if (event.code === 'Space' || event.code === 'KeyK') player.togglePlay()
 	else if (event.code === 'KeyL') {
