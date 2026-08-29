@@ -204,6 +204,7 @@ import { formatBytes, serverMessage } from '@/lib/format'
 import { assetStatusTheme } from '@/lib/status'
 import { useDownload } from '@/composables/useDownload'
 import { useOverlays } from '@/composables/useOverlays'
+import { useUploadTarget } from '@/composables/usePasteUpload'
 import AssetActions from '@/components/assets/AssetActions.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import RelativeTime from '@/components/common/RelativeTime.vue'
@@ -216,6 +217,7 @@ const PAGE_SIZE = 20
 const COLUMNS = ['minmax(12rem,1fr)', '9rem', '6rem', '5rem', '7rem', '2.5rem']
 
 const { openUpload } = useOverlays()
+useUploadTarget(() => ({ onDone: reload }))
 const { downloadMany, isDownloading } = useDownload()
 
 const categoryOptions = ASSET_CATEGORIES.map((c) => ({ label: c, value: c }))

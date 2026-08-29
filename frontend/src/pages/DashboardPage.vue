@@ -185,6 +185,7 @@ import type { Asset, Project, ProjectStatus } from '@/types'
 import { formatBytes } from '@/lib/format'
 import { assetStatusTheme, type BadgeTheme } from '@/lib/status'
 import { useOverlays } from '@/composables/useOverlays'
+import { useUploadTarget } from '@/composables/usePasteUpload'
 import EmptyState from '@/components/common/EmptyState.vue'
 import RelativeTime from '@/components/common/RelativeTime.vue'
 import FileTypeIcon from '@/components/common/FileTypeIcon.vue'
@@ -194,6 +195,7 @@ import SkeletonCards from '@/components/common/SkeletonCards.vue'
 usePageMeta(() => ({ title: 'Home · VMS' }))
 
 const { openUpload, createProjectOpen } = useOverlays()
+useUploadTarget(() => ({ onDone: () => void assets.reload() }))
 
 type RecentProject = Pick<Project, 'name' | 'project_name' | 'status' | 'modified'>
 type RecentAsset = Pick<

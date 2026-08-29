@@ -289,6 +289,7 @@ import { serverMessage } from '@/lib/format'
 import ShareProjectPanel from '@/components/projects/ShareProjectPanel.vue'
 import { useProjectBrowser } from '@/components/projects/useProjectBrowser'
 import { useProjectPageActions } from '@/components/projects/useProjectPageActions'
+import { useUploadTarget } from '@/composables/usePasteUpload'
 import SkeletonLines from '@/components/common/SkeletonLines.vue'
 import SkeletonCards from '@/components/common/SkeletonCards.vue'
 
@@ -301,6 +302,12 @@ const browser = useProjectBrowser(
 	() => props.projectId,
 	() => props.folderId,
 )
+// A paste on this page lands in the project and folder being browsed.
+useUploadTarget(() => ({
+	project: props.projectId,
+	folder: props.folderId,
+	onDone: () => void browser.reloadAssets(),
+}))
 const {
 	project,
 	assetsCall,
