@@ -171,12 +171,36 @@ export function useProjectBrowser(
 			await router.push(`/review/${asset.name}`)
 			return
 		}
+		await showPreview(asset)
+	}
+
+	async function showPreview(asset: Asset) {
 		try {
 			const result = await viewUrl.submit({ asset_name: asset.name })
 			if (result?.url) preview.value = { asset, url: result.url }
 		} catch (error) {
 			toast.error(serverMessage(error) || 'Could not open preview')
 		}
+	}
+
+	/** The gallery the preview steps through: the images of the listing behind it. */
+	const previewable = computed(() =>
+		assets.value.filter(
+			(asset) => asset.status === 'Ready' && asset.file_type?.startsWith('image/'),
+		),
+	)
+	const previewIndex = computed(() => {
+		const current = preview.value?.asset.name
+		return current ? previewable.value.findIndex((asset) => asset.name === current) : -1
+	})
+	const hasPreviousPreview = computed(() => previewIndex.value > 0)
+	const hasNextPreview = computed(
+		() => previewIndex.value >= 0 && previewIndex.value < previewable.value.length - 1,
+	)
+
+	function stepPreview(step: 1 | -1) {
+		const next = previewable.value[previewIndex.value + step]
+		if (previewIndex.value >= 0 && next) void showPreview(next)
 	}
 
 	const viewUrl = useCall<ViewUrlResponse, { asset_name: string }>({
@@ -297,6 +321,10 @@ export function useProjectBrowser(
 		selection,
 		view,
 		preview,
+		hasPreviousPreview,
+		hasNextPreview,
+		showPreviousPreview: () => stepPreview(-1),
+		showNextPreview: () => stepPreview(1),
 		limit,
 		openAsset,
 		moveAssets,

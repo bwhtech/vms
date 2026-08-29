@@ -249,6 +249,10 @@
 		:url="preview.url"
 		:name="preview.asset.file_name"
 		:mime="preview.asset.file_type ?? 'image/*'"
+		:has-previous="hasPreviousPreview"
+		:has-next="hasNextPreview"
+		@previous="showPreviousPreview"
+		@next="showNextPreview"
 		@update:open="preview = null"
 	/>
 </template>
@@ -318,6 +322,10 @@ const {
 	selection,
 	view,
 	preview,
+	hasPreviousPreview,
+	hasNextPreview,
+	showPreviousPreview,
+	showNextPreview,
 	openAsset,
 	moveAssets,
 	moveFolder,
