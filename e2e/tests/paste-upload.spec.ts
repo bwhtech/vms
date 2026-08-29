@@ -51,36 +51,78 @@ test.describe("Paste to upload", () => {
     await cleanupTestProjects(request, "E2E Paste Project");
   });
 
-  test("opens the upload dialog with the pasted file queued", async ({
+  test("uploads a pasted image and copies its review link", async ({
     page,
+    context,
   }) => {
-    const shell = new Shell(page);
-    await shell.goto(`/vms/projects/${projectName}`);
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await new Shell(page).goto(`/vms/projects/${projectName}`);
 
-    const fileName = `pasted-${Date.now()}.png`;
     await pasteFile(page, {
-      fileName,
+      fileName: "image.png",
       base64: PNG_BASE64,
       type: "image/png",
+    });
+
+    // An image skips the dialog: the queue panel carries the progress.
+    await expect(page.getByTestId("upload-queue-panel")).toBeVisible({
+      timeout: 5000,
+    });
+    await expect(dialog(page, "Upload Assets")).not.toBeVisible();
+
+    await expect(page.getByText("Review link copied to clipboard")).toBeVisible(
+      { timeout: 30000 },
+    );
+
+    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    expect(copied).toMatch(/\/vms\/review\/[^?]+\?token=\w+$/);
+
+    // The link is public, so it opens without a session.
+    const guest = await context.browser()!.newPage();
+    const response = await guest.goto(copied);
+    expect(response?.ok()).toBe(true);
+    await guest.close();
+  });
+
+  test("names a pasted screenshot after the moment it was pasted", async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await new Shell(page).goto(`/vms/projects/${projectName}`);
+
+    await pasteFile(page, {
+      fileName: "image.png",
+      base64: PNG_BASE64,
+      type: "image/png",
+    });
+
+    await expect(page.getByText(/pasted-\d{8}-\d{6}\.png/).first()).toBeVisible(
+      { timeout: 30000 },
+    );
+  });
+
+  test("opens the upload dialog for a pasted video", async ({ page }) => {
+    await new Shell(page).goto(`/vms/projects/${projectName}`);
+
+    const fileName = `pasted-${Date.now()}.mp4`;
+    await pasteFile(page, {
+      fileName,
+      base64: btoa("not really a video"),
+      type: "video/mp4",
     });
 
     const uploadDialog = dialog(page, "Upload Assets");
     await expect(uploadDialog).toBeVisible({ timeout: 5000 });
     await expect(uploadDialog.getByText(fileName)).toBeVisible();
-
-    // The paste queues straight into the upload, no extra click.
-    await expect(uploadDialog.getByText("1 uploaded")).toBeVisible({
-      timeout: 30000,
-    });
   });
 
   test("leaves a paste inside a text field alone", async ({ page }) => {
-    const shell = new Shell(page);
-    await shell.goto(`/vms/projects/${projectName}`);
+    await new Shell(page).goto(`/vms/projects/${projectName}`);
 
-    const search = page.getByPlaceholder("Search");
-    await expect(search.first()).toBeVisible({ timeout: 10000 });
-    await search.first().click();
+    const search = page.getByPlaceholder("Search").first();
+    await expect(search).toBeVisible({ timeout: 10000 });
+    await search.click();
 
     await pasteFile(page, {
       fileName: "ignored.png",
@@ -90,5 +132,6 @@ test.describe("Paste to upload", () => {
     });
 
     await expect(dialog(page, "Upload Assets")).not.toBeVisible();
+    await expect(page.getByTestId("upload-queue-panel")).not.toBeVisible();
   });
 });

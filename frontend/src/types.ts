@@ -268,8 +268,9 @@ export interface UploadContext {
 	folder?: string
 	/** Upload as a new version of this asset instead of a new asset. */
 	versionOf?: string
-	/** The opener's own refresh — the dialog does not know what to reload. */
-	onDone?: () => void
+	/** The opener's own refresh — the dialog does not know what to reload.
+	 *  Receives the assets that uploaded, in queue order. */
+	onDone?: (assetNames: string[]) => void
 	/** Asset category sent to get_upload_url. Defaults to "Footage". */
 	category?: string
 	/** Overrides file.name as the stored file name. */

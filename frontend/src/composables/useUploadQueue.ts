@@ -21,7 +21,7 @@ export type UploadReportStatus = 'idle' | 'sending' | 'sent' | 'error' | 'skippe
 
 interface UploadBatch {
 	ids: Set<string>
-	onDone?: () => void
+	onDone?: (assetNames: string[]) => void
 	notified: boolean
 }
 
@@ -209,9 +209,12 @@ function notifySettledBatches(): void {
 			continue
 		}
 		batch.notified = true
-		if (batchItems.some((item) => item.status === 'done')) {
+		const uploaded = batchItems
+			.filter((item) => item.status === 'done' && item.assetName)
+			.map((item) => item.assetName as string)
+		if (uploaded.length > 0) {
 			try {
-				batch.onDone?.()
+				batch.onDone?.(uploaded)
 			} catch {
 				// A page refresh callback must not break queue cleanup or reporting.
 			}
