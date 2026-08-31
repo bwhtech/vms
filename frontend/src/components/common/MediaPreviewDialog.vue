@@ -23,10 +23,18 @@
 					class="max-h-[76vh] max-w-full rounded-4"
 				/>
 				<img
-					v-else
-					:src="url"
+					v-else-if="shownUrl"
+					ref="imageEl"
+					:src="shownUrl"
 					:alt="name"
 					class="max-h-[76vh] max-w-full rounded-4 object-contain"
+				/>
+				<div
+					v-else
+					class="animate-pulse rounded-4 bg-surface-gray-6"
+					:style="skeletonBox"
+					role="status"
+					aria-label="Loading image"
 				/>
 
 				<Button
@@ -53,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onScopeDispose, watch } from 'vue'
+import { computed, onScopeDispose, ref, watch } from 'vue'
 import { Button, Dialog } from 'frappe-ui'
 
 const props = defineProps<{
@@ -73,6 +81,66 @@ const emit = defineEmits<{
 }>()
 
 const isVideo = computed(() => props.mime.startsWith('video/'))
+
+// The <img> keeps painting the previous file until the new one decodes, so
+// stepping through a folder used to swap the name and leave the old picture up.
+// Decode off-screen first and only bind the src once it is ready.
+const shownUrl = ref('')
+const imageEl = ref<HTMLImageElement | null>(null)
+// The skeleton takes over the outgoing image's box so the dialog does not
+// resize twice on the way to the next picture.
+const skeletonBox = ref({ height: '60vh', width: '100%' })
+let loader: HTMLImageElement | null = null
+let skeletonTimer: ReturnType<typeof setTimeout> | undefined
+
+function clearSkeletonTimer() {
+	if (skeletonTimer === undefined) return
+	clearTimeout(skeletonTimer)
+	skeletonTimer = undefined
+}
+
+function loadImage(url: string) {
+	clearSkeletonTimer()
+	loader = null
+	if (!url) {
+		shownUrl.value = ''
+		return
+	}
+	if (url === shownUrl.value) return
+
+	const image = new Image()
+	loader = image
+	// Hold the old frame for a beat: a cached image resolves inside it and never
+	// flashes a skeleton.
+	skeletonTimer = setTimeout(() => {
+		if (loader !== image) return
+		const box = imageEl.value
+		if (box?.clientHeight) {
+			skeletonBox.value = { height: `${box.clientHeight}px`, width: `${box.clientWidth}px` }
+		}
+		shownUrl.value = ''
+	}, 120)
+	image.onload = image.onerror = () => {
+		if (loader !== image) return
+		clearSkeletonTimer()
+		shownUrl.value = url
+	}
+	image.src = url
+}
+
+watch(
+	() => [props.open, props.url, isVideo.value] as const,
+	([open, url, video]) => {
+		if (!open || video) {
+			clearSkeletonTimer()
+			loader = null
+			shownUrl.value = ''
+			return
+		}
+		loadImage(url)
+	},
+	{ immediate: true },
+)
 
 // A video's own controls own the arrow keys (frame stepping, volume), so the
 // gallery only claims them for stills.
@@ -95,5 +163,9 @@ watch(
 	},
 	{ immediate: true },
 )
-onScopeDispose(() => document.removeEventListener('keydown', handleArrowKeys))
+onScopeDispose(() => {
+	document.removeEventListener('keydown', handleArrowKeys)
+	clearSkeletonTimer()
+	loader = null
+})
 </script>
