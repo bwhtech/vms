@@ -419,41 +419,6 @@ def purge_expired_trash():
 			frappe.logger("vms").warning(f"Failed to purge expired trash folder {folder_name}")
 
 
-def cleanup_expired_compress_jobs():
-	"""Scheduler: delete compress jobs and their R2 output files older than retention period.
-
-	Returns early if tools_retention_days == 0 (Never).
-	"""
-	settings = frappe.get_single("VMS Settings")
-	retention_days = int(settings.tools_retention_days or 0)
-
-	if retention_days <= 0:
-		return
-
-	cutoff = add_days(now_datetime(), -retention_days)
-
-	expired = frappe.get_all(
-		"VMS Compress Job",
-		filters={"creation": ["<=", cutoff]},
-		fields=["name", "original_r2_key", "compressed_r2_key"],
-	)
-
-	if not expired:
-		return
-
-	for job in expired:
-		try:
-			if job.original_r2_key:
-				delete_r2_object(job.original_r2_key)
-			if job.compressed_r2_key:
-				delete_r2_object(job.compressed_r2_key)
-			frappe.delete_doc("VMS Compress Job", job.name, ignore_permissions=True)
-			frappe.db.commit()
-		except Exception:
-			frappe.db.rollback()
-			frappe.logger("vms").warning(f"Failed to cleanup compress job {job.name}")
-
-
 # ── Upload Cleanup ───────────────────────────────────────────────────────────
 
 

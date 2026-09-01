@@ -212,7 +212,6 @@ const commands: Command[] = [
 		'/audit-logs',
 	),
 	nav('trash', 'Go to Trash', 'lucide-trash-2', ['deleted', 'bin'], '/trash'),
-	nav('tools', 'Go to Tools', 'lucide-wrench', ['compress'], '/tools'),
 	action('upload', 'Upload Files', 'lucide-upload', ['add', 'import'], () => openUpload(), 'U'),
 	action('new-project', 'New Project', 'lucide-folder-plus', ['create'], () => {
 		createProjectOpen.value = true

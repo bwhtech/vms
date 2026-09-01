@@ -55,7 +55,6 @@ const menu: SheetItem[] = [
 			notificationsOpen.value = true
 		},
 	},
-	{ label: 'Tools', icon: 'lucide-wrench', onClick: () => router.push('/tools') },
 	{ label: 'Trash', icon: 'lucide-trash-2', onClick: () => router.push('/trash') },
 	{ label: 'Audit log', icon: 'lucide-scroll-text', onClick: () => router.push('/audit-logs') },
 	{ label: 'Settings', icon: 'lucide-settings', onClick: () => openSettings('profile') },

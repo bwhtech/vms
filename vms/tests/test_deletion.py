@@ -438,19 +438,6 @@ class TestSettingsRetention(IntegrationTestCase):
 		super().setUpClass()
 		cls.project = _make_project("Settings Test Project")
 
-	def test_zero_retention_disables_compress_cleanup(self):
-		"""tools_retention_days=0 means compress jobs are never auto-cleaned."""
-		if not frappe.db.exists("DocType", "VMS Compress Job"):
-			self.skipTest("VMS Compress Job DocType not found")
-
-		frappe.db.set_single_value("VMS Settings", "tools_retention_days", "0")
-		frappe.db.commit()
-
-		from vms.deletion import cleanup_expired_compress_jobs
-
-		# Should return early without deleting anything
-		cleanup_expired_compress_jobs()
-
 	def test_empty_trash_works_regardless_of_retention(self):
 		"""Manual 'Empty Trash' should work even when retention is 0 (Never)."""
 		asset = _make_asset(self.project, "manual_empty.mp4")
