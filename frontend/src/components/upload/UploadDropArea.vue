@@ -29,9 +29,18 @@
 </template>
 
 <script setup lang="ts">
+import { RAW_EXTENSIONS } from '@/lib/fileType'
 import { computed, ref } from 'vue'
 
-const ACCEPTED_FILES = 'video/*,audio/*,image/*,.mkv,.avi,.m4v'
+const ACCEPTED_FILES = [
+	'video/*',
+	'audio/*',
+	'image/*',
+	'.mkv',
+	'.avi',
+	'.m4v',
+	...RAW_EXTENSIONS.map((extension) => `.${extension}`),
+].join(',')
 
 const props = defineProps<{ singular?: boolean; disabled?: boolean }>()
 const emit = defineEmits<{ files: [files: File[]] }>()

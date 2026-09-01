@@ -20,11 +20,12 @@ import { useOverlays } from '@/composables/useOverlays'
 import { useUploadQueue } from '@/composables/useUploadQueue'
 import { copyText } from '@/lib/clipboard'
 import { serverMessage } from '@/lib/format'
+import { RAW_EXTENSIONS } from '@/lib/fileType'
 import type { UploadContext } from '@/types'
 
 // Mirrors UploadDropArea's accept list: types the browser labels, plus the
 // video containers it has no MIME type for.
-const EXTRA_EXTENSIONS = ['mkv', 'avi', 'm4v']
+const EXTRA_EXTENSIONS = ['mkv', 'avi', 'm4v', ...RAW_EXTENSIONS]
 
 interface ShareResponse {
 	is_public_review: 0 | 1

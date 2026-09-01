@@ -14,6 +14,7 @@ A video management application built on [Frappe](https://frappeframework.com) wi
 - **Folder System** — Organize assets within projects using folders with drag-and-drop between them
 - **Video Review** — Timestamped comments, threaded replies, drawing annotations (Fabric.js), and public review links via shareable tokens
 - **Thumbnail Generation** — Automatic thumbnail extraction from videos using FFmpeg and image resizing with Pillow
+- **Camera RAW** — `.arw`, `.cr2`, `.cr3`, `.dng`, `.nef`, `.orf`, `.raf` and `.rw2` upload with thumbnails and previews taken from the embedded JPEG via LibRaw
 - **Asset Categories** — Classify assets as Asset, For Review, or Deliverable with filtered tab views
 - **Audit Logs** — Track uploads, downloads, renames, and deletions with user attribution
 - **User Management** — Invite team members with the Video Manager role; profile and settings management

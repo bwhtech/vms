@@ -26,7 +26,8 @@ export interface VmsSettingsDoc {
 export const GB = 1024 * 1024 * 1024
 export const MB = 1024 * 1024
 export const DEFAULT_MAX_FILE_SIZE = 5 * GB
-export const DEFAULT_EXTENSIONS = 'mp4,mov,avi,mkv,webm,m4v,mp3,wav,png,jpg,jpeg,gif,webp'
+export const DEFAULT_EXTENSIONS =
+	'mp4,mov,avi,mkv,webm,m4v,mp3,wav,png,jpg,jpeg,gif,webp,arw,cr2,cr3,dng,nef,orf,raf,rw2'
 
 export const RETENTION_OPTIONS = [
 	{ label: 'Never', value: '0' },

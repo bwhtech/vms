@@ -18,6 +18,7 @@ from vms.r2 import (
 	generate_presigned_view_url,
 	get_r2_client,
 )
+from vms.raw_images import is_raw, raw_mime_for
 
 # Assets with no project, not uploading, not trashed (Inbox / Uncategorised)
 INBOX_FILTERS = {"project": ["is", "not set"], "status": ["!=", "Uploading"], "deleted_at": ["is", "not set"]}
@@ -198,12 +199,14 @@ def get_upload_url(
 	else:
 		upload_url, r2_key = generate_presigned_upload_url(file_name, content_type, project)
 
+	stored_type = raw_mime_for(file_name) or content_type
+
 	# Create asset record in Uploading status
 	asset_doc = {
 		"doctype": "VMS Asset",
 		"file_name": file_name,
 		"r2_key": r2_key,
-		"file_type": content_type,
+		"file_type": stored_type,
 		"status": "Uploading",
 		"category": category,
 		"uploaded_by": frappe.session.user,
@@ -374,6 +377,7 @@ def _apply_version_swap(source_asset, target_name: str) -> dict:
 	target.uploaded_at = new_uploaded_at
 	target.version = current_version + 1
 	target.thumbnail_url = None
+	target.preview_url = None
 	target.save(ignore_permissions=True)
 
 	# Enqueue thumbnail generation for target
@@ -499,6 +503,9 @@ def get_view_url(asset_name: str):
 
 	if not asset.r2_key:
 		frappe.throw(_("Asset has no R2 key"))
+
+	if asset.preview_url and is_raw(asset.file_type, asset.file_name):
+		return {"url": asset.preview_url}
 
 	url = generate_presigned_view_url(asset.r2_key)
 
@@ -2045,6 +2052,7 @@ def restore_version(asset_name: str, version_number: int):
 	asset.uploaded_by = ver.uploaded_by
 	asset.uploaded_at = ver.uploaded_at
 	asset.thumbnail_url = ver.thumbnail_url
+	asset.preview_url = None
 	asset.version = new_version
 	asset.save(ignore_permissions=True)
 

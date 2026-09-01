@@ -21,6 +21,7 @@
   "column_break_2",
   "duration_seconds",
   "thumbnail_url",
+  "preview_url",
   "section_break_review",
   "is_public_review",
   "column_break_review",
@@ -149,6 +150,11 @@
    "fieldname": "thumbnail_url",
    "fieldtype": "Data",
    "label": "Thumbnail URL"
+  },
+  {
+   "fieldname": "preview_url",
+   "fieldtype": "Data",
+   "label": "Preview URL"
   },
   {
    "fieldname": "section_break_review",
@@ -332,7 +338,7 @@
   }
  ],
  "links": [],
- "modified": "2026-02-25 12:00:00.000000",
+ "modified": "2026-09-01 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Video Management Solution",
  "name": "VMS Asset",

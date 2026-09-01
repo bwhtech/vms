@@ -572,3 +572,47 @@ class TestUpload(IntegrationTestCase):
 			pass
 		frappe.delete_doc("VMS Asset", result["asset_name"], ignore_permissions=True)
 		frappe.db.commit()
+
+	def test_raw_upload_is_stored_as_an_image_type(self):
+		from vms.api import get_upload_url
+
+		settings = frappe.get_single("VMS Settings")
+		original_extensions = settings.allowed_extensions
+		settings.allowed_extensions = f"{original_extensions},arw"
+		settings.save(ignore_permissions=True)
+		frappe.db.commit()
+
+		try:
+			result = get_upload_url(
+				file_name="DSC02816.ARW",
+				content_type="application/octet-stream",
+				file_size=23 * 1024 * 1024,
+				project=self.project,
+			)
+
+			asset = frappe.get_doc("VMS Asset", result["asset_name"])
+			self.assertEqual(asset.file_type, "image/x-sony-arw")
+
+			frappe.delete_doc("VMS Asset", result["asset_name"], ignore_permissions=True)
+			frappe.db.commit()
+		finally:
+			settings.reload()
+			settings.allowed_extensions = original_extensions
+			settings.save(ignore_permissions=True)
+			frappe.db.commit()
+
+	def test_non_raw_upload_keeps_its_content_type(self):
+		from vms.api import get_upload_url
+
+		result = get_upload_url(
+			file_name="clip.mp4",
+			content_type="video/mp4",
+			file_size=1024,
+			project=self.project,
+		)
+
+		asset = frappe.get_doc("VMS Asset", result["asset_name"])
+		self.assertEqual(asset.file_type, "video/mp4")
+
+		frappe.delete_doc("VMS Asset", result["asset_name"], ignore_permissions=True)
+		frappe.db.commit()

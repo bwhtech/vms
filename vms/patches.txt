@@ -12,3 +12,4 @@ vms.patches.regenerate_image_thumbnails_exif
 vms.patches.sanitize_soft_delete_fields
 vms.patches.migrate_youtube_channel
 vms.patches.sanitize_rich_text_fields
+vms.patches.backfill_raw_asset_types
