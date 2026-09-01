@@ -12,7 +12,6 @@ from vms.r2 import (
 	complete_multipart_upload,
 	configure_bucket_cors,
 	create_multipart_upload,
-	delete_r2_object,
 	generate_presigned_download_url,
 	generate_presigned_part_url,
 	generate_presigned_upload_url,
@@ -325,12 +324,17 @@ def confirm_upload(asset_name: str, file_size: int, version_of: str | None = Non
 
 
 def _discard_preview(asset):
+	# The key has to be cleared for the new file's preview to regenerate, so the
+	# delete is queued rather than run inline: a transient R2 failure is then
+	# retryable from the job payload instead of being lost with the key.
 	if not asset.preview_r2_key:
 		return
-	try:
-		delete_r2_object(asset.preview_r2_key)
-	except Exception:
-		frappe.logger("vms").warning(f"R2 preview object {asset.preview_r2_key} not found or already deleted")
+	frappe.enqueue(
+		"vms.r2.delete_r2_object",
+		r2_key=asset.preview_r2_key,
+		queue="short",
+		enqueue_after_commit=True,
+	)
 	asset.preview_r2_key = None
 
 
