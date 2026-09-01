@@ -32,7 +32,6 @@ const shellRoutes: RouteRecordRaw[] = [
 		meta: { ownScroll: true },
 	},
 	{ path: 'trash', name: 'Trash', component: () => import('@/pages/TrashPage.vue') },
-	{ path: 'tools', name: 'Tools', component: () => import('@/pages/ToolsPage.vue') },
 	{
 		// Hidden sandbox for the shared components. Not linked from anywhere.
 		path: 'dev',

@@ -44,7 +44,6 @@
 			<SidebarProjects />
 
 			<SidebarSection label="More">
-				<SidebarItem icon="lucide-wrench" label="Tools" to="/tools" />
 				<SidebarItem icon="lucide-scroll-text" label="Audit log" to="/audit-logs" />
 				<SidebarItem icon="lucide-trash-2" label="Trash" to="/trash" />
 			</SidebarSection>

@@ -1,7 +1,7 @@
 /**
  * DocType and API shapes as the frontend consumes them. Field names mirror the
  * Frappe DocType JSONs and the dicts returned by `vms/api.py`,
- * `vms/review_api.py`, `vms/transcription.py` and `vms/tools_api.py`.
+ * `vms/review_api.py` and `vms/transcription.py`.
  */
 
 export type Bool = 0 | 1
@@ -176,30 +176,6 @@ export interface Transcription {
 	transcription: string
 	/** Raw speaker label → display name. */
 	speaker_names: Record<string, string>
-}
-
-export type CompressJobStatus = 'Queued' | 'Uploading' | 'Processing' | 'Complete' | 'Error'
-
-export interface CompressJob {
-	name: string
-	original_file_name: string
-	original_size: number
-	compressed_size: number
-	status: CompressJobStatus
-	progress: number
-	creation: string
-}
-
-export interface CompressStatus {
-	job_name: string
-	status: CompressJobStatus | string
-	progress: number
-	original_file_name: string
-	original_size: number
-	compressed_size: number
-	compressed_file_name: string
-	error_message: string
-	download_url?: string
 }
 
 export type AuditAction = 'Download' | 'Delete' | 'Permanent Delete' | 'Rename' | 'Restore'

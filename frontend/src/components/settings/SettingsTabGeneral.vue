@@ -65,16 +65,6 @@
 								class="w-32"
 							/>
 						</SettingsRow>
-						<SettingsRow
-							title="Clear tool outputs"
-							description="Delete compressed and split files after"
-						>
-							<Select
-								v-model="toolsRetention"
-								:options="RETENTION_OPTIONS"
-								class="w-32"
-							/>
-						</SettingsRow>
 					</div>
 				</section>
 
@@ -133,7 +123,6 @@ const maxFileSize = ref(DEFAULT_MAX_FILE_SIZE)
 const presignedExpiry = ref(3600)
 const extensions = ref<string[]>([])
 const trashRetention = ref('0')
-const toolsRetention = ref('0')
 
 function splitExtensions(value: string | null | undefined): string[] {
 	return (value || DEFAULT_EXTENSIONS)
@@ -152,7 +141,6 @@ watch(
 		presignedExpiry.value = value.presigned_url_expiry || 3600
 		extensions.value = splitExtensions(value.allowed_extensions)
 		trashRetention.value = String(value.trash_retention_days ?? '0')
-		toolsRetention.value = String(value.tools_retention_days ?? '0')
 	},
 	{ immediate: true },
 )
@@ -163,7 +151,6 @@ const form = computed<Partial<VmsSettingsDoc>>(() => ({
 	presigned_url_expiry: Number(presignedExpiry.value) || 3600,
 	allowed_extensions: extensions.value.join(','),
 	trash_retention_days: trashRetention.value,
-	tools_retention_days: toolsRetention.value,
 }))
 const changes = computed(() => changedFields(doc.doc, form.value))
 const isDirty = computed(() => Object.keys(changes.value).length > 0)

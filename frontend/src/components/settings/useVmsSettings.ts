@@ -16,7 +16,6 @@ export interface VmsSettingsDoc {
 	presigned_url_expiry: number
 	allowed_extensions: string
 	trash_retention_days: string
-	tools_retention_days: string
 	transcription_provider: string
 	whisper_model: string
 	openai_api_key: string

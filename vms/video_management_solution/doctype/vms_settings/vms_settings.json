@@ -20,8 +20,6 @@
   "allowed_extensions",
   "trash_section",
   "trash_retention_days",
-  "tools_section",
-  "tools_retention_days",
   "transcription_section",
   "transcription_provider",
   "whisper_model",
@@ -131,19 +129,6 @@
    "default": "0",
    "description": "Automatically purge trashed items after this many days. 0 means Never (manual deletion only).",
    "fieldname": "trash_retention_days",
-   "fieldtype": "Select",
-   "label": "Auto-delete after",
-   "options": "0\n7\n14\n30"
-  },
-  {
-   "fieldname": "tools_section",
-   "fieldtype": "Section Break",
-   "label": "Tools"
-  },
-  {
-   "default": "0",
-   "description": "Automatically delete tool output files after this many days. 0 means Never (manual deletion only).",
-   "fieldname": "tools_retention_days",
    "fieldtype": "Select",
    "label": "Auto-delete after",
    "options": "0\n7\n14\n30"
