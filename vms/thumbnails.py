@@ -190,8 +190,6 @@ def generate_thumbnail(asset_name):
 
 		asset.reload()
 
-		# The file was replaced while this job ran, so these derivatives describe
-		# an image the asset no longer holds. The newer job owns them now.
 		if asset.r2_key != source_key:
 			if preview_r2_key:
 				frappe.enqueue(

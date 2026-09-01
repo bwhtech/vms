@@ -324,9 +324,6 @@ def confirm_upload(asset_name: str, file_size: int, version_of: str | None = Non
 
 
 def _discard_preview(asset):
-	# The key has to be cleared for the new file's preview to regenerate, so the
-	# delete is queued rather than run inline: a transient R2 failure is then
-	# retryable from the job payload instead of being lost with the key.
 	if not asset.preview_r2_key:
 		return
 	frappe.enqueue(
