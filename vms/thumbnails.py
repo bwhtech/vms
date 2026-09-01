@@ -2,12 +2,13 @@ import os
 import shutil
 import subprocess
 import tempfile
+import uuid
 
 import frappe
 import requests
 from PIL import Image, ImageOps
 
-from vms.r2 import generate_presigned_view_url
+from vms.r2 import generate_presigned_view_url, upload_r2_object
 from vms.raw_images import is_raw, open_raw_preview
 
 IMAGE_MIME_PREFIXES = ("image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp", "image/tiff")
@@ -149,7 +150,7 @@ def generate_thumbnail(asset_name):
 		raw = is_raw(asset.file_type, asset.file_name)
 		is_video = not raw and not _is_image(asset.file_type)
 		needs_duration = is_video and not asset.duration_seconds
-		needs_preview = raw and not asset.preview_url
+		needs_preview = raw and not asset.preview_r2_key
 
 		# nothing left to compute, don't pay for the download
 		if asset.thumbnail_url and not needs_duration and not needs_preview:
@@ -185,15 +186,16 @@ def generate_thumbnail(asset_name):
 		if not asset.thumbnail_url:
 			thumbnail_url = _attach_webp(asset_name, thumb_path, f"{asset_name}.webp")
 
-		preview_url = None
+		preview_r2_key = None
 		if needs_preview:
-			preview_url = _attach_webp(asset_name, preview_path, f"{asset_name}-preview.webp")
+			preview_r2_key = f"preview/{uuid.uuid4().hex}.webp"
+			upload_r2_object(preview_r2_key, preview_path, "image/webp")
 
 		asset.reload()
 		if thumbnail_url:
 			asset.thumbnail_url = thumbnail_url
-		if preview_url:
-			asset.preview_url = preview_url
+		if preview_r2_key:
+			asset.preview_r2_key = preview_r2_key
 		asset.save(ignore_permissions=True)
 		frappe.db.commit()
 

@@ -21,7 +21,7 @@
   "column_break_2",
   "duration_seconds",
   "thumbnail_url",
-  "preview_url",
+  "preview_r2_key",
   "section_break_review",
   "is_public_review",
   "column_break_review",
@@ -152,9 +152,9 @@
    "label": "Thumbnail URL"
   },
   {
-   "fieldname": "preview_url",
+   "fieldname": "preview_r2_key",
    "fieldtype": "Data",
-   "label": "Preview URL"
+   "label": "Preview R2 Key"
   },
   {
    "fieldname": "section_break_review",

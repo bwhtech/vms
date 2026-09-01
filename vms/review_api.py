@@ -148,8 +148,8 @@ def get_review_view_url(asset_name: str, token: str | None = None):
 	if not asset.r2_key:
 		frappe.throw(_("Asset has no R2 key"))
 
-	if asset.preview_url and is_raw(asset.file_type, asset.file_name):
-		return {"url": asset.preview_url, "is_proxy": False}
+	if asset.preview_r2_key and is_raw(asset.file_type, asset.file_name):
+		return {"url": generate_presigned_view_url(asset.preview_r2_key), "is_proxy": False}
 
 	# Prefer proxy for streaming when available
 	r2_key = asset.proxy_r2_key if asset.proxy_r2_key and asset.proxy_status == "Ready" else asset.r2_key

@@ -95,6 +95,7 @@ def hard_delete_asset(asset_name: str):
 
 	r2_key = asset.r2_key
 	proxy_r2_key = asset.proxy_r2_key if hasattr(asset, "proxy_r2_key") else None
+	preview_r2_key = asset.preview_r2_key if hasattr(asset, "preview_r2_key") else None
 
 	audit_data = {
 		"file_name": asset.file_name,
@@ -144,6 +145,11 @@ def hard_delete_asset(asset_name: str):
 			delete_r2_object(proxy_r2_key)
 		except Exception:
 			frappe.logger("vms").warning(f"R2 proxy object {proxy_r2_key} not found or already deleted")
+	if preview_r2_key:
+		try:
+			delete_r2_object(preview_r2_key)
+		except Exception:
+			frappe.logger("vms").warning(f"R2 preview object {preview_r2_key} not found or already deleted")
 
 
 def restore_asset(asset_name: str):
