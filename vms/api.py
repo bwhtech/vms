@@ -1825,6 +1825,9 @@ def get_shared_project_assets(project: str, token: str | None = None, page=1, pa
 	}
 
 
+# Reviewed: guests reach this only with a share token that is checked against the
+# project, and the asset must belong to that same project.
+# nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @frappe.whitelist(allow_guest=True)
 def get_shared_asset_view_url(asset_name: str, project: str, token: str | None = None):
 	"""Get a presigned view URL for an asset in a shared project (guest-accessible)."""
@@ -1833,7 +1836,7 @@ def get_shared_asset_view_url(asset_name: str, project: str, token: str | None =
 	asset = frappe.db.get_value(
 		"VMS Asset",
 		asset_name,
-		["r2_key", "project"],
+		["r2_key", "project", "file_type", "file_name", "preview_url"],
 		as_dict=True,
 	)
 
@@ -1842,6 +1845,9 @@ def get_shared_asset_view_url(asset_name: str, project: str, token: str | None =
 
 	if not asset.r2_key:
 		frappe.throw(_("Asset has no R2 key"))
+
+	if asset.preview_url and is_raw(asset.file_type, asset.file_name):
+		return {"url": asset.preview_url}
 
 	url = generate_presigned_view_url(asset.r2_key)
 	return {"url": url}

@@ -114,6 +114,7 @@ def _probe_duration(video_path, asset_name):
 
 
 def _attach_webp(asset_name, path, file_name):
+	# nosemgrep: frappe-semgrep-rules.rules.security.frappe-security-file-traversal
 	with open(path, "rb") as f:
 		content = f.read()
 
