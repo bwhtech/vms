@@ -147,6 +147,7 @@ def generate_thumbnail(asset_name):
 		if not asset.r2_key:
 			return
 
+		source_key = asset.r2_key
 		raw = is_raw(asset.file_type, asset.file_name)
 		is_video = not raw and not _is_image(asset.file_type)
 		needs_duration = is_video and not asset.duration_seconds
@@ -182,18 +183,27 @@ def generate_thumbnail(asset_name):
 			if not _generate_video_thumbnail(src_path, thumb_path, asset_name):
 				return
 
-		thumbnail_url = None
-		if not asset.thumbnail_url:
-			thumbnail_url = _attach_webp(asset_name, thumb_path, f"{asset_name}.webp")
-
 		preview_r2_key = None
 		if needs_preview:
 			preview_r2_key = f"preview/{uuid.uuid4().hex}.webp"
 			upload_r2_object(preview_r2_key, preview_path, "image/webp")
 
 		asset.reload()
-		if thumbnail_url:
-			asset.thumbnail_url = thumbnail_url
+
+		# The file was replaced while this job ran, so these derivatives describe
+		# an image the asset no longer holds. The newer job owns them now.
+		if asset.r2_key != source_key:
+			if preview_r2_key:
+				frappe.enqueue(
+					"vms.r2.delete_r2_object",
+					r2_key=preview_r2_key,
+					queue="short",
+					enqueue_after_commit=True,
+				)
+			return
+
+		if not asset.thumbnail_url:
+			asset.thumbnail_url = _attach_webp(asset_name, thumb_path, f"{asset_name}.webp")
 		if preview_r2_key:
 			asset.preview_r2_key = preview_r2_key
 		asset.save(ignore_permissions=True)
