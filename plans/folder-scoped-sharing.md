@@ -50,14 +50,16 @@ uploads · extracting sharing out of `api.py`.
   | `disable_folder_sharing(folder)` | `require_vms_access()` | `{status: "ok"}` |
   | `get_shared_folder(folder, token)` | guest | `{name, folder_name, project_name}` |
   | `get_shared_folder_assets(folder, token, page, page_size)` | guest | same shape as `get_shared_project_assets`, filtered to `{folder}` |
-- `_validate_folder_token(folder, token)` — mirrors `_validate_project_token`,
-  also rejects a trashed folder.
+- `_validate_folder_token(folder, token)` — requires a valid token for every
+  caller (no authenticated-session bypass) and rejects a trashed or unshared
+  folder.
 - `_validate_shared_asset_scope(project, token, folder)` — returns the
   `(field, value)` a shared asset must match: `("folder", folder)` when `folder`
   is given, else `("project", project)`.
 - `get_shared_asset_view_url` / `get_shared_asset_download_url` gain an optional
   `folder` param and use `_validate_shared_asset_scope`. `project` becomes
-  optional. Behaviour with no `folder` is unchanged.
+  optional. They also reject a trashed or still-uploading asset. Behaviour for
+  a live asset with no `folder` is unchanged.
 
 ## Frontend
 

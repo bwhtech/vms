@@ -1876,16 +1876,8 @@ def _validate_folder_token(folder_name, token):
 		as_dict=True,
 	)
 
-	if not result or result.deleted_at or not result.share_token:
+	if not result or result.deleted_at or not result.share_token or token != result.share_token:
 		frappe.throw(_("Invalid or expired share link"), frappe.AuthenticationError)
-
-	if frappe.session.user and frappe.session.user != "Guest":
-		return False
-
-	if not token or token != result.share_token:
-		frappe.throw(_("Invalid or expired share link"), frappe.AuthenticationError)
-
-	return True
 
 
 def _validate_shared_asset_scope(project, token, folder):
@@ -1971,11 +1963,11 @@ def get_shared_asset_view_url(
 	asset = frappe.db.get_value(
 		"VMS Asset",
 		asset_name,
-		["r2_key", "project", "folder", "file_type", "file_name", "preview_r2_key"],
+		["r2_key", "project", "folder", "file_type", "file_name", "preview_r2_key", "status", "deleted_at"],
 		as_dict=True,
 	)
 
-	if not asset or asset.get(scope_field) != scope_value:
+	if not asset or asset.deleted_at or asset.status == "Uploading" or asset.get(scope_field) != scope_value:
 		frappe.throw(_("Asset not found in this share"), frappe.DoesNotExistError)
 
 	if not asset.r2_key:
@@ -2230,11 +2222,11 @@ def get_shared_asset_download_url(
 	asset = frappe.db.get_value(
 		"VMS Asset",
 		asset_name,
-		["r2_key", "file_name", "project", "folder"],
+		["r2_key", "file_name", "project", "folder", "status", "deleted_at"],
 		as_dict=True,
 	)
 
-	if not asset or asset.get(scope_field) != scope_value:
+	if not asset or asset.deleted_at or asset.status == "Uploading" or asset.get(scope_field) != scope_value:
 		frappe.throw(_("Asset not found in this share"), frappe.DoesNotExistError)
 
 	if not asset.r2_key:
