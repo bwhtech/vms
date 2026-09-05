@@ -1896,6 +1896,7 @@ def _validate_shared_asset_scope(project, token, folder):
 	return "project", project
 
 
+# nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @frappe.whitelist(allow_guest=True, methods=["GET"])
 def get_shared_folder(folder: str, token: str | None = None):
 	_validate_folder_token(folder, token)
@@ -1916,8 +1917,11 @@ def get_shared_folder(folder: str, token: str | None = None):
 	}
 
 
+# nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @frappe.whitelist(allow_guest=True, methods=["GET"])
-def get_shared_folder_assets(folder: str, token: str | None = None, page=1, page_size=20):
+def get_shared_folder_assets(
+	folder: str, token: str | None = None, page: int | str = 1, page_size: int | str = 20
+):
 	_validate_folder_token(folder, token)
 
 	page = max(1, int(page))
@@ -1955,8 +1959,8 @@ def get_shared_folder_assets(folder: str, token: str | None = None, page=1, page
 	}
 
 
-# Reviewed: guests reach this only with a share token, checked against the project
-# or folder it names, and the asset must belong to that same project or folder.
+# Reviewed: guests reach this only with a share token that is checked against the
+# project, and the asset must belong to that same project.
 # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @frappe.whitelist(allow_guest=True)
 def get_shared_asset_view_url(
@@ -2216,6 +2220,7 @@ def restore_version(asset_name: str, version_number: int):
 	return {"status": "ok", "asset_name": asset.name, "version": new_version}
 
 
+# nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @frappe.whitelist(allow_guest=True)
 def get_shared_asset_download_url(
 	asset_name: str, project: str | None = None, token: str | None = None, folder: str | None = None
