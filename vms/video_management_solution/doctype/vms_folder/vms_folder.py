@@ -13,6 +13,11 @@ MAX_FOLDER_DEPTH = 50
 class VMSFolder(Document):
 	def validate(self):
 		self.validate_parent_folder()
+		self.revoke_share_on_trash()
+
+	def revoke_share_on_trash(self):
+		if self.deleted_at and self.share_token:
+			self.share_token = None
 
 	def validate_parent_folder(self):
 		if not self.parent_folder:

@@ -11,6 +11,8 @@
   "folder_name",
   "project",
   "parent_folder",
+  "share_section",
+  "share_token",
   "section_break_trash",
   "deleted_at",
   "trashed_with_parent",
@@ -48,6 +50,19 @@
    "options": "VMS Folder"
   },
   {
+   "fieldname": "share_section",
+   "fieldtype": "Section Break",
+   "hidden": 1
+  },
+  {
+   "fieldname": "share_token",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Share Token",
+   "read_only": 1,
+   "unique": 1
+  },
+  {
    "fieldname": "section_break_trash",
    "fieldtype": "Section Break",
    "label": "Trash"
@@ -81,7 +96,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-25 12:00:00.000000",
+ "modified": "2026-09-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Video Management Solution",
  "name": "VMS Folder",

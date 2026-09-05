@@ -37,6 +37,7 @@
 				draggable
 				@rename="emit('rename-folder', $event)"
 				@move="emit('move-folder', $event)"
+				@share="emit('share-folder', $event)"
 				@delete="emit('delete-folder', $event)"
 				@drop-assets="(names, target) => emit('drop-assets', names, target)"
 				@drop-folder="(name, target) => emit('drop-folder', name, target)"
@@ -148,6 +149,7 @@ const emit = defineEmits<{
 	'open-folder': [name: string]
 	'rename-folder': [folder: Folder]
 	'move-folder': [folder: Folder]
+	'share-folder': [folder: Folder]
 	'delete-folder': [folder: Folder]
 	'drop-assets': [names: string[], folder: string]
 	'drop-folder': [name: string, folder: string]

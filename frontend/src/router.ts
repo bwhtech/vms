@@ -59,6 +59,13 @@ const routes: RouteRecordRaw[] = [
 		meta: { guest: true },
 	},
 	{
+		path: '/shared/folder/:folderId',
+		name: 'SharedFolder',
+		component: () => import('@/pages/SharedProjectPage.vue'),
+		props: true,
+		meta: { guest: true },
+	},
+	{
 		path: '/shared/:projectId',
 		name: 'SharedProject',
 		component: () => import('@/pages/SharedProjectPage.vue'),

@@ -19,8 +19,10 @@ export function useProjectPageActions(
 	const moveFolderOpen = ref(false)
 	const moveAssetsOpen = ref(false)
 	const shareOpen = ref(false)
+	const shareFolderOpen = ref(false)
 	const settingsOpen = ref(false)
 	const folderAction = ref<Folder | null>(null)
+	const shareFolderTarget = ref<Folder | null>(null)
 
 	const plainDescription = computed(() =>
 		(browser.project.doc?.description ?? '')
@@ -51,6 +53,12 @@ export function useProjectPageActions(
 			icon: 'lucide-folder-input',
 			onClick: () =>
 				browser.currentFolderDoc.value && openMoveFolder(browser.currentFolderDoc.value),
+		},
+		{
+			label: 'Share',
+			icon: 'lucide-share-2',
+			onClick: () =>
+				browser.currentFolderDoc.value && openShareFolder(browser.currentFolderDoc.value),
 		},
 		{
 			label: 'Delete',
@@ -90,6 +98,11 @@ export function useProjectPageActions(
 	function openMoveFolder(folder: Folder) {
 		folderAction.value = folder
 		moveFolderOpen.value = true
+	}
+
+	function openShareFolder(folder: Folder) {
+		shareFolderTarget.value = folder
+		shareFolderOpen.value = true
 	}
 
 	async function handleFolderMoved(targetProject: string) {
@@ -163,8 +176,10 @@ export function useProjectPageActions(
 		moveFolderOpen,
 		moveAssetsOpen,
 		shareOpen,
+		shareFolderOpen,
 		settingsOpen,
 		folderAction,
+		shareFolderTarget,
 		plainDescription,
 		projectActions,
 		folderActions,
@@ -173,6 +188,7 @@ export function useProjectPageActions(
 		openFolder,
 		openRenameFolder,
 		openMoveFolder,
+		openShareFolder,
 		handleFolderMoved,
 		handleAssetsMoved,
 		saveProject,

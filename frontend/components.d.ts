@@ -66,6 +66,7 @@ declare module 'vue' {
     SettingsTabTranscription: typeof import('./src/components/settings/SettingsTabTranscription.vue')['default']
     SettingsTabUsers: typeof import('./src/components/settings/SettingsTabUsers.vue')['default']
     SettingsTabYoutube: typeof import('./src/components/settings/SettingsTabYoutube.vue')['default']
+    ShareFolderPanel: typeof import('./src/components/folders/ShareFolderPanel.vue')['default']
     ShareProjectPanel: typeof import('./src/components/projects/ShareProjectPanel.vue')['default']
     SidebarProjects: typeof import('./src/components/shell/SidebarProjects.vue')['default']
     SidePanel: typeof import('./src/components/common/SidePanel.vue')['default']
