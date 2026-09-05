@@ -9,6 +9,7 @@ from vms.r2 import (
 	generate_presigned_upload_url_raw,
 	generate_presigned_view_url,
 )
+from vms.raw_images import is_raw
 from vms.youtube import channel_display_name
 
 # Keys minted by `upload_comment_image`, and the only keys a comment may re-sign.
@@ -130,6 +131,9 @@ def get_review_data(asset_name: str, token: str | None = None):
 	return data
 
 
+# Reviewed: guests reach this only with a review token that is checked against
+# this asset, and they get a short-lived URL for that one asset.
+# nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @frappe.whitelist(allow_guest=True)
 def get_review_view_url(asset_name: str, token: str | None = None):
 	"""Get a presigned view URL for video playback in review page.
@@ -143,6 +147,9 @@ def get_review_view_url(asset_name: str, token: str | None = None):
 
 	if not asset.r2_key:
 		frappe.throw(_("Asset has no R2 key"))
+
+	if asset.preview_r2_key and is_raw(asset.file_type, asset.file_name):
+		return {"url": generate_presigned_view_url(asset.preview_r2_key), "is_proxy": False}
 
 	# Prefer proxy for streaming when available
 	r2_key = asset.proxy_r2_key if asset.proxy_r2_key and asset.proxy_status == "Ready" else asset.r2_key

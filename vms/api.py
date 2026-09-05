@@ -18,6 +18,7 @@ from vms.r2 import (
 	generate_presigned_view_url,
 	get_r2_client,
 )
+from vms.raw_images import is_raw, raw_mime_for
 
 # Assets with no project, not uploading, not trashed (Inbox / Uncategorised)
 INBOX_FILTERS = {"project": ["is", "not set"], "status": ["!=", "Uploading"], "deleted_at": ["is", "not set"]}
@@ -198,12 +199,14 @@ def get_upload_url(
 	else:
 		upload_url, r2_key = generate_presigned_upload_url(file_name, content_type, project)
 
+	stored_type = raw_mime_for(file_name) or content_type
+
 	# Create asset record in Uploading status
 	asset_doc = {
 		"doctype": "VMS Asset",
 		"file_name": file_name,
 		"r2_key": r2_key,
-		"file_type": content_type,
+		"file_type": stored_type,
 		"status": "Uploading",
 		"category": category,
 		"uploaded_by": frappe.session.user,
@@ -320,6 +323,18 @@ def confirm_upload(asset_name: str, file_size: int, version_of: str | None = Non
 	return {"status": "ok", "asset_name": asset.name}
 
 
+def _discard_preview(asset):
+	if not asset.preview_r2_key:
+		return
+	frappe.enqueue(
+		"vms.r2.delete_r2_object",
+		r2_key=asset.preview_r2_key,
+		queue="short",
+		enqueue_after_commit=True,
+	)
+	asset.preview_r2_key = None
+
+
 def _apply_version_swap(source_asset, target_name: str) -> dict:
 	"""Swap a newly uploaded temp asset's file data onto the target asset.
 
@@ -374,6 +389,7 @@ def _apply_version_swap(source_asset, target_name: str) -> dict:
 	target.uploaded_at = new_uploaded_at
 	target.version = current_version + 1
 	target.thumbnail_url = None
+	_discard_preview(target)
 	target.save(ignore_permissions=True)
 
 	# Enqueue thumbnail generation for target
@@ -499,6 +515,9 @@ def get_view_url(asset_name: str):
 
 	if not asset.r2_key:
 		frappe.throw(_("Asset has no R2 key"))
+
+	if asset.preview_r2_key and is_raw(asset.file_type, asset.file_name):
+		return {"url": generate_presigned_view_url(asset.preview_r2_key)}
 
 	url = generate_presigned_view_url(asset.r2_key)
 
@@ -1818,6 +1837,9 @@ def get_shared_project_assets(project: str, token: str | None = None, page=1, pa
 	}
 
 
+# Reviewed: guests reach this only with a share token that is checked against the
+# project, and the asset must belong to that same project.
+# nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @frappe.whitelist(allow_guest=True)
 def get_shared_asset_view_url(asset_name: str, project: str, token: str | None = None):
 	"""Get a presigned view URL for an asset in a shared project (guest-accessible)."""
@@ -1826,7 +1848,7 @@ def get_shared_asset_view_url(asset_name: str, project: str, token: str | None =
 	asset = frappe.db.get_value(
 		"VMS Asset",
 		asset_name,
-		["r2_key", "project"],
+		["r2_key", "project", "file_type", "file_name", "preview_r2_key"],
 		as_dict=True,
 	)
 
@@ -1835,6 +1857,9 @@ def get_shared_asset_view_url(asset_name: str, project: str, token: str | None =
 
 	if not asset.r2_key:
 		frappe.throw(_("Asset has no R2 key"))
+
+	if asset.preview_r2_key and is_raw(asset.file_type, asset.file_name):
+		return {"url": generate_presigned_view_url(asset.preview_r2_key)}
 
 	url = generate_presigned_view_url(asset.r2_key)
 	return {"url": url}
@@ -2045,6 +2070,7 @@ def restore_version(asset_name: str, version_number: int):
 	asset.uploaded_by = ver.uploaded_by
 	asset.uploaded_at = ver.uploaded_at
 	asset.thumbnail_url = ver.thumbnail_url
+	_discard_preview(asset)
 	asset.version = new_version
 	asset.save(ignore_permissions=True)
 

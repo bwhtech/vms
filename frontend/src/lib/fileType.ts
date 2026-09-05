@@ -1,5 +1,7 @@
 export type FileKind = 'video' | 'image' | 'audio' | 'file'
 
+export const RAW_EXTENSIONS = ['arw', 'cr2', 'cr3', 'dng', 'nef', 'orf', 'raf', 'rw2']
+
 export interface FileKindStyle {
 	icon: string
 	/** Badge-style "subtle" pairing: tinted background + darker ink. */

@@ -19,6 +19,7 @@ class VMSAsset(Document):
 		file_type: DF.Data | None
 		is_public_review: DF.Check
 		naming_series: DF.Literal["VMS-ASSET-.#####"]
+		preview_r2_key: DF.Data | None
 		project: DF.Link | None
 		r2_key: DF.Data | None
 		review_token: DF.Data | None

@@ -2,16 +2,20 @@ import os
 import shutil
 import subprocess
 import tempfile
+import uuid
 
 import frappe
 import requests
 from PIL import Image, ImageOps
 
-from vms.r2 import generate_presigned_view_url
+from vms.r2 import generate_presigned_view_url, upload_r2_object
+from vms.raw_images import is_raw, open_raw_preview
 
 IMAGE_MIME_PREFIXES = ("image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp", "image/tiff")
 THUMB_MAX_WIDTH = 640
 THUMB_QUALITY = 60
+PREVIEW_MAX_WIDTH = 2048
+PREVIEW_QUALITY = 80
 
 
 def _is_image(file_type):
@@ -26,15 +30,31 @@ def _download_file(presigned_url, dest_path):
 			f.write(chunk)
 
 
+def _save_resized(img, dest_path, max_width, quality):
+	if img.width > max_width:
+		ratio = max_width / img.width
+		img = img.resize((max_width, max(1, int(img.height * ratio))), Image.LANCZOS)
+	img.save(dest_path, "WEBP", quality=quality)
+
+
 def _generate_image_thumbnail(src_path, thumb_path):
 	"""Resize image to max THUMB_MAX_WIDTH wide, save as WebP."""
 	img = Image.open(src_path)
 	img = ImageOps.exif_transpose(img)
 	img = img.convert("RGB")
-	if img.width > THUMB_MAX_WIDTH:
-		ratio = THUMB_MAX_WIDTH / img.width
-		img = img.resize((THUMB_MAX_WIDTH, int(img.height * ratio)), Image.LANCZOS)
-	img.save(thumb_path, "WEBP", quality=THUMB_QUALITY)
+	_save_resized(img, thumb_path, THUMB_MAX_WIDTH, THUMB_QUALITY)
+
+
+def _generate_raw_thumbnail(src_path, thumb_path, preview_path, asset_name):
+	try:
+		img = open_raw_preview(src_path)
+	except Exception:
+		frappe.logger("vms").error(f"RAW preview extraction failed for {asset_name}", exc_info=True)
+		return False
+
+	_save_resized(img, thumb_path, THUMB_MAX_WIDTH, THUMB_QUALITY)
+	_save_resized(img, preview_path, PREVIEW_MAX_WIDTH, PREVIEW_QUALITY)
+	return True
 
 
 def _generate_video_thumbnail(video_path, thumb_path, asset_name):
@@ -94,6 +114,25 @@ def _probe_duration(video_path, asset_name):
 		return None
 
 
+def _attach_webp(asset_name, path, file_name):
+	# nosemgrep: frappe-semgrep-rules.rules.security.frappe-security-file-traversal
+	with open(path, "rb") as f:
+		content = f.read()
+
+	file_doc = frappe.get_doc(
+		{
+			"doctype": "File",
+			"file_name": file_name,
+			"attached_to_doctype": "VMS Asset",
+			"attached_to_name": asset_name,
+			"content": content,
+			"is_private": 0,
+		}
+	)
+	file_doc.save(ignore_permissions=True)
+	return file_doc.file_url
+
+
 def generate_thumbnail(asset_name):
 	"""Generate a WebP thumbnail from an asset (runs as background job).
 
@@ -108,17 +147,21 @@ def generate_thumbnail(asset_name):
 		if not asset.r2_key:
 			return
 
-		is_video = not _is_image(asset.file_type)
+		source_key = asset.r2_key
+		raw = is_raw(asset.file_type, asset.file_name)
+		is_video = not raw and not _is_image(asset.file_type)
 		needs_duration = is_video and not asset.duration_seconds
+		needs_preview = raw and not asset.preview_r2_key
 
 		# nothing left to compute, don't pay for the download
-		if asset.thumbnail_url and not needs_duration:
+		if asset.thumbnail_url and not needs_duration and not needs_preview:
 			return
 
 		presigned_url = generate_presigned_view_url(asset.r2_key)
 		ext = asset.file_name.rsplit(".", 1)[-1].lower() if "." in asset.file_name else "bin"
 		src_path = os.path.join(tmp_dir, f"input.{ext}")
 		thumb_path = os.path.join(tmp_dir, "thumb.webp")
+		preview_path = os.path.join(tmp_dir, "preview.webp")
 
 		_download_file(presigned_url, src_path)
 
@@ -128,32 +171,39 @@ def generate_thumbnail(asset_name):
 				frappe.db.set_value("VMS Asset", asset_name, "duration_seconds", duration)
 				frappe.db.commit()
 
-		if asset.thumbnail_url:
+		if asset.thumbnail_url and not needs_preview:
 			return
 
-		if _is_image(asset.file_type):
+		if raw:
+			if not _generate_raw_thumbnail(src_path, thumb_path, preview_path, asset_name):
+				return
+		elif _is_image(asset.file_type):
 			_generate_image_thumbnail(src_path, thumb_path)
 		else:
 			if not _generate_video_thumbnail(src_path, thumb_path, asset_name):
 				return
 
-		with open(thumb_path, "rb") as f:
-			content = f.read()
-
-		file_doc = frappe.get_doc(
-			{
-				"doctype": "File",
-				"file_name": f"{asset_name}.webp",
-				"attached_to_doctype": "VMS Asset",
-				"attached_to_name": asset_name,
-				"content": content,
-				"is_private": 0,
-			}
-		)
-		file_doc.save(ignore_permissions=True)
+		preview_r2_key = None
+		if needs_preview:
+			preview_r2_key = f"preview/{uuid.uuid4().hex}.webp"
+			upload_r2_object(preview_r2_key, preview_path, "image/webp")
 
 		asset.reload()
-		asset.thumbnail_url = file_doc.file_url
+
+		if asset.r2_key != source_key:
+			if preview_r2_key:
+				frappe.enqueue(
+					"vms.r2.delete_r2_object",
+					r2_key=preview_r2_key,
+					queue="short",
+					enqueue_after_commit=True,
+				)
+			return
+
+		if not asset.thumbnail_url:
+			asset.thumbnail_url = _attach_webp(asset_name, thumb_path, f"{asset_name}.webp")
+		if preview_r2_key:
+			asset.preview_r2_key = preview_r2_key
 		asset.save(ignore_permissions=True)
 		frappe.db.commit()
 
