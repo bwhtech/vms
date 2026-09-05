@@ -39,7 +39,11 @@ export function useProjectBrowser(
 	const category = ref<AssetCategory | ''>('')
 	const tag = ref<string | null>(null)
 	const sort = ref<AssetSort>({ field: 'creation', order: 'desc' })
-	const limit = ref(PAGE_SIZE)
+	const page = ref(1)
+	const refreshSize = ref<number | null>(null)
+	const assets = ref<Asset[]>([])
+	const total = ref(0)
+	const lastPageFull = ref(true)
 	const selection = ref<string[]>([])
 	const preview = ref<{ asset: Asset; url: string } | null>(null)
 	const view = ref<'grid' | 'list'>(storedView())
@@ -96,18 +100,28 @@ export function useProjectBrowser(
 			category: category.value || undefined,
 			tag: tag.value || undefined,
 			search: search.value || undefined,
-			page: 1,
-			page_size: limit.value,
+			page: refreshSize.value !== null ? 1 : page.value,
+			page_size: refreshSize.value ?? PAGE_SIZE,
 			sort_by: sort.value.field,
 			sort_order: sort.value.order,
 		}),
-		refetch: true,
 		cacheKey: ['project-assets', currentProject.value],
 		staleOnError: true,
+		onSuccess: (data: ProjectAssetsResponse) => {
+			total.value = data.total
+			if (refreshSize.value !== null) {
+				assets.value = data.assets
+				lastPageFull.value = true
+			} else if (page.value === 1) {
+				assets.value = data.assets
+				lastPageFull.value = data.assets.length >= PAGE_SIZE
+			} else {
+				assets.value = [...assets.value, ...data.assets]
+				lastPageFull.value = data.assets.length >= PAGE_SIZE
+			}
+			refreshSize.value = null
+		},
 	})
-
-	const assets = computed(() => assetsCall.data?.assets ?? [])
-	const total = computed(() => assetsCall.data?.total ?? 0)
 	const allFolders = computed(() => folders.data ?? [])
 	const currentFolderDoc = computed(
 		() => allFolders.value.find((folder) => folder.name === currentFolder.value) ?? null,
@@ -141,7 +155,10 @@ export function useProjectBrowser(
 		}
 		return counts
 	})
-	const hasMore = computed(() => assets.value.length < total.value)
+	const hasMore = computed(() => assets.value.length < total.value && lastPageFull.value)
+	const loadingMore = computed(
+		() => assetsCall.loading && page.value > 1 && refreshSize.value === null,
+	)
 	const hasProcessing = computed(() => assets.value.some((asset) => asset.status === 'Processing'))
 
 	watch(searchInput, (value) => {
@@ -165,11 +182,13 @@ export function useProjectBrowser(
 	})
 
 	async function reloadAssets() {
+		refreshSize.value = Math.max(assets.value.length, PAGE_SIZE)
 		await assetsCall.reload()
 		void countRows.reload()
 	}
 
 	async function reloadAll() {
+		refreshSize.value = Math.max(assets.value.length, PAGE_SIZE)
 		await Promise.all([assetsCall.reload(), folders.reload(), countRows.reload()])
 	}
 
@@ -302,8 +321,17 @@ export function useProjectBrowser(
 	}
 
 	function resetList() {
-		limit.value = PAGE_SIZE
+		page.value = 1
+		refreshSize.value = null
+		lastPageFull.value = true
 		selection.value = []
+		void assetsCall.reload()
+	}
+
+	function loadMore() {
+		if (assetsCall.loading || !hasMore.value) return
+		page.value += 1
+		void assetsCall.reload()
 	}
 
 	return {
@@ -322,6 +350,7 @@ export function useProjectBrowser(
 		folderCounts,
 		selectedAssets,
 		hasMore,
+		loadingMore,
 		searchInput,
 		category,
 		tag,
@@ -333,14 +362,13 @@ export function useProjectBrowser(
 		hasNextPreview,
 		showPreviousPreview: () => stepPreview(-1),
 		showNextPreview: () => stepPreview(1),
-		limit,
 		openAsset,
 		moveAssets,
 		moveFolder,
 		deleteFolder,
 		reloadAssets,
 		reloadAll,
-		loadMore: () => (limit.value += PAGE_SIZE),
+		loadMore,
 	}
 }
 

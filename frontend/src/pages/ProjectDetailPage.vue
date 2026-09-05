@@ -174,13 +174,9 @@
 					@drop-assets="(names, target) => moveAssets(names, target)"
 					@drop-folder="(name, target) => moveFolder(name, target)"
 				/>
-				<div v-if="hasMore" class="flex justify-center pt-6">
-					<Button
-						label="Load more"
-						variant="ghost"
-						:loading="assetsCall.loading"
-						@click="loadMore"
-					/>
+				<div v-if="hasMore" ref="sentinel" class="pt-3">
+					<SkeletonCards v-if="loadingMore && view === 'grid'" :count="4" media />
+					<SkeletonLines v-else-if="loadingMore" :lines="3" />
 				</div>
 			</template>
 			<EmptyState
@@ -271,7 +267,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
 	Button,
 	Dropdown,
@@ -303,6 +299,7 @@ import { serverMessage } from '@/lib/format'
 import ShareProjectPanel from '@/components/projects/ShareProjectPanel.vue'
 import { useProjectBrowser } from '@/components/projects/useProjectBrowser'
 import { useProjectPageActions } from '@/components/projects/useProjectPageActions'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useUploadTarget } from '@/composables/usePasteUpload'
 import SkeletonLines from '@/components/common/SkeletonLines.vue'
 import SkeletonCards from '@/components/common/SkeletonCards.vue'
@@ -336,6 +333,7 @@ const {
 	folderCounts,
 	selectedAssets,
 	hasMore,
+	loadingMore,
 	searchInput,
 	category,
 	tag,
@@ -355,6 +353,9 @@ const {
 	reloadAll,
 	loadMore,
 } = browser
+
+const sentinel = ref<HTMLElement | null>(null)
+useInfiniteScroll(sentinel, loadingMore, () => hasMore.value, loadMore)
 const {
 	createFolderOpen,
 	renameFolderOpen,

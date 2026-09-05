@@ -12,6 +12,8 @@
 				:src="asset.thumbnail_url"
 				alt=""
 				draggable="false"
+				loading="lazy"
+				decoding="async"
 				class="size-full object-cover"
 			/>
 			<div v-else :class="['grid size-full place-items-center', previewStyle.tile]">
