@@ -37,8 +37,16 @@
 				@drop-folder="moveFolder"
 			/>
 			<PageHeaderTitle v-else><h1 class="truncate">Project</h1></PageHeaderTitle>
-			<Dropdown v-if="project.doc" :options="projectActions" align="end">
-				<Button variant="ghost" icon="lucide-ellipsis" aria-label="Project actions" />
+			<Dropdown
+				v-if="project.doc"
+				:options="currentFolderDoc ? folderActions : projectActions"
+				align="end"
+			>
+				<Button
+					variant="ghost"
+					icon="lucide-ellipsis"
+					:aria-label="currentFolderDoc ? 'Folder actions' : 'Project actions'"
+				/>
 			</Dropdown>
 		</div>
 		<!-- One right-hand group: `Dropdown` declares `inheritAttrs: false`, so a
@@ -46,9 +54,6 @@
 		     mobile trigger used to sit apart from the actions at every width. -->
 		<div class="flex shrink-0 items-center gap-2">
 			<div class="hidden items-center gap-2 sm:flex">
-				<Dropdown v-if="currentFolderDoc" :options="folderActions" align="end">
-					<Button variant="subtle" icon="lucide-folder-cog" label="Folder actions" />
-				</Dropdown>
 				<Button
 					label="New folder"
 					icon-left="lucide-folder-plus"
@@ -129,6 +134,7 @@
 								draggable
 								@rename="openRenameFolder"
 								@move="openMoveFolder"
+								@share="openShareFolder"
 								@delete="deleteFolder"
 								@drop-assets="(names, target) => moveAssets(names, target)"
 								@drop-folder="(name, target) => moveFolder(name, target)"
@@ -163,6 +169,7 @@
 					@changed="reloadAssets"
 					@rename-folder="openRenameFolder"
 					@move-folder="openMoveFolder"
+					@share-folder="openShareFolder"
 					@delete-folder="deleteFolder"
 					@drop-assets="(names, target) => moveAssets(names, target)"
 					@drop-folder="(name, target) => moveFolder(name, target)"
@@ -237,6 +244,12 @@
 		:project="project.doc"
 		@changed="project.reload"
 	/>
+	<ShareFolderPanel
+		v-if="shareFolderTarget"
+		v-model:open="shareFolderOpen"
+		:folder="shareFolderTarget"
+		@changed="reloadAll"
+	/>
 	<ProjectSettingsDialog
 		v-if="project.doc"
 		v-model:open="settingsOpen"
@@ -279,6 +292,7 @@ import FolderCard from '@/components/folders/FolderCard.vue'
 import MoveFolderDialog from '@/components/folders/MoveFolderDialog.vue'
 import MoveToFolderDialog from '@/components/folders/MoveToFolderDialog.vue'
 import RenameFolderDialog from '@/components/folders/RenameFolderDialog.vue'
+import ShareFolderPanel from '@/components/folders/ShareFolderPanel.vue'
 import ProjectBrowserToolbar from '@/components/projects/ProjectBrowserToolbar.vue'
 import ProjectSettingsDialog from '@/components/projects/ProjectSettingsDialog.vue'
 import IdentityAvatar from '@/components/common/IdentityAvatar.vue'
@@ -347,8 +361,10 @@ const {
 	moveFolderOpen,
 	moveAssetsOpen,
 	shareOpen,
+	shareFolderOpen,
 	settingsOpen,
 	folderAction,
+	shareFolderTarget,
 	plainDescription,
 	projectActions,
 	folderActions,
@@ -357,6 +373,7 @@ const {
 	openFolder,
 	openRenameFolder,
 	openMoveFolder,
+	openShareFolder,
 	handleFolderMoved,
 	handleAssetsMoved,
 	saveProject,

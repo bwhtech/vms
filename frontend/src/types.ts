@@ -46,6 +46,7 @@ export interface Folder {
 	folder_name: string
 	project: string
 	parent_folder?: string | null
+	share_token?: string | null
 	deleted_at?: string | null
 	deleted_by?: string | null
 	deleter_name?: string

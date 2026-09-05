@@ -49,7 +49,15 @@ export function useProjectBrowser(
 	const project = useDoc<Project>({ doctype: 'VMS Project', name: currentProject })
 	const folders = useList<Folder>({
 		doctype: 'VMS Folder',
-		fields: ['name', 'folder_name', 'project', 'parent_folder', 'creation', 'modified'],
+		fields: [
+			'name',
+			'folder_name',
+			'project',
+			'parent_folder',
+			'share_token',
+			'creation',
+			'modified',
+		],
 		filters: () => ({ project: currentProject.value, deleted_at: ['is', 'not set'] }),
 		orderBy: 'folder_name asc',
 		limit: 500,

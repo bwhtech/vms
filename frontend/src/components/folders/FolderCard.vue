@@ -82,6 +82,7 @@ const props = defineProps<{
 const emit = defineEmits<{
 	rename: [folder: Folder]
 	move: [folder: Folder]
+	share: [folder: Folder]
 	delete: [folder: Folder]
 	'drop-assets': [names: string[], folder: string]
 	'drop-folder': [name: string, folder: string]
@@ -91,6 +92,7 @@ const dragOver = ref(false)
 const actions = computed(() => [
 	{ label: 'Rename', icon: 'lucide-pencil', onClick: () => emit('rename', props.folder) },
 	{ label: 'Move', icon: 'lucide-folder-input', onClick: () => emit('move', props.folder) },
+	{ label: 'Share', icon: 'lucide-share-2', onClick: () => emit('share', props.folder) },
 	{
 		label: 'Delete',
 		icon: 'lucide-trash-2',

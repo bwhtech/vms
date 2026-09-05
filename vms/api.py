@@ -1837,23 +1837,142 @@ def get_shared_project_assets(project: str, token: str | None = None, page=1, pa
 	}
 
 
-# Reviewed: guests reach this only with a share token that is checked against the
-# project, and the asset must belong to that same project.
+# ── Folder Sharing ───────────────────────────────────────────────────────────
+
+
+@frappe.whitelist()
+def enable_folder_sharing(folder: str):
+	require_vms_access()
+
+	doc = frappe.get_doc("VMS Folder", folder)
+	if doc.deleted_at:
+		frappe.throw(_("A folder in the trash cannot be shared"))
+	if not doc.share_token:
+		doc.share_token = uuid.uuid4().hex
+		doc.save(ignore_permissions=True)
+
+	site_url = frappe.utils.get_url()
+	return {
+		"share_token": doc.share_token,
+		"share_url": f"{site_url}/vms/shared/folder/{folder}?token={doc.share_token}",
+	}
+
+
+@frappe.whitelist()
+def disable_folder_sharing(folder: str):
+	require_vms_access()
+
+	doc = frappe.get_doc("VMS Folder", folder)
+	doc.share_token = None
+	doc.save(ignore_permissions=True)
+	return {"status": "ok"}
+
+
+def _validate_folder_token(folder_name, token):
+	result = frappe.db.get_value(
+		"VMS Folder",
+		folder_name,
+		["share_token", "deleted_at"],
+		as_dict=True,
+	)
+
+	if not result or result.deleted_at or not result.share_token:
+		frappe.throw(_("Invalid or expired share link"), frappe.AuthenticationError)
+
+	if frappe.session.user and frappe.session.user != "Guest":
+		return False
+
+	if not token or token != result.share_token:
+		frappe.throw(_("Invalid or expired share link"), frappe.AuthenticationError)
+
+	return True
+
+
+def _validate_shared_asset_scope(project, token, folder):
+	if folder:
+		_validate_folder_token(folder, token)
+		return "folder", folder
+	_validate_project_token(project, token)
+	return "project", project
+
+
+@frappe.whitelist(allow_guest=True, methods=["GET"])
+def get_shared_folder(folder: str, token: str | None = None):
+	_validate_folder_token(folder, token)
+
+	doc = frappe.db.get_value(
+		"VMS Folder",
+		folder,
+		["name", "folder_name", "project"],
+		as_dict=True,
+	)
+	if not doc:
+		frappe.throw(_("Folder not found"), frappe.DoesNotExistError)
+
+	return {
+		"name": doc.name,
+		"folder_name": doc.folder_name,
+		"project_name": frappe.db.get_value("VMS Project", doc.project, "project_name"),
+	}
+
+
+@frappe.whitelist(allow_guest=True, methods=["GET"])
+def get_shared_folder_assets(folder: str, token: str | None = None, page=1, page_size=20):
+	_validate_folder_token(folder, token)
+
+	page = max(1, int(page))
+	page_size = min(100, max(1, int(page_size)))
+	start = (page - 1) * page_size
+
+	filters = {"folder": folder, "status": ["!=", "Uploading"], "deleted_at": ["is", "not set"]}
+
+	total = frappe.db.count("VMS Asset", filters=filters)
+
+	assets = frappe.get_all(
+		"VMS Asset",
+		filters=filters,
+		fields=[
+			"name",
+			"file_name",
+			"category",
+			"file_size",
+			"file_type",
+			"uploaded_at",
+			"creation",
+			"thumbnail_url",
+		],
+		order_by="creation desc",
+		start=start,
+		page_length=page_size,
+	)
+
+	return {
+		"assets": assets,
+		"total": total,
+		"page": page,
+		"page_size": page_size,
+		"total_pages": -(-total // page_size) if total else 0,
+	}
+
+
+# Reviewed: guests reach this only with a share token, checked against the project
+# or folder it names, and the asset must belong to that same project or folder.
 # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @frappe.whitelist(allow_guest=True)
-def get_shared_asset_view_url(asset_name: str, project: str, token: str | None = None):
-	"""Get a presigned view URL for an asset in a shared project (guest-accessible)."""
-	_validate_project_token(project, token)
+def get_shared_asset_view_url(
+	asset_name: str, project: str | None = None, token: str | None = None, folder: str | None = None
+):
+	scope_field, scope_value = _validate_shared_asset_scope(project, token, folder)
 
 	asset = frappe.db.get_value(
 		"VMS Asset",
 		asset_name,
-		["r2_key", "project", "file_type", "file_name", "preview_r2_key"],
+		["r2_key", "project", "folder", "file_type", "file_name", "preview_r2_key"],
 		as_dict=True,
 	)
 
-	if not asset or asset.project != project:
-		frappe.throw(_("Asset not found in this project"), frappe.DoesNotExistError)
+	if not asset or asset.get(scope_field) != scope_value:
+		frappe.throw(_("Asset not found in this share"), frappe.DoesNotExistError)
 
 	if not asset.r2_key:
 		frappe.throw(_("Asset has no R2 key"))
@@ -2098,19 +2217,20 @@ def restore_version(asset_name: str, version_number: int):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_shared_asset_download_url(asset_name: str, project: str, token: str | None = None):
-	"""Get a presigned download URL for an asset in a shared project (guest-accessible)."""
-	_validate_project_token(project, token)
+def get_shared_asset_download_url(
+	asset_name: str, project: str | None = None, token: str | None = None, folder: str | None = None
+):
+	scope_field, scope_value = _validate_shared_asset_scope(project, token, folder)
 
 	asset = frappe.db.get_value(
 		"VMS Asset",
 		asset_name,
-		["r2_key", "file_name", "project"],
+		["r2_key", "file_name", "project", "folder"],
 		as_dict=True,
 	)
 
-	if not asset or asset.project != project:
-		frappe.throw(_("Asset not found in this project"), frappe.DoesNotExistError)
+	if not asset or asset.get(scope_field) != scope_value:
+		frappe.throw(_("Asset not found in this share"), frappe.DoesNotExistError)
 
 	if not asset.r2_key:
 		frappe.throw(_("Asset has no R2 key"))
