@@ -113,9 +113,9 @@
 			>
 				{{ plainDescription }}
 			</p>
-			<SkeletonCards v-if="assetsCall.loading && !assetsCall.data" :count="6" media />
+			<SkeletonCards v-if="assetsCall.loading && !assets.length" :count="6" media />
 			<ErrorMessage
-				v-else-if="assetsCall.error && !assetsCall.data"
+				v-else-if="assetsCall.error && !assets.length"
 				:message="assetsCall.error.message"
 			/>
 			<template v-else-if="assets.length || visibleFolders.length">

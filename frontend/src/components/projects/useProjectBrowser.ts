@@ -12,6 +12,7 @@ interface AssetSort {
 }
 
 const PAGE_SIZE = 20
+const MAX_PAGE_SIZE = 500
 
 interface ProjectAssetsResponse {
 	assets: Asset[]
@@ -39,9 +40,10 @@ export function useProjectBrowser(
 	const category = ref<AssetCategory | ''>('')
 	const tag = ref<string | null>(null)
 	const sort = ref<AssetSort>({ field: 'creation', order: 'desc' })
-	const limit = ref(PAGE_SIZE)
+	const assets = ref<Asset[]>([])
+	const total = ref(0)
 	const loadingMore = ref(false)
-	const reachedEnd = ref(false)
+	const request = ref({ page: 1, size: PAGE_SIZE, append: false })
 	const selection = ref<string[]>([])
 	const preview = ref<{ asset: Asset; url: string } | null>(null)
 	const view = ref<'grid' | 'list'>(storedView())
@@ -98,18 +100,25 @@ export function useProjectBrowser(
 			category: category.value || undefined,
 			tag: tag.value || undefined,
 			search: search.value || undefined,
-			page: 1,
-			page_size: limit.value,
+			page: request.value.page,
+			page_size: request.value.size,
 			sort_by: sort.value.field,
 			sort_order: sort.value.order,
 		}),
-		refetch: true,
 		cacheKey: ['project-assets', currentProject.value],
 		staleOnError: true,
+		onSuccess: (data: ProjectAssetsResponse) => {
+			total.value = data.total
+			if (request.value.append) {
+				const seen = new Set(assets.value.map((asset) => asset.name))
+				assets.value = assets.value.concat(data.assets.filter((asset) => !seen.has(asset.name)))
+			} else {
+				assets.value = data.assets
+			}
+			request.value.append = false
+		},
 	})
 
-	const assets = computed(() => assetsCall.data?.assets ?? [])
-	const total = computed(() => assetsCall.data?.total ?? 0)
 	const allFolders = computed(() => folders.data ?? [])
 	const currentFolderDoc = computed(
 		() => allFolders.value.find((folder) => folder.name === currentFolder.value) ?? null,
@@ -143,21 +152,13 @@ export function useProjectBrowser(
 		}
 		return counts
 	})
-	const hasMore = computed(() => !reachedEnd.value && assets.value.length < total.value)
+	const hasMore = computed(() => assets.value.length < total.value)
 	const hasProcessing = computed(() => assets.value.some((asset) => asset.status === 'Processing'))
 
 	watch(searchInput, (value) => {
 		clearTimeout(debounceTimer)
 		debounceTimer = setTimeout(() => (search.value = value.trim()), 250)
 	})
-	watch(
-		() => assetsCall.loading,
-		(loading) => {
-			if (loading) return
-			loadingMore.value = false
-			reachedEnd.value = assets.value.length < limit.value
-		},
-	)
 	watch([currentProject, currentFolder, category, tag, search, sort], resetList, { deep: true })
 	watch(view, (value) => localStorage.setItem('vms_asset_view', value))
 	watch(hasProcessing, configurePolling, { immediate: true })
@@ -174,12 +175,18 @@ export function useProjectBrowser(
 		clearInterval(pollTimer)
 	})
 
+	function refreshSize() {
+		return Math.min(Math.max(assets.value.length, PAGE_SIZE), MAX_PAGE_SIZE)
+	}
+
 	async function reloadAssets() {
+		request.value = { page: 1, size: refreshSize(), append: false }
 		await assetsCall.reload()
 		void countRows.reload()
 	}
 
 	async function reloadAll() {
+		request.value = { page: 1, size: refreshSize(), append: false }
 		await Promise.all([assetsCall.reload(), folders.reload(), countRows.reload()])
 	}
 
@@ -312,16 +319,23 @@ export function useProjectBrowser(
 	}
 
 	function resetList() {
-		limit.value = PAGE_SIZE
+		request.value = { page: 1, size: PAGE_SIZE, append: false }
 		loadingMore.value = false
-		reachedEnd.value = false
 		selection.value = []
+		void assetsCall.reload()
 	}
 
 	function loadMore() {
-		if (assetsCall.loading || !hasMore.value) return
+		if (assetsCall.loading || loadingMore.value || !hasMore.value) return
 		loadingMore.value = true
-		limit.value += PAGE_SIZE
+		request.value = {
+			page: Math.floor(assets.value.length / PAGE_SIZE) + 1,
+			size: PAGE_SIZE,
+			append: true,
+		}
+		void assetsCall.reload().finally(() => {
+			loadingMore.value = false
+		})
 	}
 
 	return {
