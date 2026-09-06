@@ -40,6 +40,8 @@ export function useProjectBrowser(
 	const tag = ref<string | null>(null)
 	const sort = ref<AssetSort>({ field: 'creation', order: 'desc' })
 	const limit = ref(PAGE_SIZE)
+	const loadingMore = ref(false)
+	const reachedEnd = ref(false)
 	const selection = ref<string[]>([])
 	const preview = ref<{ asset: Asset; url: string } | null>(null)
 	const view = ref<'grid' | 'list'>(storedView())
@@ -141,13 +143,21 @@ export function useProjectBrowser(
 		}
 		return counts
 	})
-	const hasMore = computed(() => assets.value.length < total.value)
+	const hasMore = computed(() => !reachedEnd.value && assets.value.length < total.value)
 	const hasProcessing = computed(() => assets.value.some((asset) => asset.status === 'Processing'))
 
 	watch(searchInput, (value) => {
 		clearTimeout(debounceTimer)
 		debounceTimer = setTimeout(() => (search.value = value.trim()), 250)
 	})
+	watch(
+		() => assetsCall.loading,
+		(loading) => {
+			if (loading) return
+			loadingMore.value = false
+			reachedEnd.value = assets.value.length < limit.value
+		},
+	)
 	watch([currentProject, currentFolder, category, tag, search, sort], resetList, { deep: true })
 	watch(view, (value) => localStorage.setItem('vms_asset_view', value))
 	watch(hasProcessing, configurePolling, { immediate: true })
@@ -303,7 +313,15 @@ export function useProjectBrowser(
 
 	function resetList() {
 		limit.value = PAGE_SIZE
+		loadingMore.value = false
+		reachedEnd.value = false
 		selection.value = []
+	}
+
+	function loadMore() {
+		if (assetsCall.loading || !hasMore.value) return
+		loadingMore.value = true
+		limit.value += PAGE_SIZE
 	}
 
 	return {
@@ -322,6 +340,7 @@ export function useProjectBrowser(
 		folderCounts,
 		selectedAssets,
 		hasMore,
+		loadingMore,
 		searchInput,
 		category,
 		tag,
@@ -333,14 +352,13 @@ export function useProjectBrowser(
 		hasNextPreview,
 		showPreviousPreview: () => stepPreview(-1),
 		showNextPreview: () => stepPreview(1),
-		limit,
 		openAsset,
 		moveAssets,
 		moveFolder,
 		deleteFolder,
 		reloadAssets,
 		reloadAll,
-		loadMore: () => (limit.value += PAGE_SIZE),
+		loadMore,
 	}
 }
 

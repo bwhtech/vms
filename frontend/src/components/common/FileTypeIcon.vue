@@ -7,7 +7,14 @@
 			'grid place-items-center',
 		]"
 	>
-		<img v-if="thumbnailUrl" :src="thumbnailUrl" :alt="alt" class="size-full object-cover" />
+		<img
+			v-if="thumbnailUrl"
+			:src="thumbnailUrl"
+			:alt="alt"
+			loading="lazy"
+			decoding="async"
+			class="size-full object-cover"
+		/>
 		<span v-else :class="[style.icon, iconClass]" aria-hidden="true" />
 	</div>
 </template>
