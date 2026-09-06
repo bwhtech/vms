@@ -43,6 +43,7 @@ export function useProjectBrowser(
 	const assets = ref<Asset[]>([])
 	const total = ref(0)
 	const loadingMore = ref(false)
+	const reachedEnd = ref(false)
 	const request = ref({ page: 1, size: PAGE_SIZE, append: false })
 	const selection = ref<string[]>([])
 	const preview = ref<{ asset: Asset; url: string } | null>(null)
@@ -110,10 +111,13 @@ export function useProjectBrowser(
 		onSuccess: (data: ProjectAssetsResponse) => {
 			total.value = data.total
 			if (request.value.append) {
+				const before = assets.value.length
 				const seen = new Set(assets.value.map((asset) => asset.name))
 				assets.value = assets.value.concat(data.assets.filter((asset) => !seen.has(asset.name)))
+				reachedEnd.value = assets.value.length === before
 			} else {
 				assets.value = data.assets
+				reachedEnd.value = false
 			}
 			request.value.append = false
 		},
@@ -152,7 +156,7 @@ export function useProjectBrowser(
 		}
 		return counts
 	})
-	const hasMore = computed(() => assets.value.length < total.value)
+	const hasMore = computed(() => !reachedEnd.value && assets.value.length < total.value)
 	const hasProcessing = computed(() => assets.value.some((asset) => asset.status === 'Processing'))
 
 	watch(searchInput, (value) => {
@@ -321,6 +325,7 @@ export function useProjectBrowser(
 	function resetList() {
 		request.value = { page: 1, size: PAGE_SIZE, append: false }
 		loadingMore.value = false
+		reachedEnd.value = false
 		selection.value = []
 		void assetsCall.reload()
 	}
