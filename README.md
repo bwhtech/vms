@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/BuildWithHussain/vms/actions/workflows/ci.yml/badge.svg)](https://github.com/BuildWithHussain/vms/actions/workflows/ci.yml)
 [![UI Tests](https://github.com/BuildWithHussain/vms/actions/workflows/ui-tests.yml/badge.svg)](https://github.com/BuildWithHussain/vms/actions/workflows/ui-tests.yml)
+[![Built at BWH](.github/built-at-bwh.svg)](https://bwh.tech)
 
 A video management application built on [Frappe](https://frappeframework.com) with a Vue 3 + frappe-ui frontend. Upload, organize, review, and deliver video assets for your team.
 
