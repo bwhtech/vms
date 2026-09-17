@@ -1,17 +1,9 @@
 import { ref } from 'vue'
 import { call, toast } from 'frappe-ui'
 import type { ViewUrlResponse } from '@/types'
+import { triggerDownload } from '@/lib/download'
 
 export type DownloadFormat = 'jpeg' | 'png'
-
-function triggerDownload(url: string, fileName: string) {
-	const a = document.createElement('a')
-	a.href = url
-	a.download = fileName
-	document.body.appendChild(a)
-	a.click()
-	document.body.removeChild(a)
-}
 
 function convertedName(fileName: string, format: DownloadFormat) {
 	return fileName.replace(/\.[^.]+$/, '') + (format === 'jpeg' ? '.jpg' : '.png')

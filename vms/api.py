@@ -875,6 +875,52 @@ def _trashed_folders(project):
 	)
 
 
+def _folder_breadcrumb(current, root_folder):
+	trail = []
+	node = current
+	for _depth in range(50):
+		row = frappe.db.get_value(
+			"VMS Folder", node, ["folder_name", "parent_folder", "deleted_at"], as_dict=True
+		)
+		if not row or row.deleted_at:
+			return None
+		trail.append({"name": node, "folder_name": row.folder_name})
+		if node == root_folder:
+			trail.reverse()
+			return trail
+		node = row.parent_folder
+		if not node:
+			return None
+	return None
+
+
+def _project_folder_breadcrumb(current, project):
+	if not current:
+		return []
+	trail = []
+	node = current
+	for _depth in range(50):
+		row = frappe.db.get_value(
+			"VMS Folder",
+			node,
+			["folder_name", "parent_folder", "project", "deleted_at"],
+			as_dict=True,
+		)
+		if not row or row.project != project or row.deleted_at:
+			return None
+		trail.append({"name": node, "folder_name": row.folder_name})
+		if not row.parent_folder:
+			trail.reverse()
+			return trail
+		node = row.parent_folder
+	return None
+
+
+def _folder_is_live(folder_name):
+	row = frappe.db.get_value("VMS Folder", folder_name, ["deleted_at"], as_dict=True)
+	return bool(row) and not row.deleted_at
+
+
 def _asset_order_by(sort_by=None, sort_order=None):
 	"""Build a safe `order_by` clause from user input, defaulting to newest first."""
 	field = sort_by if sort_by in SORTABLE_ASSET_FIELDS else "creation"
@@ -1791,10 +1837,15 @@ def _validate_project_token(project_name, token):
 	return True
 
 
+# nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @frappe.whitelist(allow_guest=True, methods=["GET"])
-def get_shared_project(project: str, token: str | None = None):
+def get_shared_project(project: str, token: str | None = None, current: str | None = None):
 	"""Get project info for a shared project (guest-accessible)."""
 	_validate_project_token(project, token)
+
+	breadcrumb = _project_folder_breadcrumb(current, project)
+	if breadcrumb is None:
+		frappe.throw(_("Invalid or expired share link"), frappe.AuthenticationError)
 
 	doc = frappe.db.get_value(
 		"VMS Project",
@@ -1805,11 +1856,30 @@ def get_shared_project(project: str, token: str | None = None):
 	if not doc:
 		frappe.throw(_("Project not found"), frappe.DoesNotExistError)
 
+	doc["breadcrumb"] = breadcrumb
+	doc["subfolders"] = frappe.get_all(
+		"VMS Folder",
+		filters={
+			"project": project,
+			"parent_folder": current or ["is", "not set"],
+			"deleted_at": ["is", "not set"],
+		},
+		fields=["name", "folder_name"],
+		order_by="folder_name asc",
+	)
 	return doc
 
 
+# nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @frappe.whitelist(allow_guest=True, methods=["GET"])
-def get_shared_project_assets(project: str, token: str | None = None, page=1, page_size=20):
+def get_shared_project_assets(
+	project: str,
+	token: str | None = None,
+	current: str | None = None,
+	recursive: bool | int | str = False,
+	page: int | str = 1,
+	page_size: int | str = 20,
+):
 	"""Get assets for a shared project (guest-accessible, paginated)."""
 	_validate_project_token(project, token)
 
@@ -1818,17 +1888,36 @@ def get_shared_project_assets(project: str, token: str | None = None, page=1, pa
 	if not share_token:
 		frappe.throw(_("This project is no longer shared"), frappe.AuthenticationError)
 
+	recursive = cint(recursive)
+	if not recursive and _project_folder_breadcrumb(current, project) is None:
+		frappe.throw(_("Invalid or expired share link"), frappe.AuthenticationError)
+
 	page = max(1, int(page))
 	page_size = min(100, max(1, int(page_size)))
 	start = (page - 1) * page_size
 
 	filters = {"project": project, "status": ["!=", "Uploading"], "deleted_at": ["is", "not set"]}
+	or_filters = None
+	if recursive:
+		trashed = _trashed_folders(project)
+		if trashed:
+			or_filters = [["folder", "not in", trashed], ["folder", "is", "not set"]]
+	elif current:
+		filters["folder"] = current
+	else:
+		filters["folder"] = ["is", "not set"]
 
-	total = frappe.db.count("VMS Asset", filters=filters)
+	if or_filters:
+		total = frappe.get_all("VMS Asset", filters=filters, or_filters=or_filters, fields=[{"COUNT": "*"}])[
+			0
+		].get("COUNT(*)")
+	else:
+		total = frappe.db.count("VMS Asset", filters=filters)
 
 	assets = frappe.get_all(
 		"VMS Asset",
 		filters=filters,
+		or_filters=or_filters,
 		fields=[
 			"name",
 			"file_name",
@@ -1899,44 +1988,70 @@ def _validate_folder_token(folder_name, token):
 def _validate_shared_asset_scope(project, token, folder):
 	if folder:
 		_validate_folder_token(folder, token)
-		return "folder", folder
-	_validate_project_token(project, token)
-	return "project", project
+	else:
+		_validate_project_token(project, token)
+
+
+def _asset_in_shared_scope(asset, project=None, folder=None):
+	if folder:
+		return bool(asset.folder) and _folder_breadcrumb(asset.folder, folder) is not None
+	return asset.project == project and (not asset.folder or _folder_is_live(asset.folder))
 
 
 # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @frappe.whitelist(allow_guest=True, methods=["GET"])
-def get_shared_folder(folder: str, token: str | None = None):
+def get_shared_folder(folder: str, token: str | None = None, current: str | None = None):
 	_validate_folder_token(folder, token)
+
+	current = current or folder
+	breadcrumb = _folder_breadcrumb(current, folder)
+	if breadcrumb is None:
+		frappe.throw(_("Invalid or expired share link"), frappe.AuthenticationError)
 
 	doc = frappe.db.get_value(
 		"VMS Folder",
-		folder,
+		current,
 		["name", "folder_name", "project"],
 		as_dict=True,
 	)
-	if not doc:
-		frappe.throw(_("Folder not found"), frappe.DoesNotExistError)
 
 	return {
 		"name": doc.name,
 		"folder_name": doc.folder_name,
 		"project_name": frappe.db.get_value("VMS Project", doc.project, "project_name"),
+		"breadcrumb": breadcrumb,
+		"subfolders": frappe.get_all(
+			"VMS Folder",
+			filters={"parent_folder": current, "deleted_at": ["is", "not set"]},
+			fields=["name", "folder_name"],
+			order_by="folder_name asc",
+		),
 	}
 
 
 # nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @frappe.whitelist(allow_guest=True, methods=["GET"])
 def get_shared_folder_assets(
-	folder: str, token: str | None = None, page: int | str = 1, page_size: int | str = 20
+	folder: str,
+	token: str | None = None,
+	current: str | None = None,
+	recursive: bool | int | str = False,
+	page: int | str = 1,
+	page_size: int | str = 20,
 ):
 	_validate_folder_token(folder, token)
+
+	recursive = cint(recursive)
+	current = current or folder
+	if not recursive and _folder_breadcrumb(current, folder) is None:
+		frappe.throw(_("Invalid or expired share link"), frappe.AuthenticationError)
 
 	page = max(1, int(page))
 	page_size = min(100, max(1, int(page_size)))
 	start = (page - 1) * page_size
 
-	filters = {"folder": folder, "status": ["!=", "Uploading"], "deleted_at": ["is", "not set"]}
+	filters = {"status": ["!=", "Uploading"], "deleted_at": ["is", "not set"]}
+	filters["folder"] = ["in", _folder_subtree(folder)] if recursive else current
 
 	total = frappe.db.count("VMS Asset", filters=filters)
 
@@ -1974,7 +2089,7 @@ def get_shared_folder_assets(
 def get_shared_asset_view_url(
 	asset_name: str, project: str | None = None, token: str | None = None, folder: str | None = None
 ):
-	scope_field, scope_value = _validate_shared_asset_scope(project, token, folder)
+	_validate_shared_asset_scope(project, token, folder)
 
 	asset = frappe.db.get_value(
 		"VMS Asset",
@@ -1983,7 +2098,12 @@ def get_shared_asset_view_url(
 		as_dict=True,
 	)
 
-	if not asset or asset.deleted_at or asset.status == "Uploading" or asset.get(scope_field) != scope_value:
+	if (
+		not asset
+		or asset.deleted_at
+		or asset.status == "Uploading"
+		or not _asset_in_shared_scope(asset, project=project, folder=folder)
+	):
 		frappe.throw(_("Asset not found in this share"), frappe.DoesNotExistError)
 
 	if not asset.r2_key:
@@ -2233,7 +2353,7 @@ def restore_version(asset_name: str, version_number: int):
 def get_shared_asset_download_url(
 	asset_name: str, project: str | None = None, token: str | None = None, folder: str | None = None
 ):
-	scope_field, scope_value = _validate_shared_asset_scope(project, token, folder)
+	_validate_shared_asset_scope(project, token, folder)
 
 	asset = frappe.db.get_value(
 		"VMS Asset",
@@ -2242,7 +2362,12 @@ def get_shared_asset_download_url(
 		as_dict=True,
 	)
 
-	if not asset or asset.deleted_at or asset.status == "Uploading" or asset.get(scope_field) != scope_value:
+	if (
+		not asset
+		or asset.deleted_at
+		or asset.status == "Uploading"
+		or not _asset_in_shared_scope(asset, project=project, folder=folder)
+	):
 		frappe.throw(_("Asset not found in this share"), frappe.DoesNotExistError)
 
 	if not asset.r2_key:
@@ -2262,7 +2387,7 @@ def download_shared_converted_asset(
 	token: str | None = None,
 	folder: str | None = None,
 ):
-	scope_field, scope_value = _validate_shared_asset_scope(project, token, folder)
+	_validate_shared_asset_scope(project, token, folder)
 
 	meta = frappe.db.get_value(
 		"VMS Asset",
@@ -2271,7 +2396,12 @@ def download_shared_converted_asset(
 		as_dict=True,
 	)
 
-	if not meta or meta.deleted_at or meta.status == "Uploading" or meta.get(scope_field) != scope_value:
+	if (
+		not meta
+		or meta.deleted_at
+		or meta.status == "Uploading"
+		or not _asset_in_shared_scope(meta, project=project, folder=folder)
+	):
 		frappe.throw(_("Asset not found in this share"), frappe.DoesNotExistError)
 
 	asset = frappe.get_doc("VMS Asset", asset_name)

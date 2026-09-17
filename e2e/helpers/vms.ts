@@ -213,6 +213,7 @@ export async function getUploadUrl(
 		content_type: string;
 		project?: string;
 		category?: string;
+		folder?: string;
 	},
 ): Promise<UploadUrlResponse> {
 	return callMethod<UploadUrlResponse>(request, "vms.api.get_upload_url", {
@@ -220,6 +221,7 @@ export async function getUploadUrl(
 		content_type: options.content_type,
 		project: options.project,
 		category: options.category,
+		folder: options.folder,
 	});
 }
 
@@ -304,6 +306,7 @@ export async function uploadTestFile(
 		content_type?: string;
 		project?: string;
 		category?: string;
+		folder?: string;
 	} = {},
 ): Promise<{ asset_name: string; r2_key: string }> {
 	const fileName = options.file_name || `test-file-${Date.now()}.mp4`;
@@ -316,6 +319,7 @@ export async function uploadTestFile(
 		content_type: contentType,
 		project: options.project,
 		category: options.category,
+		folder: options.folder,
 	});
 
 	// Step 2: PUT file to object storage
@@ -431,11 +435,13 @@ export async function createTestFolder(
 	request: APIRequestContext,
 	project: string,
 	folderName?: string,
+	parentFolder?: string,
 ): Promise<VMSFolder> {
 	const name = folderName || `E2E Folder ${Date.now()}`;
 	return callMethod<VMSFolder>(request, "vms.api.create_folder", {
 		folder_name: name,
 		project,
+		parent_folder: parentFolder,
 	});
 }
 
@@ -547,6 +553,24 @@ export async function disableProjectSharing(
 ): Promise<void> {
 	await callMethod(request, "vms.api.disable_project_sharing", {
 		project: projectName,
+	});
+}
+
+export async function enableFolderSharing(
+	request: APIRequestContext,
+	folderName: string,
+): Promise<ShareResult> {
+	return callMethod<ShareResult>(request, "vms.api.enable_folder_sharing", {
+		folder: folderName,
+	});
+}
+
+export async function disableFolderSharing(
+	request: APIRequestContext,
+	folderName: string,
+): Promise<void> {
+	await callMethod(request, "vms.api.disable_folder_sharing", {
+		folder: folderName,
 	});
 }
 
