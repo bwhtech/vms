@@ -47,11 +47,9 @@ jobs:
             quay.io/minio/minio server /data
           # Wait for MinIO to be ready
           timeout 30 bash -c 'until curl -sf http://127.0.0.1:9090/minio/health/live; do sleep 1; done'
-          # Create test bucket using mc
-          curl -sL https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc
-          chmod +x /usr/local/bin/mc
-          mc alias set ci http://127.0.0.1:9090 minioadmin minioadmin
-          mc mb ci/vms-media
+          # Create test bucket using awscli (mc is no longer distributed by MinIO)
+          AWS_ACCESS_KEY_ID=minioadmin AWS_SECRET_ACCESS_KEY=minioadmin \
+            aws --endpoint-url http://127.0.0.1:9090 s3 mb s3://vms-media
 
       - name: Setup Python
         uses: actions/setup-python@v5
