@@ -25,8 +25,15 @@
 		</div>
 
 		<template v-else>
-			<PageHeaderBase class="flex min-h-12 shrink-0 items-center border-b px-3 sm:px-5">
+			<PageHeaderBase
+				class="flex min-h-12 shrink-0 items-center border-b px-3 py-2.5 sm:px-5"
+			>
 				<PageHeaderTitle>
+					<Breadcrumbs
+						v-if="breadcrumbItems.length > 1"
+						:items="breadcrumbItems"
+						class="mb-0.5"
+					/>
 					<h1 class="truncate">{{ title }}</h1>
 					<p class="truncate text-sm text-ink-gray-5" data-testid="shared-count">
 						{{ total }} {{ total === 1 ? 'file' : 'files' }} shared
@@ -62,89 +69,39 @@
 					<!-- eslint-enable vue/no-v-html -->
 
 					<div
-						v-if="assetsCall.loading && !assets.length"
+						v-if="assetsCall.loading && !assets.length && !info.data?.subfolders.length"
 						class="grid place-items-center py-12"
 					>
 						<Spinner class="size-5 text-ink-gray-5" />
 					</div>
 
 					<EmptyState
-						v-else-if="!assets.length"
+						v-else-if="!assets.length && !info.data?.subfolders.length"
 						icon="lucide-film"
-						title="No files shared"
+						title="This folder is empty"
 					/>
 
-					<div v-else class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
-						<article
-							v-for="asset in assets"
-							:key="asset.name"
-							class="group cursor-pointer overflow-hidden rounded-5 border border-outline-gray-1 bg-surface-base transition hover:border-outline-gray-2 hover:shadow-sm"
-							data-testid="shared-asset-card"
-							@click="open(asset)"
+					<template v-else>
+						<SharedFolderTiles
+							v-if="info.data?.subfolders.length"
+							:folders="info.data.subfolders"
+							@open="openFolder"
+						/>
+
+						<div
+							v-if="assets.length"
+							class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3"
 						>
-							<div class="relative aspect-video bg-surface-gray-2">
-								<img
-									v-if="asset.thumbnail_url"
-									:src="asset.thumbnail_url"
-									alt=""
-									class="size-full object-cover"
-								/>
-								<div
-									v-else
-									:class="[
-										'grid size-full place-items-center',
-										fileKindStyle(asset.file_type).tile,
-									]"
-								>
-									<span
-										:class="[fileKindStyle(asset.file_type).icon, 'size-8']"
-										aria-hidden="true"
-									/>
-								</div>
-							</div>
-							<div class="flex items-start gap-2 p-3">
-								<div class="min-w-0 flex-1">
-									<p
-										class="truncate text-base text-ink-gray-8"
-										:title="asset.file_name"
-									>
-										{{ asset.file_name }}
-									</p>
-									<p
-										class="mt-1 flex items-center gap-2 truncate text-sm text-ink-gray-5"
-									>
-										<span v-if="asset.file_size">{{
-											formatBytes(asset.file_size)
-										}}</span>
-										<Badge
-											:label="asset.category"
-											theme="gray"
-											variant="subtle"
-										/>
-									</p>
-								</div>
-								<Dropdown
-									v-if="isConvertibleStill(asset.file_type, asset.file_name)"
-									:options="downloadMenu(asset)"
-									align="end"
-								>
-									<Button
-										variant="ghost"
-										icon="lucide-download"
-										label="Download"
-										@click.stop
-									/>
-								</Dropdown>
-								<Button
-									v-else
-									variant="ghost"
-									icon="lucide-download"
-									label="Download"
-									@click.stop="download(asset)"
-								/>
-							</div>
-						</article>
-					</div>
+							<SharedAssetCard
+								v-for="asset in assets"
+								:key="asset.name"
+								:asset="asset"
+								:download-menu="downloadMenu(asset)"
+								@open="open(asset)"
+								@download="download(asset)"
+							/>
+						</div>
+					</template>
 
 					<div v-if="hasMore" ref="sentinel" class="grid place-items-center py-4">
 						<Spinner class="size-5 text-ink-gray-5" />
@@ -177,68 +134,45 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
 	Badge,
+	Breadcrumbs,
 	Button,
-	Dropdown,
 	PageHeaderBase,
 	PageHeaderTitle,
 	Spinner,
 	toast,
 	useCall,
 	usePageMeta,
+	type BreadcrumbsProps,
 	type DropdownOption,
 } from 'frappe-ui'
 import type { ViewUrlResponse } from '@/types'
 import EmptyState from '@/components/common/EmptyState.vue'
-import { fileKindStyle, isConvertibleStill } from '@/lib/fileType'
+import SharedFolderTiles from '@/components/shared/SharedFolderTiles.vue'
+import SharedAssetCard from '@/components/shared/SharedAssetCard.vue'
+import { isConvertibleStill } from '@/lib/fileType'
 import MediaPreviewDialog from '@/components/common/MediaPreviewDialog.vue'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
-import { formatBytes, serverMessage } from '@/lib/format'
-
-interface SharedScope {
-	name: string
-	/** Set on a project share. */
-	project_name?: string
-	status?: string
-	description?: string
-	/** Set on a folder share. */
-	folder_name?: string
-}
-
-interface SharedAsset {
-	name: string
-	file_name: string
-	category: string
-	file_size?: number
-	file_type?: string
-	uploaded_at?: string
-	creation: string
-	thumbnail_url?: string
-}
-
-interface SharedAssetsResponse {
-	assets: SharedAsset[]
-	total: number
-	page: number
-	page_size: number
-	total_pages: number
-}
-
-interface ScopeParams {
-	project?: string
-	folder?: string
-	token: string
-}
-type SharedAssetParams = ScopeParams & { asset_name: string }
+import { useRecursiveDownload } from '@/composables/useRecursiveDownload'
+import { triggerDownload } from '@/lib/download'
+import { serverMessage } from '@/lib/format'
+import type {
+	SharedScope,
+	SharedAsset,
+	SharedAssetsResponse,
+	ScopeParams,
+	SharedAssetParams,
+} from './sharedPageTypes'
 
 const PAGE_SIZE = 20
 
 const props = defineProps<{ projectId?: string; folderId?: string }>()
 
 const route = useRoute()
+const router = useRouter()
 
 const isFolder = computed(() => Boolean(props.folderId))
 const scopeId = computed(() => props.folderId ?? props.projectId ?? '')
@@ -248,6 +182,22 @@ const token = computed(() => {
 	const value = route.query.token
 	return typeof value === 'string' && value ? value : ''
 })
+
+const currentFolder = computed(() => {
+	const value = route.query.path
+	return typeof value === 'string' && value ? value : undefined
+})
+
+function openFolder(folder: { name: string }) {
+	router.push({ query: { ...route.query, path: folder.name } })
+}
+
+function openBreadcrumb(name: string | undefined) {
+	const query = { ...route.query }
+	if (name) query.path = name
+	else delete query.path
+	router.push({ query })
+}
 
 const request = ref({ page: 1, append: false })
 const assets = ref<SharedAsset[]>([])
@@ -259,9 +209,10 @@ const preview = ref<{ asset: SharedAsset; url: string; downloadUrl?: string } | 
 const downloadingAll = ref(false)
 
 function scopeParams(): ScopeParams {
-	return isFolder.value
+	const base = isFolder.value
 		? { folder: props.folderId, token: token.value }
 		: { project: props.projectId, token: token.value }
+	return currentFolder.value ? { ...base, current: currentFolder.value } : base
 }
 
 const infoUrl = computed(() =>
@@ -280,7 +231,7 @@ const info = useCall<SharedScope, ScopeParams>({
 	method: 'GET',
 	params: scopeParams,
 	immediate: Boolean(token.value),
-	cacheKey: ['shared-info', scopeId.value],
+	cacheKey: ['shared-info', scopeId.value, currentFolder.value ?? ''],
 })
 
 const assetsCall = useCall<SharedAssetsResponse, ScopeParams & { page: number; page_size: number }>(
@@ -289,7 +240,7 @@ const assetsCall = useCall<SharedAssetsResponse, ScopeParams & { page: number; p
 		method: 'GET',
 		params: () => ({ ...scopeParams(), page: request.value.page, page_size: PAGE_SIZE }),
 		immediate: Boolean(token.value),
-		cacheKey: ['shared-assets', scopeId.value],
+		cacheKey: ['shared-assets', scopeId.value, currentFolder.value ?? ''],
 		onSuccess: (data: SharedAssetsResponse) => {
 			total.value = data.total
 			if (request.value.append) {
@@ -306,6 +257,15 @@ const assetsCall = useCall<SharedAssetsResponse, ScopeParams & { page: number; p
 	},
 )
 
+watch(currentFolder, () => {
+	assets.value = []
+	total.value = 0
+	reachedEnd.value = false
+	request.value = { page: 1, append: false }
+	void info.reload()
+	void assetsCall.reload()
+})
+
 const viewUrl = useCall<ViewUrlResponse, SharedAssetParams>({
 	url: '/api/v2/method/vms.api.get_shared_asset_view_url',
 	method: 'POST',
@@ -318,7 +278,32 @@ const downloadUrl = useCall<ViewUrlResponse, SharedAssetParams>({
 	immediate: false,
 })
 
-const title = computed(() => info.data?.folder_name ?? info.data?.project_name ?? '')
+const title = computed(() => {
+	const scope = info.data
+	if (!scope) return ''
+	const trail = scope.breadcrumb
+	if (trail.length) return trail[trail.length - 1].folder_name
+	return scope.folder_name ?? scope.project_name ?? ''
+})
+
+const breadcrumbItems = computed<BreadcrumbsProps['items']>(() => {
+	const scope = info.data
+	if (!scope) return []
+	const rootLabel = isFolder.value ? undefined : (scope.project_name ?? '')
+	const items: BreadcrumbsProps['items'] = []
+	if (rootLabel !== undefined) {
+		items.push({ label: rootLabel, onClick: () => openBreadcrumb(undefined) })
+	}
+	scope.breadcrumb.forEach((folder, index) => {
+		const isLast = index === scope.breadcrumb.length - 1
+		items.push({
+			label: folder.folder_name,
+			onClick: isLast ? undefined : () => openBreadcrumb(folder.name),
+		})
+	})
+	return items
+})
+
 const hasMore = computed(() => !reachedEnd.value && assets.value.length < total.value)
 
 usePageMeta(() => ({ title: title.value ? `${title.value} · VMS` : 'Shared · VMS' }))
@@ -360,10 +345,20 @@ async function download(asset: SharedAsset) {
 	}
 }
 
+const { fetchAll: fetchAllSharedAssets } = useRecursiveDownload<SharedAsset, ScopeParams>({
+	url: assetsUrl,
+	baseParams: () =>
+		isFolder.value
+			? { folder: props.folderId, token: token.value }
+			: { project: props.projectId, token: token.value },
+	pageSize: PAGE_SIZE,
+})
+
 async function downloadAll() {
 	downloadingAll.value = true
 	try {
-		for (const asset of assets.value) {
+		const everything = await fetchAllSharedAssets()
+		for (const asset of everything) {
 			await download(asset)
 			// Give the browser a beat between downloads so none is dropped.
 			await new Promise((resolve) => setTimeout(resolve, 300))
@@ -392,15 +387,5 @@ function downloadMenu(asset: SharedAsset): DropdownOption[] {
 		{ label: 'JPEG', icon: 'lucide-image', onClick: () => downloadConverted(asset, 'jpeg') },
 		{ label: 'PNG', icon: 'lucide-image', onClick: () => downloadConverted(asset, 'png') },
 	]
-}
-
-function triggerDownload(url: string, fileName: string) {
-	const anchor = document.createElement('a')
-	anchor.href = url
-	anchor.download = fileName
-	anchor.rel = 'noopener'
-	document.body.appendChild(anchor)
-	anchor.click()
-	anchor.remove()
 }
 </script>
