@@ -190,6 +190,13 @@ watch(player.currentTime, (time) => {
 	writeTimeToUrl(time)
 })
 
+// currentTime's ref can land on the same value the throttled writer already
+// wrote, in which case the watcher above never fires — write explicitly on
+// every pause so the URL can't go stale by up to a second.
+watch(player.isPlaying, (playing) => {
+	if (!playing) writeTimeToUrl(player.currentTime.value)
+})
+
 watch(
 	video,
 	(element, _previous, onCleanup) => {
