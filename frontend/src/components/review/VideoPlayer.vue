@@ -80,6 +80,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onScopeDispose, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ErrorMessage, Skeleton, providePortalTarget, useCall } from 'frappe-ui'
 import type { AnnotationJson, ReviewComment, ViewUrlResponse } from '@/types'
 import AnnotationCanvas from '@/components/review/AnnotationCanvas.vue'
@@ -94,6 +95,8 @@ const props = withDefaults(defineProps<{ assetName: string; preferProxy?: boolea
 })
 
 const review = useReview()
+const route = useRoute()
+const router = useRouter()
 const container = ref<HTMLElement | null>(null)
 const videoWrapper = ref<HTMLElement | null>(null)
 const video = ref<HTMLVideoElement | null>(null)
@@ -167,6 +170,40 @@ watch(
 watch(canvasActive, (active) => {
 	if (active) video.value?.pause()
 })
+
+let lastUrlWriteAt = 0
+
+function writeTimeToUrl(time: number) {
+	const rounded = String(Math.round(time * 100) / 100)
+	if (route.query.t === rounded) return
+	void router.replace({ query: { ...route.query, t: rounded } })
+}
+
+watch(player.currentTime, (time) => {
+	if (!player.isPlaying.value) {
+		writeTimeToUrl(time)
+		return
+	}
+	const now = Date.now()
+	if (now - lastUrlWriteAt < 1000) return
+	lastUrlWriteAt = now
+	writeTimeToUrl(time)
+})
+
+watch(
+	video,
+	(element, _previous, onCleanup) => {
+		if (!element) return
+		const onLoadedMetadata = () => {
+			const raw = route.query.t
+			const time = typeof raw === 'string' ? Number(raw) : NaN
+			if (Number.isFinite(time)) player.seek(time)
+		}
+		element.addEventListener('loadedmetadata', onLoadedMetadata)
+		onCleanup(() => element.removeEventListener('loadedmetadata', onLoadedMetadata))
+	},
+	{ immediate: true },
+)
 
 async function openComment(comment: ReviewComment) {
 	const time = comment.video_timestamp ?? 0
