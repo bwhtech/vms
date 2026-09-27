@@ -153,6 +153,19 @@ def generate_thumbnail(asset_name):
 		needs_duration = is_video and not asset.duration_seconds
 		needs_preview = raw and not asset.preview_r2_key
 
+		if (
+			not is_video
+			and asset.face_index_key != source_key
+			and frappe.db.get_single_value("VMS Settings", "face_recognition_enabled")
+		):
+			frappe.enqueue(
+				"vms.faces.index_asset_faces",
+				asset_name=asset_name,
+				queue="long",
+				job_id=f"vms_faces::{asset_name}",
+				deduplicate=True,
+			)
+
 		# nothing left to compute, don't pay for the download
 		if asset.thumbnail_url and not needs_duration and not needs_preview:
 			return

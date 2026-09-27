@@ -22,6 +22,7 @@
   "duration_seconds",
   "thumbnail_url",
   "preview_r2_key",
+  "face_index_key",
   "section_break_review",
   "is_public_review",
   "column_break_review",
@@ -155,6 +156,13 @@
    "fieldname": "preview_r2_key",
    "fieldtype": "Data",
    "label": "Preview R2 Key"
+  },
+  {
+   "fieldname": "face_index_key",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Face Index Key",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_review",
@@ -338,7 +346,7 @@
   }
  ],
  "links": [],
- "modified": "2026-09-01 12:00:00.000000",
+ "modified": "2026-09-27 23:30:00.000000",
  "modified_by": "Administrator",
  "module": "Video Management Solution",
  "name": "VMS Asset",

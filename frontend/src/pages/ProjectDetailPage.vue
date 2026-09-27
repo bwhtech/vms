@@ -83,6 +83,7 @@
 	<ProjectBrowserToolbar
 		v-model:search="searchInput"
 		v-model:tag="tag"
+		v-model:person="person"
 		v-model:category="category"
 		v-model:sort="sort"
 		v-model:view="view"
@@ -181,10 +182,18 @@
 			</template>
 			<EmptyState
 				v-else
-				:icon="searchInput || tag || category ? 'lucide-search-x' : 'lucide-folder-open'"
-				:title="searchInput || tag || category ? 'No files found' : 'This folder is empty'"
+				:icon="
+					searchInput || tag || person || category
+						? 'lucide-search-x'
+						: 'lucide-folder-open'
+				"
+				:title="
+					searchInput || tag || person || category
+						? 'No files found'
+						: 'This folder is empty'
+				"
 				:description="
-					searchInput || tag || category
+					searchInput || tag || person || category
 						? 'Try changing the current filters.'
 						: 'Upload a file or create a folder.'
 				"
@@ -337,6 +346,7 @@ const {
 	searchInput,
 	category,
 	tag,
+	person,
 	sort,
 	selection,
 	view,

@@ -11,6 +11,7 @@
 			</template>
 		</TextInput>
 		<AssetTagFilter v-model="tagModel" :project="project" :folder="folder" />
+		<AssetPeopleFilter v-model="personModel" :project="project" :folder="folder" />
 		<Select
 			v-model="categoryModel"
 			class="w-40"
@@ -30,6 +31,7 @@ import { Select, TabButtons, TextInput } from 'frappe-ui'
 import type { AssetCategory } from '@/types'
 import AssetSortMenu from '@/components/assets/AssetSortMenu.vue'
 import AssetTagFilter from '@/components/assets/AssetTagFilter.vue'
+import AssetPeopleFilter from '@/components/people/AssetPeopleFilter.vue'
 
 interface AssetSort {
 	field: 'creation' | 'file_size' | 'file_name'
@@ -41,6 +43,7 @@ const props = defineProps<{
 	folder?: string | null
 	search: string
 	tag: string | null
+	person: string | null
 	category: AssetCategory | ''
 	sort: AssetSort
 	view: 'grid' | 'list'
@@ -48,6 +51,7 @@ const props = defineProps<{
 const emit = defineEmits<{
 	'update:search': [value: string]
 	'update:tag': [value: string | null]
+	'update:person': [value: string | null]
 	'update:category': [value: AssetCategory | '']
 	'update:sort': [value: AssetSort]
 	'update:view': [value: 'grid' | 'list']
@@ -55,6 +59,7 @@ const emit = defineEmits<{
 
 const searchModel = model('search')
 const tagModel = model('tag')
+const personModel = model('person')
 const categoryModel = model('category')
 const sortModel = model('sort')
 const viewModel = model('view')

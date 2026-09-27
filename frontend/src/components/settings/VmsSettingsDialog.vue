@@ -28,6 +28,12 @@
 					</template>
 					Transcription
 				</SettingsNavItem>
+				<SettingsNavItem value="faces" data-testid="settings-nav-faces">
+					<template #prefix>
+						<span class="lucide-scan-face size-4" aria-hidden="true" />
+					</template>
+					Face recognition
+				</SettingsNavItem>
 				<SettingsNavItem value="youtube" data-testid="settings-nav-youtube">
 					<template #prefix><YoutubeIcon class="size-4" /></template>
 					YouTube
@@ -48,6 +54,7 @@
 			<template v-if="isSystemManager">
 				<SettingsTabGeneral />
 				<SettingsTabTranscription />
+				<SettingsTabFaces />
 				<SettingsTabYoutube />
 			</template>
 			<SettingsTabUsers />
@@ -67,6 +74,7 @@ import { useOverlays } from '@/composables/useOverlays'
 import { useSession } from '@/composables/useSession'
 import YoutubeIcon from '@/components/common/YoutubeIcon.vue'
 import SettingsTabAppearance from './SettingsTabAppearance.vue'
+import SettingsTabFaces from './SettingsTabFaces.vue'
 import SettingsTabGeneral from './SettingsTabGeneral.vue'
 import SettingsTabProfile from './SettingsTabProfile.vue'
 import SettingsTabTranscription from './SettingsTabTranscription.vue'

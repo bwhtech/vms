@@ -50,6 +50,10 @@ def get_audit_log_permission_query_conditions(user):
 	return _vms_access_condition(user)
 
 
+def get_face_permission_query_conditions(user):
+	return _vms_access_condition(user)
+
+
 def get_pinned_project_permission_query_conditions(user):
 	"""A pin is private to whoever made it, so a user only ever lists their own rows.
 
