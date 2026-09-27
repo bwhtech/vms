@@ -39,15 +39,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Start MinIO
-        run: |
-          docker run -d --name minio \
-            -p 9090:9000 \
-            -e MINIO_ROOT_USER=minioadmin \
-            -e MINIO_ROOT_PASSWORD=minioadmin \
-            quay.io/minio/minio server /data
-          timeout 30 bash -c 'until curl -sf http://127.0.0.1:9090/minio/health/live; do sleep 1; done'
-          AWS_ACCESS_KEY_ID=minioadmin AWS_SECRET_ACCESS_KEY=minioadmin \
-            aws --endpoint-url http://127.0.0.1:9090 s3 mb s3://vms-media
+        uses: ./.github/actions/start-minio
 
       - name: Find tests
         run: |

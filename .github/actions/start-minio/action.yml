@@ -1,0 +1,42 @@
+name: Start MinIO
+description: Build a pinned MinIO from source (cached) and serve it on :9090 with a vms-media bucket
+
+inputs:
+  version:
+    description: Go module version of github.com/minio/minio
+    # RELEASE.2025-10-15T17-29-55Z, the last release before the repo was archived
+    default: v0.0.0-20251015172955-9e49d5e7a648
+
+runs:
+  using: composite
+  steps:
+    - name: Restore MinIO binary
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ~/minio-bin
+        key: minio-${{ inputs.version }}-${{ runner.os }}-${{ runner.arch }}
+
+    - name: Setup Go
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/setup-go@v5
+      with:
+        go-version: "1.24.8"
+        cache: false
+
+    - name: Build MinIO
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: GOBIN="$HOME/minio-bin" go install "github.com/minio/minio@${{ inputs.version }}"
+
+    - name: Start MinIO
+      shell: bash
+      run: |
+        mkdir -p "$RUNNER_TEMP/minio-data"
+        MINIO_ROOT_USER=minioadmin MINIO_ROOT_PASSWORD=minioadmin MINIO_API_CORS_ALLOW_ORIGIN="*" \
+          nohup "$HOME/minio-bin/minio" server "$RUNNER_TEMP/minio-data" --address :9090 \
+          > "$RUNNER_TEMP/minio.log" 2>&1 &
+        timeout 30 bash -c 'until curl -sf http://127.0.0.1:9090/minio/health/live; do sleep 1; done' \
+          || { cat "$RUNNER_TEMP/minio.log"; exit 1; }
+        AWS_ACCESS_KEY_ID=minioadmin AWS_SECRET_ACCESS_KEY=minioadmin \
+          aws --endpoint-url http://127.0.0.1:9090 s3 mb s3://vms-media
