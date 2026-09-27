@@ -34,3 +34,14 @@ class VMSAsset(Document):
 			self.review_token = uuid.uuid4().hex
 		elif not self.is_public_review and self.review_token:
 			self.review_token = None
+
+	def on_trash(self):
+		if not frappe.db.exists("VMS Face", {"asset": self.name}):
+			return
+
+		from frappe.utils.synchronization import filelock
+
+		from vms.faces import CLUSTER_LOCK, remove_asset_faces
+
+		with filelock(CLUSTER_LOCK, timeout=120):
+			remove_asset_faces(self.name)

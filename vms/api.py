@@ -939,8 +939,9 @@ def get_project_assets(
 	page_size: int | str = 20,
 	sort_by: str | None = None,
 	sort_order: str | None = None,
+	person: str | None = None,
 ):
-	"""Get project assets with server-side folder/category/tag/name filtering, sorting and pagination.
+	"""Get project assets with server-side folder/category/tag/person/name filtering, sorting and pagination.
 
 	Parameters:
 		project: VMS Project ID (required)
@@ -953,6 +954,8 @@ def get_project_assets(
 			whole project from the root, folder + descendants inside a folder. Assets
 			in trashed folders are excluded either way, since they're unreachable.
 		search: Substring match on file_name. Same subtree scoping as `tag`.
+		person: VMS Person ID. Filter to photos that person's face was found in. Same
+			subtree scoping as `tag`.
 		page: Page number (1-indexed, default 1)
 		page_size: Items per page (default 20, max 500)
 		sort_by: "creation", "file_size" or "file_name" (default "creation")
@@ -980,7 +983,7 @@ def get_project_assets(
 		trashed = _trashed_folders(project)
 		if trashed:
 			filters["folder"] = ["not in", trashed]
-	elif tag or search:
+	elif tag or search or person:
 		# A tag filter or a search is scoped to the current subtree: from the project
 		# root that's every folder, inside a folder it's that folder plus everything
 		# nested under it. Matching only the exact folder would hide results the user
@@ -1002,13 +1005,20 @@ def get_project_assets(
 	if search:
 		filters["file_name"] = ["like", f"%{_escape_like(search)}%"]
 
+	matching_names = None
 	if tag:
-		tagged_names = frappe.get_all(
-			"Tag Link",
-			filters={"document_type": "VMS Asset", "tag": tag},
-			pluck="document_name",
+		matching_names = set(
+			frappe.get_all(
+				"Tag Link",
+				filters={"document_type": "VMS Asset", "tag": tag},
+				pluck="document_name",
+			)
 		)
-		if not tagged_names:
+	if person:
+		person_assets = set(frappe.get_all("VMS Face", filters={"person": person}, pluck="asset"))
+		matching_names = person_assets if matching_names is None else matching_names & person_assets
+	if matching_names is not None:
+		if not matching_names:
 			return {
 				"assets": [],
 				"total": 0,
@@ -1016,7 +1026,7 @@ def get_project_assets(
 				"page_size": page_size,
 				"total_pages": 0,
 			}
-		filters["name"] = ["in", tagged_names]
+		filters["name"] = ["in", list(matching_names)]
 
 	# Counted through get_all, not frappe.db.count: only get_all applies Frappe's
 	# ifnull() compatibility wrapping, so a `not in` filter counts the NULL-folder

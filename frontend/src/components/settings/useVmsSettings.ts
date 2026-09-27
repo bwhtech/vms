@@ -20,6 +20,7 @@ export interface VmsSettingsDoc {
 	whisper_model: string
 	openai_api_key: string
 	deepgram_api_key: string
+	face_recognition_enabled: 0 | 1
 	youtube_client_id: string
 }
 

@@ -127,6 +127,8 @@ permission_query_conditions = {
 	"VMS Review Comment": "vms.permissions.get_comment_permission_query_conditions",
 	"VMS Audit Log": "vms.permissions.get_audit_log_permission_query_conditions",
 	"VMS Pinned Project": "vms.permissions.get_pinned_project_permission_query_conditions",
+	"VMS Person": "vms.permissions.get_face_permission_query_conditions",
+	"VMS Face": "vms.permissions.get_face_permission_query_conditions",
 }
 
 # has_permission = {

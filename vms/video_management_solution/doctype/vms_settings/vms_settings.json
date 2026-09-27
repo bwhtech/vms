@@ -25,6 +25,8 @@
   "whisper_model",
   "openai_api_key",
   "deepgram_api_key",
+  "faces_section",
+  "face_recognition_enabled",
   "youtube_section",
   "youtube_client_id",
   "youtube_client_secret",
@@ -170,6 +172,18 @@
    "depends_on": "eval:doc.transcription_provider=='Deepgram'"
   },
   {
+   "fieldname": "faces_section",
+   "fieldtype": "Section Break",
+   "label": "Face Recognition"
+  },
+  {
+   "default": "0",
+   "description": "Detect faces in photos on this server and group them into people",
+   "fieldname": "face_recognition_enabled",
+   "fieldtype": "Check",
+   "label": "Enable Face Recognition"
+  },
+  {
    "fieldname": "youtube_section",
    "fieldtype": "Section Break",
    "label": "YouTube"
@@ -214,7 +228,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-09-08 12:00:00.000000",
+ "modified": "2026-09-27 23:30:00.000000",
  "modified_by": "Administrator",
  "module": "Video Management Solution",
  "name": "VMS Settings",

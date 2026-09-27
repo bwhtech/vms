@@ -236,8 +236,18 @@ export type SettingsTab =
 	| 'appearance'
 	| 'general'
 	| 'transcription'
+	| 'faces'
 	| 'youtube'
 	| 'users'
+
+/** A person found in a project's photos, from `vms.faces.get_project_people`. */
+export interface ProjectPerson {
+	name: string
+	person_name: string | null
+	count: number
+	cover_box: [number, number, number, number] | null
+	cover_thumbnail: string | null
+}
 
 /** What the upload dialog needs from whoever opened it. */
 export interface UploadContext {

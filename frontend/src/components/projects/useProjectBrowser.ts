@@ -39,6 +39,7 @@ export function useProjectBrowser(
 	const search = ref('')
 	const category = ref<AssetCategory | ''>('')
 	const tag = ref<string | null>(null)
+	const person = ref<string | null>(null)
 	const sort = ref<AssetSort>({ field: 'creation', order: 'desc' })
 	const assets = ref<Asset[]>([])
 	const total = ref(0)
@@ -86,6 +87,7 @@ export function useProjectBrowser(
 			folder?: string
 			category?: AssetCategory
 			tag?: string
+			person?: string
 			search?: string
 			page: number
 			page_size: number
@@ -100,6 +102,7 @@ export function useProjectBrowser(
 			folder: category.value ? undefined : (currentFolder.value ?? undefined),
 			category: category.value || undefined,
 			tag: tag.value || undefined,
+			person: person.value || undefined,
 			search: search.value || undefined,
 			page: request.value.page,
 			page_size: request.value.size,
@@ -134,7 +137,9 @@ export function useProjectBrowser(
 	const folderNotFound = computed(() =>
 		Boolean(currentFolder.value && folders.isFinished && !currentFolderDoc.value),
 	)
-	const resultsSpanFolders = computed(() => Boolean(category.value || tag.value || search.value))
+	const resultsSpanFolders = computed(() =>
+		Boolean(category.value || tag.value || person.value || search.value),
+	)
 	const folderPaths = computed(() =>
 		resultsSpanFolders.value
 			? buildFolderPathMap(allFolders.value, category.value ? null : currentFolder.value)
@@ -163,7 +168,9 @@ export function useProjectBrowser(
 		clearTimeout(debounceTimer)
 		debounceTimer = setTimeout(() => (search.value = value.trim()), 250)
 	})
-	watch([currentProject, currentFolder, category, tag, search, sort], resetList, { deep: true })
+	watch([currentProject, currentFolder, category, tag, person, search, sort], resetList, {
+		deep: true,
+	})
 	watch(view, (value) => localStorage.setItem('vms_asset_view', value))
 	watch(hasProcessing, configurePolling, { immediate: true })
 
@@ -363,6 +370,7 @@ export function useProjectBrowser(
 		searchInput,
 		category,
 		tag,
+		person,
 		sort,
 		selection,
 		view,
