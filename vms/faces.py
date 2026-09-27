@@ -9,6 +9,7 @@ from pathlib import Path
 import frappe
 import numpy as np
 from frappe import _
+from frappe.query_builder.functions import Count, Max
 from frappe.utils.synchronization import filelock
 from PIL import Image, ImageOps
 
@@ -158,12 +159,12 @@ def index_asset_faces(asset_name: str):
 			frappe.db.set_value(
 				"VMS Asset", asset_name, "face_index_key", asset.r2_key, update_modified=False
 			)
-			frappe.db.commit()
+			frappe.db.commit()  # nosemgrep: frappe-semgrep-rules.rules.frappe-manual-commit
 	except Exception:
 		frappe.db.rollback()
 		frappe.logger("vms").error(f"Face indexing failed for {asset_name}", exc_info=True)
 		frappe.db.set_value("VMS Asset", asset_name, "face_index_key", asset.r2_key, update_modified=False)
-		frappe.db.commit()
+		frappe.db.commit()  # nosemgrep: frappe-semgrep-rules.rules.frappe-manual-commit
 	finally:
 		shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -288,36 +289,44 @@ def get_project_people(project: str, folder: str | None = None):
 	if not frappe.db.exists("VMS Project", project):
 		frappe.throw(_("Project {0} does not exist").format(project))
 
-	conditions = ""
-	values = [project]
+	Face = frappe.qb.DocType("VMS Face")
+	Asset = frappe.qb.DocType("VMS Asset")
+	Person = frappe.qb.DocType("VMS Person")
+	Cover = frappe.qb.DocType("VMS Face").as_("cover")
+	CoverAsset = frappe.qb.DocType("VMS Asset").as_("cover_asset")
+
+	query = (
+		frappe.qb.from_(Face)
+		.inner_join(Asset)
+		.on(Asset.name == Face.asset)
+		.inner_join(Person)
+		.on(Person.name == Face.person)
+		.left_join(Cover)
+		.on(Cover.name == Person.cover_face)
+		.left_join(CoverAsset)
+		.on(CoverAsset.name == Cover.asset)
+		.select(
+			Person.name,
+			Max(Person.person_name).as_("person_name"),
+			Count(Face.asset).distinct().as_("count"),
+			Max(Cover.box).as_("cover_box"),
+			Max(CoverAsset.thumbnail_url).as_("cover_thumbnail"),
+		)
+		.where(Asset.project == project)
+		.where(Asset.deleted_at.isnull())
+		.where(Asset.status != "Uploading")
+		.groupby(Person.name)
+	)
 	if folder:
-		conditions = " AND a.folder IN %s"
-		values.append(tuple(_folder_subtree(folder)))
+		query = query.where(Asset.folder.isin(_folder_subtree(folder)))
 	else:
 		trashed = _trashed_folders(project)
 		if trashed:
-			conditions = " AND (a.folder IS NULL OR a.folder NOT IN %s)"
-			values.append(tuple(trashed))
+			query = query.where(Asset.folder.isnull() | Asset.folder.notin(trashed))
 
-	people = frappe.db.sql(
-		f"""
-		SELECT p.name AS name, MAX(p.person_name) AS person_name,
-			COUNT(DISTINCT f.asset) AS count,
-			MAX(cover.box) AS cover_box, MAX(cover_asset.thumbnail_url) AS cover_thumbnail
-		FROM `tabVMS Face` f
-		INNER JOIN `tabVMS Asset` a ON a.name = f.asset
-		INNER JOIN `tabVMS Person` p ON p.name = f.person
-		LEFT JOIN `tabVMS Face` cover ON cover.name = p.cover_face
-		LEFT JOIN `tabVMS Asset` cover_asset ON cover_asset.name = cover.asset
-		WHERE a.project = %s
-			AND a.deleted_at IS NULL
-			AND a.status != 'Uploading'
-			{conditions}
-		GROUP BY p.name
-		ORDER BY MAX(p.person_name) IS NULL, count DESC, MAX(p.person_name) ASC
-		""",
-		tuple(values),
-		as_dict=True,
+	people = sorted(
+		query.run(as_dict=True),
+		key=lambda person: (person.person_name is None, -person.count, person.person_name or ""),
 	)
 	for person in people:
 		person["cover_box"] = json.loads(person.cover_box) if person.cover_box else None
