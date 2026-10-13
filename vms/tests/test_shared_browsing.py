@@ -165,6 +165,16 @@ def _make_asset(project, folder=None, file_name="test.jpg", status="Ready"):
 	return doc.name
 
 
+class TestPublicReviewShareUrl(IntegrationTestCase):
+	def test_share_url_follows_the_review_token(self):
+		from vms.review_api import toggle_public_review
+
+		asset = _make_asset(_make_project(), file_name="review.mp4")
+		on = toggle_public_review(asset, 1)
+		self.assertTrue(on["share_url"].endswith(f"/vms/review/{asset}?token={on['review_token']}"))
+		self.assertIsNone(toggle_public_review(asset, 0)["share_url"])
+
+
 class TestAssetInSharedScope(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):

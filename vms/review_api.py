@@ -486,9 +486,14 @@ def toggle_public_review(asset_name: str, enable: int):
 	doc.is_public_review = int(enable)
 	doc.save(ignore_permissions=True)
 
+	share_url = None
+	if doc.review_token:
+		share_url = f"{frappe.utils.get_url()}/vms/review/{doc.name}?token={doc.review_token}"
+
 	return {
 		"is_public_review": doc.is_public_review,
 		"review_token": doc.review_token,
+		"share_url": share_url,
 	}
 
 
