@@ -23,8 +23,6 @@ from vmstool import write_cmds as w
 from vmstool.client import VmsError
 from vmstool.session import Session
 
-CATEGORIES = ("Footage", "For Review", "Deliverable")
-
 
 def main(argv=None) -> int:
 	args = parser().parse_args(argv)
@@ -67,7 +65,7 @@ def parser() -> argparse.ArgumentParser:
 
 	cmd("info", r.info, "details of one file").add_argument("path")
 
-	lk = cmd("link", r.link, "view links (expire, usually in 1 hour) for files or every file in a folder")
+	lk = cmd("link", r.link, "short-lived view links for files or every file in a folder")
 	lk.add_argument("paths", nargs="+")
 	lk.add_argument("-r", "--recursive", action="store_true")
 	lk.add_argument("--download", action="store_true", help="download links instead of streaming links")
@@ -92,8 +90,8 @@ def parser() -> argparse.ArgumentParser:
 	tg.add_argument("path"), tg.add_argument("tags", nargs="+")
 	tg.add_argument("--rm", dest="remove", action="store_true")
 
-	ca = cmd("category", w.category, "set the category: Footage, 'For Review' or Deliverable")
-	ca.add_argument("category", choices=CATEGORIES), ca.add_argument("paths", nargs="+")
+	ca = cmd("category", w.category, "set the category (the site lists the valid ones if you get it wrong)")
+	ca.add_argument("category"), ca.add_argument("paths", nargs="+")
 
 	sh = cmd("share", w.share, "public link for a project, folder (browse) or file (review)")
 	sh.add_argument("path"), sh.add_argument("--off", action="store_true", help="revoke the link")
@@ -101,7 +99,7 @@ def parser() -> argparse.ArgumentParser:
 	up = cmd("upload", w.upload, "upload files or folders (folders keep their structure)")
 	up.add_argument("paths", nargs="+")
 	up.add_argument("--to", required=True, help="project or folder to upload into")
-	up.add_argument("--category", default="Footage", choices=CATEGORIES)
+	up.add_argument("--category", help="default: the site's default")
 	up.add_argument("-n", "--dry-run", action="store_true")
 	up.add_argument("--force", action="store_true", help="upload even when a file of that name is there")
 	return p

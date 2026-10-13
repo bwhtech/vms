@@ -31,9 +31,6 @@ class Vms:
 	def __init__(self, site: str | None):
 		self.ctl = Frappectl(site)
 
-	def site_url(self) -> str:
-		return self.ctl.site_url()
-
 	def projects(self) -> list[dict]:
 		return self.ctl.doc_list("VMS Project", ["name", "project_name", "status"], [], "project_name asc")
 
@@ -168,13 +165,6 @@ class Frappectl:
 			args += ["--order-by", order_by]
 		args += ["--limit", str(limit)] if limit else ["--all"]
 		return self._run([*args, "--json"]) or []
-
-	def site_url(self) -> str:
-		info = self._run(["auth", "whoami"]) or {}
-		for key in ("url", "site_url", "base_url", "site"):
-			if str(info.get(key, "")).startswith("http"):
-				return info[key].rstrip("/")
-		raise VmsError("could not read the site URL from `frappectl auth whoami`")
 
 	def _run(self, args: list[str], stdin: str | None = None) -> Any:
 		proc = subprocess.run(self.prefix + args, input=stdin, capture_output=True, text=True)

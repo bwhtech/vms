@@ -20,7 +20,7 @@ Global flags: `-s/--site <profile>` (default `$VMS_SITE`), `--json`.
 | `rename <path> <new name>` | rename a file or folder | `vms.api.rename_asset`, `vms.api.rename_folder` |
 | `mv <path>… <dest>` | move files or folders | `vms.api.move_asset` (other project), `vms.api.move_assets_to_folder`, `vms.api.move_folder` |
 | `tag <file> <tag>… [--rm]` | add or remove tags | `vms.api.add_asset_tag`, `vms.api.remove_asset_tag` |
-| `category <Footage\|For Review\|Deliverable> <file>…` | set the category | `vms.api.update_asset_category` |
+| `category <category> <file>…` | set the category | `vms.api.update_asset_category` |
 | `share <path> [--off]` | public link | `vms.api.enable_project_sharing`, `vms.api.enable_folder_sharing`, `vms.review_api.toggle_public_review` (and their disable forms) |
 | `upload <path>… --to <dest> [--category C] [-n] [--force]` | upload | see below |
 
@@ -46,8 +46,8 @@ with `--json`, print what they did on stdout.
 ## Upload flow
 
 1. `vms.api.get_upload_url(file_name, content_type, file_size, project, folder, category)`
-   creates the asset in `Uploading` status. It returns `upload_url`, or for files above
-   2 GB, `upload_id` and `part_size`.
+   creates the asset in `Uploading` status. It returns `upload_url`, or for large files
+   (`multipart: true`) `upload_id` and `part_size`.
 2. Single PUT: `PUT upload_url` with the same `Content-Type`.
    Multipart: for each part, `vms.api.get_part_upload_url(r2_key, upload_id, part_number)`,
    then `PUT`. Keep each `ETag`. Then `vms.api.complete_multipart(asset_name, upload_id, parts)`.

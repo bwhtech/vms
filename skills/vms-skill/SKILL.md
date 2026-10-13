@@ -58,7 +58,8 @@ vmsctl get "Acme Launch/Raw" -r -o ~/Downloads   # download, keeping the folder 
 vmsctl transcript "Acme Launch/Raw/clip.mp4"
 ```
 
-Links expire, usually after 1 hour. Hand them to the user right away, or fetch fresh ones.
+Links expire (VMS Settings → presigned URL expiry). Hand them to the user right away, or
+fetch fresh ones.
 Each download link writes a Download entry to the VMS audit log, so use `link` without
 `--download` when the user only wants to watch. `get` skips files that are already on disk
 at the same size, so running it again resumes a folder.
@@ -74,12 +75,12 @@ vmsctl mv "Acme Launch/Raw/clip.mp4" "Acme Launch/Selects"
 vmsctl mv "Acme Launch/Raw/Day 1" "Other Project"  # a folder moves with everything in it
 vmsctl rename "Acme Launch/Raw/clip.mp4" "clip-final.mp4"
 vmsctl tag "Acme Launch/Raw/clip.mp4" broll drone   # --rm removes
-vmsctl category Deliverable "Acme Launch/Edits/final.mp4"
+vmsctl category Deliverable "Acme Launch/Edits/final.mp4"   # a wrong name lists the valid ones
 ```
 
 Run `upload -n` first and show the user the plan. `upload` skips a file when one of that
-name is already in the target folder. `--force` uploads a second copy. Files above 2 GB go
-up in 512 MB parts. If an upload fails partway, the tool cleans up the half-made record.
+name is already in the target folder. `--force` uploads a second copy. Large files go up
+in parts, sized by the server. If an upload fails partway, the tool cleans up the half-made record.
 Run the same command again to retry. Files that are already up are skipped.
 
 ## Share

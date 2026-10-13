@@ -125,10 +125,7 @@ def share(s: Session, args):
 	place = s.resolve(args.path)
 	on = not args.off
 	if place.asset:
-		res = s.vms.share_asset(place.asset["name"], on)
-		url = (
-			f"{s.vms.site_url()}/vms/review/{place.asset['name']}?token={res['review_token']}" if on else None
-		)
+		url = s.vms.share_asset(place.asset["name"], on).get("share_url")
 	elif place.folder:
 		url = s.vms.share_folder(place.folder_name, on).get("share_url")
 	else:
