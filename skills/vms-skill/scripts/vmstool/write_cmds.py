@@ -179,6 +179,7 @@ def upload(s: Session, args):
 			failed.append(str(path))
 			continue
 		say(f"up   {path} → {where}/  ·{asset}")
+		present.get(folder, {})[path.name] = asset
 		done.append({"name": asset, "file": str(path), "path": f"{where}/{path.name}"})
 	if args.json:
 		emit(args, done, [])

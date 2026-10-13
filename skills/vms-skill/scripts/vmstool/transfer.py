@@ -10,6 +10,7 @@ from pathlib import Path
 from .client import VmsError
 
 CHUNK = 8 * 1024 * 1024
+TIMEOUT = 120
 
 
 def content_type(path: Path) -> str:
@@ -21,7 +22,7 @@ def download(url: str, dest: Path, label: str):
 	tmp = dest.with_name(dest.name + ".part")
 	try:
 		with (
-			urllib.request.urlopen(url) as res,
+			urllib.request.urlopen(url, timeout=TIMEOUT) as res,
 			# nosemgrep: frappe-semgrep-rules.rules.security.frappe-security-file-traversal
 			open(tmp, "wb") as out,
 		):
@@ -46,7 +47,7 @@ def put(url: str, path: Path, ctype: str, offset: int, length: int, meter: Meter
 			url, data=body, method="PUT", headers={"Content-Type": ctype, "Content-Length": str(length)}
 		)
 		try:
-			with urllib.request.urlopen(req) as res:
+			with urllib.request.urlopen(req, timeout=TIMEOUT) as res:
 				return (res.headers.get("ETag") or "").strip('"')
 		except urllib.error.HTTPError as e:
 			raise VmsError(f"storage refused the upload ({e.code}): {e.read()[:300]!r}")

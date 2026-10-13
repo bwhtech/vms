@@ -280,6 +280,17 @@ class Upload(unittest.TestCase):
 				run(vms, "upload", str(f), "--to", "Acme Launch/Raw", "--force")
 		self.assertIn("confirm_upload", [c[0] for c in vms.calls])
 
+	def test_same_name_twice_in_one_run_uploads_once(self):
+		vms = FakeVms()
+		with tempfile.TemporaryDirectory() as d:
+			for sub in ("a", "b"):
+				(Path(d) / sub).mkdir()
+				(Path(d) / sub / "x.mov").write_bytes(b"1")
+			with mock.patch.object(write_cmds, "put", return_value=""):
+				_, err = run(vms, "upload", f"{d}/a/x.mov", f"{d}/b/x.mov", "--to", "Acme Launch/Raw")
+		self.assertEqual([c[0] for c in vms.calls].count("start_upload"), 1)
+		self.assertIn("skip x.mov", err)
+
 	def test_failed_put_marks_upload_failed(self):
 		vms = FakeVms()
 		with tempfile.TemporaryDirectory() as d:
